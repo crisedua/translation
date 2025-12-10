@@ -52,7 +52,7 @@ CRITICAL NAME EXTRACTION RULES:
 - segundo_apellido (second surname - found in "Segundo Apellido" field)
 - apellidos (full surnames if separate fields not found)
 - nuip (Legacy field: Populate with the alphanumeric nuip_top if present, otherwise use nuip_bottom)
-- serial_indicator (Serial indicator/code; may appear as a short alphanumeric string)
+- serial_indicator (CRITICAL: This is the "Indicativo Serial" - a numeric code found NEXT TO the NUIP box at the top of the document. It is typically 8 digits like "29734419". Look for text "Serial" or "Indicativo Serial" near the NUIP. This is DIFFERENT from the NUIP itself.)
 - sexo (sex/gender: M, F, MASCULINO, FEMENINO, or as found)
 - grupo_sanguineo (blood type, e.g., O, A, B, AB)
 - factor_rh (Rh factor, e.g., +, -, POSITIVO, NEGATIVO)
