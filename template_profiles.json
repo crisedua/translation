@@ -1,0 +1,442 @@
+[
+  {
+    "name": "Registro Nacimiento Antiguo",
+    "id": "3bffb55c-41fb-413d-bc20-3f9f1072a5f2",
+    "content_profile": {
+      "keywords": [
+        "REPUBLIC OF COLOMBIA",
+        "CIVIL REGISTRY",
+        "BIRTH CERTIFICATE",
+        "Superintendence of Notaries and Registry",
+        "ORDINALS",
+        "MONTH CODES",
+        "IDENTIFICATION No.",
+        "Basic Part",
+        "Additional Part",
+        "Type",
+        "Municipality and Department",
+        "REGISTRANT",
+        "First Surname",
+        "Second Surname",
+        "Given Names",
+        "SEX",
+        "Date of Birth",
+        "Day",
+        "Month",
+        "Year",
+        "PLACE OF BIRTH",
+        "Country",
+        "Department",
+        "Municipality",
+        "SPECIFIC SECTION",
+        "BIRTH INFORMATION",
+        "Supporting document",
+        "Name of the professional",
+        "License",
+        "MOTHER",
+        "FATHER"
+      ],
+      "documentType": "birth_certificate",
+      "pdf_mappings": {
+        "nuip": [
+          "id_basic_part",
+          "id_add_part"
+        ],
+        "sexo": [
+          "sexo"
+        ],
+        "nombres": [
+          "given_names"
+        ],
+        "madre_nombres": [
+          "mother_names"
+        ],
+        "padre_nombres": [
+          "father_surname"
+        ],
+        "fecha_registro": [
+          "date_registered"
+        ],
+        "hora_nacimiento": [
+          "time"
+        ],
+        "madre_apellidos": [
+          "mother_surnames"
+        ],
+        "padre_apellidos": [
+          "father_surname"
+        ],
+        "pais_nacimiento": [
+          "country"
+        ],
+        "primer_apellido": [
+          "first_surname"
+        ],
+        "fecha_nacimiento": [
+          "Text Field1",
+          "month",
+          "day"
+        ],
+        "lugar_nacimiento": [
+          "birth_place"
+        ],
+        "segundo_apellido": [
+          "second_surname"
+        ],
+        "testigo1_nombres": [
+          "witness_residence"
+        ],
+        "testigo2_nombres": [
+          "witness2_residence"
+        ],
+        "declarante_nombres": [
+          "declarant_address"
+        ],
+        "madre_nacionalidad": [
+          "nationality_mother"
+        ],
+        "padre_nacionalidad": [
+          "father_nationality"
+        ],
+        "madre_identificacion": [
+          "mother_id_number"
+        ],
+        "municipio_nacimiento": [
+          "municipality"
+        ],
+        "padre_identificacion": [
+          "father_id"
+        ],
+        "departamento_nacimiento": [
+          "department"
+        ],
+        "testigo1_identificacion": [
+          "witness_id"
+        ],
+        "testigo2_identificacion": [
+          "witness2_id"
+        ],
+        "declarante_identificacion": [
+          "declarant_id"
+        ]
+      },
+      "formatIndicators": {
+        "version": "medium",
+        "description": "This format includes structured sections for registrant and parental information, with specific fields for birth details and identification numbers. It lacks modern elements like barcodes but is more organized than older formats with LIBRO/FOLIO.",
+        "specificMarkers": [
+          "ORDINALS",
+          "MONTH CODES",
+          "IDENTIFICATION No.",
+          "Superintendence of Notaries and Registry"
+        ]
+      },
+      "structuralPatterns": [],
+      "semanticDescription": "This template is used for registering births in Colombia, capturing essential details about the newborn, parents, and birth circumstances. It is issued by the Superintendence of Notaries and Registry and includes fields for identification, birth details, and parental information."
+    }
+  },
+  {
+    "name": "Registro Nacimiento Medio",
+    "id": "efbcf756-758f-4dea-8822-e0da888390c7",
+    "content_profile": {
+      "keywords": [
+        "REPUBLIC OF COLOMBIA",
+        "ELECTORAL ORGANIZATION",
+        "NATIONAL CIVIL REGISTRY DIRECTORATE",
+        "BIRTH CERTIFICATE",
+        "NUIP",
+        "Serial Indicator",
+        "Registry Office",
+        "Notary",
+        "Consulate",
+        "Township",
+        "Police Station",
+        "Country",
+        "Department",
+        "Municipality",
+        "Registrant's Information",
+        "First Surname",
+        "Second Surname",
+        "Given Name(s)",
+        "Date of Birth",
+        "Sex",
+        "Blood Type",
+        "Rh Factor",
+        "Place of Birth",
+        "Mother’s Information",
+        "Father's Information",
+        "Declarant's Information",
+        "Witness’s Information",
+        "Identification Document",
+        "Nationality",
+        "Signature"
+      ],
+      "documentType": "birth_certificate",
+      "pdf_mappings": {
+        "acta": [
+          "birth_cert_number"
+        ],
+        "nuip": [
+          "nuip"
+        ],
+        "sexo": [
+          "sex"
+        ],
+        "codigo": [
+          "reg_code"
+        ],
+        "nombres": [
+          "reg_names"
+        ],
+        "oficina": [
+          "notary_number"
+        ],
+        "reg_day": [
+          "reg_day"
+        ],
+        "reg_year": [
+          "reg_year"
+        ],
+        "birth_day": [
+          "birth_day"
+        ],
+        "factor_rh": [
+          "rh_factor"
+        ],
+        "reg_month": [
+          "reg_month"
+        ],
+        "birth_year": [
+          "birth_year"
+        ],
+        "birth_month": [
+          "birth_month"
+        ],
+        "nuip_resolved": [
+          "nuip"
+        ],
+        "notes_combined": [
+          "notes1"
+        ],
+        "numero_oficina": [
+          "notary_number"
+        ],
+        "grupo_sanguineo": [
+          "blood_type"
+        ],
+        "madre_apellidos": [
+          "mother_surnames_names"
+        ],
+        "padre_apellidos": [
+          "father_surnames_names"
+        ],
+        "primer_apellido": [
+          "reg_1_surname"
+        ],
+        "father_full_name": [
+          "father_surnames_names"
+        ],
+        "mother_full_name": [
+          "mother_surnames_names"
+        ],
+        "segundo_apellido": [
+          "reg_2_surname"
+        ],
+        "serial_indicator": [
+          "serial_indicator"
+        ],
+        "testigo1_nombres": [
+          "witness1_surnames_names"
+        ],
+        "testigo2_nombres": [
+          "witness2_surnames_names"
+        ],
+        "declarante_nombres": [
+          "declarant_surnames_names"
+        ],
+        "funcionario_nombre": [
+          "official_name&signature"
+        ],
+        "madre_nacionalidad": [
+          "mother_nationality"
+        ],
+        "padre_nacionalidad": [
+          "father_nationality"
+        ],
+        "authorizing_official": [
+          "official_name&signature"
+        ],
+        "madre_identificacion": [
+          "mother_id_doc"
+        ],
+        "padre_identificacion": [
+          "father_id_doc"
+        ],
+        "acknowledgment_official": [
+          "ack_official_name&signature"
+        ],
+        "birth_location_combined": [
+          "birth_country_dept_munic"
+        ],
+        "testigo1_identificacion": [
+          "witness1_id_doc"
+        ],
+        "testigo2_identificacion": [
+          "witness2_id_doc"
+        ],
+        "tipo_documento_anterior": [
+          "prior_doc"
+        ],
+        "declarante_identificacion": [
+          "declarant_id_doc"
+        ],
+        "registry_location_combined": [
+          "country_dept_munic"
+        ]
+      },
+      "formatIndicators": {
+        "version": "new",
+        "description": "This format includes modern identifiers such as the NUIP and a barcode, indicating a newer version of the birth certificate template.",
+        "specificMarkers": [
+          "NUIP",
+          "barcode"
+        ]
+      },
+      "structuralPatterns": [],
+      "semanticDescription": "This template is used for registering births in Colombia, providing essential information about the registrant, parents, and witnesses. It includes modern identifiers like the NUIP and a barcode, reflecting its use in contemporary civil registration processes."
+    }
+  },
+  {
+    "name": "Registro Nacimiento Nuevo",
+    "id": "9ffa61ac-84d8-4f1f-afec-21961b60a23f",
+    "content_profile": {
+      "keywords": [
+        "National Civil Registry",
+        "Digital Civil Status Registration",
+        "NUIP",
+        "Birth",
+        "Serial Indicator",
+        "Registry Office Information",
+        "Country",
+        "Department",
+        "Municipality",
+        "Date of Registration",
+        "Office Type",
+        "Registrant's Information",
+        "Names",
+        "Surnames",
+        "Date of Birth",
+        "Sex",
+        "Place of Birth",
+        "Mother or Father Information",
+        "Document Type",
+        "Document Number",
+        "Nationality",
+        "Date of Issue",
+        "Valid for 3 months",
+        "digitally signed document",
+        "Civil Registry Information System",
+        "Decree 1260 of 1970",
+        "Law 527 of 1999",
+        "Law 962 of 2005"
+      ],
+      "documentType": "birth_certificate",
+      "pdf_mappings": {
+        "nuip": [
+          "nuip"
+        ],
+        "sexo": [
+          "sex"
+        ],
+        "nombres": [
+          "names"
+        ],
+        "oficina": [
+          "office_type"
+        ],
+        "nuip_top": [
+          "nuip"
+        ],
+        "nuip_bottom": [
+          "nuip"
+        ],
+        "madre_nombres": [
+          "mother_names"
+        ],
+        "padre_nombres": [
+          "father_names"
+        ],
+        "fecha_registro": [
+          "date_registration",
+          "day",
+          "month",
+          "year"
+        ],
+        "madre_apellidos": [
+          "mother_surnames"
+        ],
+        "padre_apellidos": [
+          "father_surnames"
+        ],
+        "pais_nacimiento": [
+          "country_birth"
+        ],
+        "primer_apellido": [
+          "surnames"
+        ],
+        "fecha_nacimiento": [
+          "date_of_birth",
+          "day",
+          "month",
+          "year"
+        ],
+        "lugar_nacimiento": [
+          "township_birth"
+        ],
+        "segundo_apellido": [
+          "surnames"
+        ],
+        "serial_indicator": [
+          "serial_indicator"
+        ],
+        "funcionario_nombre": [
+          "name_director"
+        ],
+        "madre_nacionalidad": [
+          "mother_nationality"
+        ],
+        "municipio_registro": [
+          "muni_office"
+        ],
+        "padre_nacionalidad": [
+          "father_nationality"
+        ],
+        "madre_identificacion": [
+          "mother_doc_number"
+        ],
+        "municipio_nacimiento": [
+          "muni_birth"
+        ],
+        "padre_identificacion": [
+          "father_doc_number"
+        ],
+        "departamento_registro": [
+          "dept_office"
+        ],
+        "departamento_nacimiento": [
+          "dept_birth"
+        ]
+      },
+      "formatIndicators": {
+        "version": "new",
+        "description": "This format is characterized by the use of a NUIP, QR code, and digital signatures, indicating a modern, digital approach to civil registration.",
+        "specificMarkers": [
+          "NUIP",
+          "QR code",
+          "digitally signed document"
+        ]
+      },
+      "structuralPatterns": [],
+      "semanticDescription": "This template is used for the digital registration of births in Colombia. It includes detailed information about the registrant, their parents, and the registration office. The document is digitally signed and has legal validity for three months from the date of issue."
+    }
+  }
+]
