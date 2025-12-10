@@ -18,7 +18,16 @@ MANDATORY FIELDS (Must be extracted if found, regardless of template):
 - margin_notes (Any text found in the "ESPACIO PARA NOTAS" section. Look specifically for "NUIP OTORGADO POR..." or "NUIP NUEVO..." and extract the full content verbatim including dates and numbers.)
 - authorizing_official (Name of the official found near "Nombre y firma del funcionario que autoriza")
 - acknowledgment_official (Name of the official found near "Nombre y firma del funcionario ante quien se hace el reconocimiento" - this is for paternal recognition)
-- nuip_top (CRITICAL: Look at the VERY TOP and TOP-LEFT of the document. There is often a box labeled "NUIP" or "N.U.I.P." containing text. This value is often ALPHANUMERIC and frequently starts with a letter like 'A' (e.g., "A-12345678", "A0923481", "VA1112083468"). Extract EXACTLY as written, preserving all letters, numbers, and dashes. Do NOT ignore the leading letter 'A'. Do NOT assume it is only digits.)
+- nuip_top (CRITICAL NUIP EXTRACTION - READ CAREFULLY:
+  * LOCATION: Look at the VERY TOP-LEFT corner of the document
+  * VISUAL CUE: There is a small box/rectangle with the label "NUIP" or "N.U.I.P."
+  * THE VALUE IS INSIDE THIS BOX - not anywhere else
+  * FORMAT: This value is ALPHANUMERIC (contains both letters AND numbers)
+  * COMMON PATTERNS: "V2A00011S6", "A1234567", "VA1112083468", "AADOT239373"
+  * EXAMPLE: If you see a box at top-left with "NUIP" label and inside it says "V2A00011S6", extract exactly "V2A00011S6"
+  * DO NOT extract from "NUIP NUEVO" section at the bottom
+  * DO NOT extract from "NUIP OTORGADO" in notes section
+  * DO NOT hallucinate or guess - extract ONLY what you see in the top-left NUIP box)
 - nuip_bottom (The NUIP code found at the BOTTOM/SIDE of the document. Usually a 10‑digit numeric value.)
 
 PRIMARY FIELDS (Defined by Template):
