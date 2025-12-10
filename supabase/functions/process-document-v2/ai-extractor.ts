@@ -34,10 +34,22 @@ PRIMARY FIELDS (Defined by Template):
 ${fieldDescriptions.length > 0 ? fieldDescriptions : "No specific template fields defined."}
 
 COMMON FALLBACK FIELDS (Extract if present and not covered above):
-## REGISTRANT INFORMATION
-- nombres (given names)
-- primer_apellido (first surname)
-- segundo_apellido (second surname)
+## REGISTRANT INFORMATION (CHILD'S NAME - READ CAREFULLY)
+CRITICAL NAME EXTRACTION RULES:
+1. Find the section "Datos del inscrito" (Registrant Information)
+2. Look for THREE separate fields:
+   - "Primer Apellido" = FIRST SURNAME (e.g., "QUEVEDO")
+   - "Segundo Apellido" = SECOND SURNAME (e.g., "HERRERA")
+   - "Nombre(s)" = GIVEN NAME(S) (e.g., "KATERINE")
+3. DO NOT confuse surnames with given names
+4. Example from document:
+   - primer_apellido: "QUEVEDO" (NOT "KATERINE")
+   - segundo_apellido: "HERRERA"
+   - nombres: "KATERINE" (NOT "QUEVEDO")
+
+- nombres (given names - the child's first name, found in "Nombre(s)" field)
+- primer_apellido (first surname - found in "Primer Apellido" field)
+- segundo_apellido (second surname - found in "Segundo Apellido" field)
 - apellidos (full surnames if separate fields not found)
 - nuip (Legacy field: Populate with the alphanumeric nuip_top if present, otherwise use nuip_bottom)
 - serial_indicator (Serial indicator/code; may appear as a short alphanumeric string)
@@ -56,21 +68,40 @@ COMMON FALLBACK FIELDS (Extract if present and not covered above):
 - corregimiento
 
 ## FATHER INFORMATION
-- padre_nombres (father's full names)
-- padre_apellidos (father's surnames)
+CRITICAL ANTI-DUPLICATION RULE:
+- Extract father's name EXACTLY ONCE
+- If you see "QUEVEDO MEDINA HARVEY ABAD", extract it as-is
+- DO NOT append additional surnames or repeat any part
+- Example: "QUEVEDO MEDINA HARVEY ABAD" NOT "QUEVEDO MEDINA HARVEY ABAD QUEVEDO MEDINA"
+
+- padre_nombres (father's COMPLETE full name including all surnames - e.g., "QUEVEDO MEDINA HARVEY ABAD")
+- padre_apellidos (father's surnames only if separated - usually empty)
 - padre_identificacion (father's ID number - CC, TI, passport number)
 - padre_tipo_documento (father's document type - CC, TI, PASAPORTE)
 - padre_nacionalidad (father's nationality)
 
 ## MOTHER INFORMATION
-- madre_nombres (mother's full names)
-- madre_apellidos (mother's surnames)
+CRITICAL ANTI-DUPLICATION RULE:
+- Extract mother's name EXACTLY ONCE
+- If you see "HERRERA HERRERA ALBA YOLANDA", extract it as-is
+- DO NOT append additional surnames or repeat any part
+- Example: "HERRERA HERRERA ALBA YOLANDA" NOT "HERRERA HERRERA ALBA YOLANDA HERRERA"
+
+- madre_nombres (mother's COMPLETE full name including all surnames - e.g., "HERRERA HERRERA ALBA YOLANDA")
+- madre_apellidos (mother's surnames only if separated - usually empty)
 - madre_identificacion (mother's ID number - CC, TI, passport number)
 - madre_tipo_documento (mother's document type - CC, TI, PASAPORTE)
 - madre_nacionalidad (mother's nationality)
 
 ## DECLARANT INFORMATION
-- declarante_nombres (declarant's full names and surnames)
+CRITICAL ROLE DISTINCTION:
+- "Declarante" = Person making the declaration (often the father or mother)
+- "Funcionario que autoriza" = Official authorizing the document (near stamp/signature)
+- These are DIFFERENT people - do NOT confuse them
+- Look for "Datos del declarante" section for declarant information
+- The official's name (like "HOLMES RAFAEL CARDONA MONTOYA") goes in 'authorizing_official', NOT here
+
+- declarante_nombres (declarant's full names and surnames - the person declaring, NOT the official)
 - declarante_identificacion (declarant's ID number)
 - declarante_tipo_documento (declarant's document type)
 
@@ -102,6 +133,7 @@ COMMON FALLBACK FIELDS (Extract if present and not covered above):
 ## OTHER
 - notas (notes/marginal notes)
 - tipo_documento_anterior (Type of Prior Document or Witness Statement, e.g., "CERTIFICADO DE NACIDO VIVO", "DECLARACIÓN DE TESTIGOS")
+- certificado_nacido_vivo_numero (Live Birth Certificate Number - usually starts with 'A' followed by digits, e.g., "A2692167")
 - funcionario_nombre (authorizing official's name - look near "Nombre y firma" or "Funcionario")
 - funcionario_cargo (authorizing official's position)
 
