@@ -4,6 +4,8 @@ import { matchTemplateWithAI } from "./template-matcher-ai.ts";
 import { extractData } from "./ai-extractor.ts";
 import { validateData } from "./validator.ts";
 import { sendNotification } from "./email-notifier.ts";
+import { extractTextWithGoogleVision, extractTextFromImages } from "./google-vision.ts";
+import { convertPdfToImage } from "./pdf-converter.ts";
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -64,31 +66,71 @@ serve(async (req) => {
         // 3. Determine file type
         const lowerName = (fileName || '').toLowerCase();
         const isImage = lowerName.endsWith('.png') || lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg');
+        const isPdf = lowerName.endsWith('.pdf');
 
-        // 4. Extract text using PDF.co
+        // 4. Extract text using Google Vision (for both images and PDFs)
         let extractedText = "";
-        const pdfCoKey = Deno.env.get("PDF_CO_API_KEY");
-        console.log(`PDF_CO_API_KEY exists: ${!!pdfCoKey}`);
-
-        if (pdfCoKey) {
-            try {
-                console.log("Calling PDF.co for text extraction...");
-                const extractResponse = await fetch("https://api.pdf.co/v1/pdf/convert/to/text", {
-                    method: 'POST',
-                    headers: { "x-api-key": pdfCoKey, "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        url: fileUrl,
-                        async: false,
-                        ocrMode: "Auto",
-                        lang: "spa",
-                        inline: true
-                    })
-                });
-                const pdfData = await extractResponse.json();
-                console.log(`PDF.co response: error=${pdfData.error}, bodyLength=${pdfData.body?.length || 0}`);
-                extractedText = pdfData.body || "";
-            } catch (e) {
-                console.error("PDF.co failed:", e);
+        let imageUrlsForAI: string[] = []; // For passing to OpenAI Vision API
+        
+        try {
+            if (isImage) {
+                // Direct image - use Google Vision
+                console.log("Using Google Vision for image OCR...");
+                extractedText = await extractTextWithGoogleVision(fileBase64);
+                // For OpenAI Vision, use the base64 data URI
+                imageUrlsForAI = [`data:${lowerName.endsWith('.png') ? 'image/png' : 'image/jpeg'};base64,${fileBase64}`];
+            } else if (isPdf) {
+                // PDF - convert to images first, then use Google Vision
+                console.log("Converting PDF to images for Google Vision OCR...");
+                const pdfImageUrls = await convertPdfToImage(fileBuffer);
+                
+                if (pdfImageUrls && pdfImageUrls.length > 0) {
+                    console.log(`PDF converted to ${pdfImageUrls.length} image(s)`);
+                    
+                    // Use Google Vision to extract text from all pages
+                    extractedText = await extractTextFromImages(pdfImageUrls);
+                    
+                    // Store image URLs for OpenAI Vision API
+                    imageUrlsForAI = pdfImageUrls;
+                    
+                    console.log(`Google Vision extracted ${extractedText.length} characters from PDF`);
+                } else {
+                    throw new Error("Failed to convert PDF to images");
+                }
+            } else {
+                throw new Error(`Unsupported file type: ${fileName}`);
+            }
+        } catch (error) {
+            console.error("Google Vision extraction failed:", error);
+            // Fallback to PDF.co if available
+            if (isPdf) {
+                console.log("Falling back to PDF.co for text extraction...");
+                const pdfCoKey = Deno.env.get("PDF_CO_API_KEY");
+                if (pdfCoKey) {
+                    try {
+                        const extractResponse = await fetch("https://api.pdf.co/v1/pdf/convert/to/text", {
+                            method: 'POST',
+                            headers: { "x-api-key": pdfCoKey, "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                url: fileUrl,
+                                async: false,
+                                ocrMode: "Auto",
+                                lang: "spa",
+                                inline: true
+                            })
+                        });
+                        const pdfData = await extractResponse.json();
+                        extractedText = pdfData.body || "";
+                        console.log("PDF.co fallback successful");
+                    } catch (e) {
+                        console.error("PDF.co fallback also failed:", e);
+                        throw new Error("Both Google Vision and PDF.co extraction failed");
+                    }
+                } else {
+                    throw new Error("Google Vision failed and PDF.co API key not available");
+                }
+            } else {
+                throw error;
             }
         }
 
@@ -121,22 +163,19 @@ serve(async (req) => {
         }
 
         // 7. Extract structured data with AI
-        // CRITICAL: Only use Vision for actual IMAGES, not PDFs!
-
-        // CRITICAL: Alphanumeric NUIP Instruction
-        // The prompt must explicitly look for alphanumeric codes (e.g., V2A...) to avoid hallucinating 10-digit numbers.
-
+        // Use Google Vision images for OpenAI Vision API
         let dataUri: string | undefined = undefined;
-
-
+        
         if (isImage) {
-            // Only create dataUri for images - Vision API can process these
+            // For images, use base64 data URI
             const mimeType = lowerName.endsWith('.png') ? 'image/png' : 'image/jpeg';
             dataUri = `data:${mimeType};base64,${fileBase64}`;
-            console.log("Image file detected - using Vision mode");
-        } else {
-            // For PDFs, rely on extracted text only
-            console.log("PDF file detected - using text-only mode (Vision not supported for PDFs)");
+            console.log("Image file detected - using Vision mode with Google Vision OCR");
+        } else if (isPdf && imageUrlsForAI.length > 0) {
+            // For PDFs, use the first page image URL for OpenAI Vision
+            // OpenAI Vision can accept image URLs
+            dataUri = imageUrlsForAI[0];
+            console.log(`PDF detected - using first page image (${imageUrlsForAI.length} total pages) for OpenAI Vision`);
         }
 
         console.log("Extracting structured data with AI...");

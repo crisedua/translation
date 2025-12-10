@@ -58,7 +58,10 @@ CRITICAL NAME EXTRACTION RULES:
 - factor_rh (Rh factor, e.g., +, -, POSITIVO, NEGATIVO)
 
 ## BIRTH DETAILS
-- fecha_nacimiento (date of birth - look for "FECHA DE NACIMIENTO" or separate day/month/year fields)
+- fecha_nacimiento (date of birth - combined format DD/MM/YYYY - look for "FECHA DE NACIMIENTO" or separate day/month/year fields)
+- fecha_nacimiento_year (year only, e.g., "2000")
+- fecha_nacimiento_month (month only, e.g., "08")
+- fecha_nacimiento_day (day only, e.g., "19")
 - hora_nacimiento (time of birth - look for "HORA", hour/time near birth date)
 - pais_nacimiento (country of birth, default COLOMBIA)
 - departamento_nacimiento (department of birth)
@@ -120,7 +123,10 @@ CRITICAL ROLE DISTINCTION:
 - municipio_registro (city/municipality where registered)
 - ciudad_registro (same as municipio_registro)
 - consulado (consulate name if applicable)
-- fecha_registro (date of registration)
+- fecha_registro (date of registration - combined format DD/MM/YYYY)
+- fecha_registro_year (year only, e.g., "2000")
+- fecha_registro_month (month only, e.g., "08")
+- fecha_registro_day (day only, e.g., "31")
 
 ## DOCUMENT IDENTIFIERS
 - codigo (code - extract ALL parts, usually 3 numbers like "97 0 2")
@@ -145,7 +151,11 @@ IMPORTANT EXTRACTION RULES:
 5. Return empty string "" for fields not found, never use null.
 6. Return ONLY the JSON object.
 7. For DATE fields: Look carefully for dates in formats like DD/MM/YYYY, DD-MM-YYYY, or separate Year/Month/Day columns. Birth dates are often near "FECHA DE NACIMIENTO" or "AÑO MES DIA".
-8. If you find separate Year, Month, Day values, combine them into a single date string (DD/MM/YYYY format).
+8. CRITICAL - DATE EXTRACTION: Extract dates in BOTH formats:
+   - Combined: fecha_nacimiento = "19/08/2000" (DD/MM/YYYY)
+   - Separate components: fecha_nacimiento_year = "2000", fecha_nacimiento_month = "08", fecha_nacimiento_day = "19"
+   - Same for fecha_registro: combined AND separate components
+9. If you find separate Year, Month, Day values, extract them as separate fields AND combine into fecha_nacimiento/fecha_registro.
 
 CRITICAL - CÓDIGO/CODE FIELD:
 - The "Código" field usually contains 3 separate numbers (e.g., "97", "0", "2")
@@ -188,10 +198,30 @@ DYNAMIC EXTRACTION (CRITICAL FOR NEW FORMS):
             role: "user",
             content: fileUrl
                 ? [
-                    { type: "text", text: "Extract ALL data from this Colombian document image. If standard fields are not found, extract whatever you see." },
-                    { type: "image_url", image_url: { url: fileUrl } } // Use Vision if fileUrl is provided
+                    { 
+                        type: "text", 
+                        text: `Extract ALL data from this Colombian document. 
+                        
+CRITICAL INSTRUCTIONS:
+1. Look at the TOP-LEFT corner for NUIP box - extract ONLY that value (e.g., "V2A0001156")
+2. For dates, extract BOTH combined (DD/MM/YYYY) AND separate components (year, month, day)
+3. Extract EVERY visible field, even if not in standard list
+4. DO NOT guess or hallucinate - only extract what you clearly see
+5. If uncertain, return empty string for that field
+6. For fecha_nacimiento, extract: combined string AND fecha_nacimiento_year, fecha_nacimiento_month, fecha_nacimiento_day
+7. For fecha_registro, extract: combined string AND fecha_registro_year, fecha_registro_month, fecha_registro_day
+
+Return JSON with all extracted fields.` 
+                    },
+                    { 
+                        type: "image_url", 
+                        image_url: { 
+                            // Handle both data URIs and regular URLs
+                            url: fileUrl
+                        } 
+                    }
                 ]
-                : `Extract data from this Colombian document:\n\n${text}` // Fallback to text if no image
+                : `Extract data from this Colombian document text:\n\n${text.substring(0, 8000)}` // Fallback to text if no image
         }
     ];
 

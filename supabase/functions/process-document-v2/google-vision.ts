@@ -79,3 +79,79 @@ export async function extractTextWithGoogleVision(fileBase64: string): Promise<s
     console.log(`Google Vision extracted ${text.length} characters`);
     return text;
 }
+
+// Extract text from multiple images (for multi-page PDFs) using image URLs
+export async function extractTextFromImages(imageUrls: string[]): Promise<string> {
+    const accessToken = await getAccessToken();
+    const url = "https://vision.googleapis.com/v1/images:annotate";
+
+    // Process all images in parallel
+    const requests = imageUrls.map(imageUrl => ({
+        image: { source: { imageUri: imageUrl } },
+        features: [{ type: "DOCUMENT_TEXT_DETECTION" }]
+    }));
+
+    const body = { requests };
+
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${accessToken}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Google Vision API error: ${response.status} - ${error}`);
+    }
+
+    const data = await response.json();
+    
+    // Combine text from all pages
+    const allText = data.responses
+        .map((resp: any) => resp.fullTextAnnotation?.text || "")
+        .filter((text: string) => text.length > 0)
+        .join("\n\n");
+    
+    console.log(`Google Vision extracted ${allText.length} characters from ${imageUrls.length} pages`);
+    return allText;
+}
+
+// Extract text from base64 image data (for direct base64 images)
+export async function extractTextFromBase64Images(imageBase64Array: string[]): Promise<string> {
+    const accessToken = await getAccessToken();
+    const url = "https://vision.googleapis.com/v1/images:annotate";
+
+    const requests = imageBase64Array.map(base64 => ({
+        image: { content: base64 },
+        features: [{ type: "DOCUMENT_TEXT_DETECTION" }]
+    }));
+
+    const body = { requests };
+
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${accessToken}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Google Vision API error: ${response.status} - ${error}`);
+    }
+
+    const data = await response.json();
+    
+    const allText = data.responses
+        .map((resp: any) => resp.fullTextAnnotation?.text || "")
+        .filter((text: string) => text.length > 0)
+        .join("\n\n");
+    
+    console.log(`Google Vision extracted ${allText.length} characters from ${imageBase64Array.length} images`);
+    return allText;
+}
