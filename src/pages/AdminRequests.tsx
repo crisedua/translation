@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { FileText, Clock, CheckCircle, XCircle, AlertCircle, Eye, Loader, Trash2 } from 'lucide-react';

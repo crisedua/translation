@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Upload, FileText, Trash2, Eye, Edit2, Check, X } from 'lucide-react';
+import { FileText, Trash2, Eye, Edit2, Check, X } from 'lucide-react';
 
 interface Template {
     id: string;
@@ -72,7 +72,7 @@ const TemplateAdmin = () => {
             const fileName = `${Date.now()}.${fileExt}`;
             const filePath = `templates/${fileName}`;
 
-            const { data: uploadData, error: uploadError } = await supabase.storage
+            const { error: uploadError } = await supabase.storage
                 .from('documents')
                 .upload(filePath, selectedFile);
 
@@ -88,7 +88,7 @@ const TemplateAdmin = () => {
             const templateUrl = urlData.signedUrl;
 
             // 3. Call analyze-template function
-            const { data: functionData, error: functionError } = await supabase.functions
+            const { error: functionError } = await supabase.functions
                 .invoke('analyze-template', {
                     body: {
                         templateUrl,

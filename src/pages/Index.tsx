@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Link } from 'react-router-dom';
 import DocumentUpload from '../components/DocumentUpload';
 import { Settings, FileText } from 'lucide-react';
