@@ -68,73 +68,61 @@ serve(async (req) => {
         const isImage = lowerName.endsWith('.png') || lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg');
         const isPdf = lowerName.endsWith('.pdf');
 
-        // 4. Extract text using Google Vision (for both images and PDFs)
+        // 4. Extract text and prepare for AI Vision
         let extractedText = "";
-        let imageUrlsForAI: string[] = []; // For passing to OpenAI Vision API
-        
-        try {
-            if (isImage) {
-                // Direct image - use Google Vision
+        let visionDataUri: string | undefined = undefined;
+
+        console.log(`File type detection: isImage=${isImage}, isPdf=${isPdf}`);
+
+        if (isImage) {
+            // Direct image - use Google Vision for OCR
+            console.log("Processing IMAGE file...");
+            try {
                 console.log("Using Google Vision for image OCR...");
                 extractedText = await extractTextWithGoogleVision(fileBase64);
-                // For OpenAI Vision, use the base64 data URI
-                imageUrlsForAI = [`data:${lowerName.endsWith('.png') ? 'image/png' : 'image/jpeg'};base64,${fileBase64}`];
-            } else if (isPdf) {
-                // PDF - convert to images first, then use Google Vision
-                console.log("Converting PDF to images for Google Vision OCR...");
+                console.log(`Google Vision extracted ${extractedText.length} characters`);
+
+                // Prepare base64 data URI for OpenAI Vision
+                const mimeType = lowerName.endsWith('.png') ? 'image/png' : 'image/jpeg';
+                visionDataUri = `data:${mimeType};base64,${fileBase64}`;
+                console.log("Image prepared for OpenAI Vision (base64 data URI)");
+            } catch (visionError) {
+                console.error("Google Vision OCR failed:", visionError);
+                extractedText = "";
+            }
+        } else if (isPdf) {
+            // PDF file - Convert to images using PDF.co
+            // This is CRITICAL for accurate extraction - OpenAI Vision needs an image to see the NUIP box
+            console.log("Processing PDF file with PDF.co conversion...");
+            try {
+                // Convert PDF to images
                 const pdfImageUrls = await convertPdfToImage(fileBuffer);
-                
+
                 if (pdfImageUrls && pdfImageUrls.length > 0) {
                     console.log(`PDF converted to ${pdfImageUrls.length} image(s)`);
-                    
-                    // Use Google Vision to extract text from all pages
+
+                    // Use Google Vision on the images
                     extractedText = await extractTextFromImages(pdfImageUrls);
-                    
-                    // Store image URLs for OpenAI Vision API
-                    imageUrlsForAI = pdfImageUrls;
-                    
-                    console.log(`Google Vision extracted ${extractedText.length} characters from PDF`);
+
+                    // Use the first page image for OpenAI Vision
+                    // OpenAI Vision accepts URLs directly for images
+                    visionDataUri = pdfImageUrls[0];
+                    console.log(`PDF prepared for OpenAI Vision (using converted image URL)`);
                 } else {
-                    throw new Error("Failed to convert PDF to images");
+                    console.error("PDF conversion returned no images");
+                    throw new Error("PDF conversion failed");
                 }
-            } else {
-                throw new Error(`Unsupported file type: ${fileName}`);
+            } catch (pdfError) {
+                console.error("PDF processing failed:", pdfError);
+                // Fallback to text-only mode
+                console.log("Falling back to text-only mode for PDF");
+                extractedText = "";
             }
-        } catch (error) {
-            console.error("Google Vision extraction failed:", error);
-            // Fallback to PDF.co if available
-            if (isPdf) {
-                console.log("Falling back to PDF.co for text extraction...");
-                const pdfCoKey = Deno.env.get("PDF_CO_API_KEY");
-                if (pdfCoKey) {
-                    try {
-                        const extractResponse = await fetch("https://api.pdf.co/v1/pdf/convert/to/text", {
-                            method: 'POST',
-                            headers: { "x-api-key": pdfCoKey, "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                url: fileUrl,
-                                async: false,
-                                ocrMode: "Auto",
-                                lang: "spa",
-                                inline: true
-                            })
-                        });
-                        const pdfData = await extractResponse.json();
-                        extractedText = pdfData.body || "";
-                        console.log("PDF.co fallback successful");
-                    } catch (e) {
-                        console.error("PDF.co fallback also failed:", e);
-                        throw new Error("Both Google Vision and PDF.co extraction failed");
-                    }
-                } else {
-                    throw new Error("Google Vision failed and PDF.co API key not available");
-                }
-            } else {
-                throw error;
-            }
+        } else {
+            console.warn(`Unsupported file type: ${fileName}`);
         }
 
-        console.log(`Extracted text length: ${extractedText.length}`);
+        console.log(`OCR text length: ${extractedText.length}, Vision URI: ${visionDataUri ? 'SET' : 'NOT SET'}`);
 
         // 5. Fetch templates
         console.log("Fetching templates...");
@@ -146,8 +134,9 @@ serve(async (req) => {
         console.log(`Templates fetched: ${templates?.length || 0}, error: ${templatesError?.message || 'none'}`);
 
         // 6. Match template
-        console.log("Matching template with AI...");
-        let matchedTemplate = await matchTemplateWithAI(extractedText, templates || []);
+        console.log("Matching template with AI (Text-Only Mode - Google Vision OCR)...");
+        // Use text-only matching (no vision) for simplicity and reliability
+        let matchedTemplate = await matchTemplateWithAI(extractedText, templates || [], undefined);
 
         // RESILIENCE: If no match but templates exist, use first one
         if (!matchedTemplate && templates && templates.length > 0) {
@@ -162,24 +151,12 @@ serve(async (req) => {
             throw new Error("No templates available. Please upload a template first.");
         }
 
-        // 7. Extract structured data with AI
-        // Use Google Vision images for OpenAI Vision API
-        let dataUri: string | undefined = undefined;
-        
-        if (isImage) {
-            // For images, use base64 data URI
-            const mimeType = lowerName.endsWith('.png') ? 'image/png' : 'image/jpeg';
-            dataUri = `data:${mimeType};base64,${fileBase64}`;
-            console.log("Image file detected - using Vision mode with Google Vision OCR");
-        } else if (isPdf && imageUrlsForAI.length > 0) {
-            // For PDFs, use the first page image URL for OpenAI Vision
-            // OpenAI Vision can accept image URLs
-            dataUri = imageUrlsForAI[0];
-            console.log(`PDF detected - using first page image (${imageUrlsForAI.length} total pages) for OpenAI Vision`);
-        }
+        // 7. Extract structured data with AI (Text-Only Mode)
+        console.log("Extracting structured data with AI (Text-Only Mode - Google Vision OCR)...");
+        console.log(`Using OCR text (${extractedText.length} chars) for extraction`);
 
-        console.log("Extracting structured data with AI...");
-        const extractedData = await extractData(extractedText, matchedTemplate, dataUri);
+        // Use text-only extraction (no vision) - relies on Google Vision OCR
+        const extractedData = await extractData(extractedText, matchedTemplate, undefined);
         console.log(`Data extracted: ${Object.keys(extractedData || {}).length} fields`);
 
         // 8. Validate & Save

@@ -9,7 +9,8 @@ interface Template {
 
 export const matchTemplateWithAI = async (
     documentText: string,
-    templates: Template[]
+    templates: Template[],
+    visionDataUri?: string
 ): Promise<Template | null> => {
     if (!templates || templates.length === 0) {
         console.warn("No templates provided for matching");
@@ -40,7 +41,7 @@ export const matchTemplateWithAI = async (
         textSample: t.full_template_text?.substring(0, 300) || ""
     }));
 
-    const prompt = `You are an expert at matching Colombian civil documents to templates.
+    const textPrompt = `You are an expert at matching Colombian civil documents to templates.
 
 UPLOADED DOCUMENT TEXT (first 1500 chars):
 ${documentText.substring(0, 1500)}
@@ -49,10 +50,10 @@ AVAILABLE TEMPLATES:
 ${JSON.stringify(templateSummaries, null, 2)}
 
 Match the uploaded document to the BEST template. Consider:
-1. Document type (birth certificate, passport, etc.)
-2. Format indicators (old vs new format - old has LIBRO/FOLIO, new has NUIP/barcodes)
-3. Keyword presence in both document and template
-4. Structural similarities
+1. VISUAL LAYOUT & STRUCTURE (If image provided)
+2. Document type (birth certificate, passport, etc.)
+3. Format indicators (old vs new format - old has LIBRO/FOLIO, new has NUIP/barcodes)
+4. Keyword presence
 
 Return JSON:
 {
@@ -63,8 +64,32 @@ Return JSON:
 
 If no template is a good match, set confidence below 40.`;
 
+    const messages: any[] = [
+        { role: "system", content: "You are a document classification expert for Colombian civil registry documents." }
+    ];
+
+    if (visionDataUri) {
+        // Visual + Text Matching
+        messages.push({
+            role: "user",
+            content: [
+                { type: "text", text: textPrompt },
+                {
+                    type: "image_url",
+                    image_url: {
+                        url: visionDataUri,
+                        detail: "low" // Low detail is enough for layout matching and cheaper/faster
+                    }
+                }
+            ]
+        });
+    } else {
+        // Text-only Matching
+        messages.push({ role: "user", content: textPrompt });
+    }
+
     try {
-        console.log("Matching with AI...");
+        console.log(`Matching with AI (Vision: ${!!visionDataUri})...`);
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",
             headers: {
@@ -72,15 +97,13 @@ If no template is a good match, set confidence below 40.`;
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                model: "gpt-4o-mini",
-                messages: [
-                    { role: "system", content: "You are a document classification expert for Colombian civil registry documents." },
-                    { role: "user", content: prompt }
-                ],
+                model: "gpt-4o-mini", // GPT-4o-mini supports vision
+                messages: messages,
                 temperature: 0.1,
                 response_format: { type: "json_object" }
             }),
         });
+
 
         if (!response.ok) {
             console.error("AI matching failed, using keyword fallback");
