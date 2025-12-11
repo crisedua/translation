@@ -1,4 +1,4 @@
-interface ExtractedData {
+﻿interface ExtractedData {
     [key: string]: any;
 }
 
@@ -28,7 +28,7 @@ MANDATORY FIELDS (Must be extracted if found, regardless of template):
   * DO NOT extract from "NUIP NUEVO" section at the bottom
   * DO NOT extract from "NUIP OTORGADO" in notes section
   * DO NOT hallucinate or guess - extract ONLY what you see in the top-left NUIP box)
-- nuip_bottom (The NUIP code found at the BOTTOM/SIDE of the document. Usually a 10‑digit numeric value.)
+- nuip_bottom (The NUIP code found at the BOTTOM/SIDE of the document. Usually a 10â€‘digit numeric value.)
 
 PRIMARY FIELDS (Defined by Template):
 ${fieldDescriptions.length > 0 ? fieldDescriptions : "No specific template fields defined."}
@@ -115,7 +115,7 @@ CRITICAL ROLE DISTINCTION:
 - testigo2_identificacion (second witness's ID number)
 
 ## REGISTRY OFFICE INFORMATION
-- oficina (office name - e.g., "NOTARÍA 21 CALI")
+- oficina (office name - e.g., "NOTARÃA 21 CALI")
 - tipo_oficina (office type: Notaria, Consulado, Registraduria)
 - numero_oficina (office number, e.g., 21, 5)
 - pais_registro (country of registration, typically "COLOMBIA")
@@ -138,7 +138,7 @@ CRITICAL ROLE DISTINCTION:
 
 ## OTHER
 - notas (notes/marginal notes)
-- tipo_documento_anterior (Type of Prior Document or Witness Statement, e.g., "CERTIFICADO DE NACIDO VIVO", "DECLARACIÓN DE TESTIGOS")
+- tipo_documento_anterior (Type of Prior Document or Witness Statement, e.g., "CERTIFICADO DE NACIDO VIVO", "DECLARACIÃ“N DE TESTIGOS")
 - certificado_nacido_vivo_numero (Live Birth Certificate Number - usually starts with 'A' followed by digits, e.g., "A2692167")
 - funcionario_nombre (authorizing official's name - look near "Nombre y firma" or "Funcionario")
 - funcionario_cargo (authorizing official's position)
@@ -146,21 +146,21 @@ CRITICAL ROLE DISTINCTION:
 IMPORTANT EXTRACTION RULES:
 1. Prioritize the "PRIMARY FIELDS" if they exist.
 2. Use the exact field names provided in the "PRIMARY FIELDS" section.
-3. Extract the FULL office name (e.g., "NOTARÍA 21 CALI")
+3. Extract the FULL office name (e.g., "NOTARÃA 21 CALI")
 4. Default 'pais_nacimiento' and 'pais_registro' to "COLOMBIA" if not explicitly different.
 5. Return empty string "" for fields not found, never use null.
 6. Return ONLY the JSON object.
-7. For DATE fields: Look carefully for dates in formats like DD/MM/YYYY, DD-MM-YYYY, or separate Year/Month/Day columns. Birth dates are often near "FECHA DE NACIMIENTO" or "AÑO MES DIA".
+7. For DATE fields: Look carefully for dates in formats like DD/MM/YYYY, DD-MM-YYYY, or separate Year/Month/Day columns. Birth dates are often near "FECHA DE NACIMIENTO" or "AÃ‘O MES DIA".
 8. CRITICAL - DATE EXTRACTION: Extract dates in BOTH formats:
    - Combined: fecha_nacimiento = "19/08/2000" (DD/MM/YYYY)
    - Separate components: fecha_nacimiento_year = "2000", fecha_nacimiento_month = "08", fecha_nacimiento_day = "19"
    - Same for fecha_registro: combined AND separate components
 9. If you find separate Year, Month, Day values, extract them as separate fields AND combine into fecha_nacimiento/fecha_registro.
 
-CRITICAL - CÓDIGO/CODE FIELD:
-- The "Código" field usually contains 3 separate numbers (e.g., "97", "0", "2")
+CRITICAL - CÃ“DIGO/CODE FIELD:
+- The "CÃ³digo" field usually contains 3 separate numbers (e.g., "97", "0", "2")
 - These may appear in separate table cells or lines in the OCR text
-- Look for patterns like "Código 97" followed by "0" and "2" nearby
+- Look for patterns like "CÃ³digo 97" followed by "0" and "2" nearby
 - Combine ALL parts into a single string like "97 0 2"
 - Do NOT return just the first number. Look for suffix numbers like "0 2" or similar scattered parts.
 
