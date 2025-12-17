@@ -270,7 +270,8 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
         "registry_location_combined": ["country_dept_munic"],
         "father_full_name": ["father_surnames_names"],
         "mother_full_name": ["mother_surnames_names"],
-        "notes_combined": ["notes1"],
+        "notes_combined": ["notes1", "notes", "notas", "space for notes", "margin notes", "observaciones"],
+        "margin_notes": ["notes1", "notes", "notas", "space for notes", "margin notes", "observaciones"],
 
         // Names
         "nombres": ["reg_names", "given_names", "names"],
