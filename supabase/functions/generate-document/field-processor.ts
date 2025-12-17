@@ -243,19 +243,34 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
         pdfFieldLookup.set(name.toLowerCase(), name);
     });
 
-    // Helper to find actual PDF field name (case-insensitive)
-    const findField = (pattern: string): string | null => {
+    // Helper to find actual PDF field names (case-insensitive, returns ALL matches)
+    const findFields = (pattern: string): string[] => {
         const lower = pattern.toLowerCase();
+        const matches: Set<string> = new Set();
+
+        // Check exact match first
         if (pdfFieldLookup.has(lower)) {
-            return pdfFieldLookup.get(lower)!;
+            matches.add(pdfFieldLookup.get(lower)!);
         }
-        // Try partial match
+
+        // Check partial matches
         for (const [key, value] of pdfFieldLookup) {
+            // "notes" should match "Notes 1", "Notes_2", "SpaceForNotes"
+            // But we want to be careful not to match "footnotes" if we are looking for "notes" (maybe too greedy? for now let's be greedy as fallback is tough)
             if (key.includes(lower) || lower.includes(key)) {
-                return value;
+                matches.add(value);
             }
         }
-        return null;
+
+        // Sort matches to ensure order (e.g. Notes 1, Notes 2, Notes 3)
+        // This is important for sequential filling
+        return Array.from(matches).sort((a, b) => {
+            // Try to sort by embedded numbers if present
+            const numA = parseInt(a.replace(/\D/g, '') || '0');
+            const numB = parseInt(b.replace(/\D/g, '') || '0');
+            if (numA !== numB) return numA - numB;
+            return a.localeCompare(b);
+        });
     };
 
     const mappings: Record<string, string[]> = {};
@@ -270,8 +285,8 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
         "registry_location_combined": ["country_dept_munic"],
         "father_full_name": ["father_surnames_names"],
         "mother_full_name": ["mother_surnames_names"],
-        "notes_combined": ["notes1", "notes", "notas", "space for notes", "margin notes", "observaciones"],
-        "margin_notes": ["notes1", "notes", "notas", "space for notes", "margin notes", "observaciones"],
+        "notes_combined": ["notes1", "notes", "notas", "space for notes", "spacefornotes", "margin notes", "marginnotes", "observaciones"],
+        "margin_notes": ["notes1", "notes", "notas", "space for notes", "spacefornotes", "margin notes", "marginnotes", "observaciones"],
 
         // Names
         "nombres": ["reg_names", "given_names", "names"],
@@ -334,15 +349,19 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
 
     // Build mappings based on what PDF fields actually exist
     for (const [extractedField, patterns] of Object.entries(fieldPatterns)) {
-        const matchedFields: string[] = [];
+        const matchedFields: Set<string> = new Set();
         for (const pattern of patterns) {
-            const found = findField(pattern);
-            if (found && !matchedFields.includes(found)) {
-                matchedFields.push(found);
-            }
+            const foundList = findFields(pattern);
+            foundList.forEach(f => matchedFields.add(f));
         }
-        if (matchedFields.length > 0) {
-            mappings[extractedField] = matchedFields;
+        if (matchedFields.size > 0) {
+            // Convert to array and sort again to be safe
+            mappings[extractedField] = Array.from(matchedFields).sort((a, b) => {
+                const numA = parseInt(a.replace(/\D/g, '') || '0');
+                const numB = parseInt(b.replace(/\D/g, '') || '0');
+                if (numA !== numB) return numA - numB;
+                return a.localeCompare(b);
+            });
         }
     }
 
