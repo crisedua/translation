@@ -103,20 +103,57 @@ export function processExtractedData(extractedData: Record<string, any>): Proces
     // =========================================================================
     // 2. BIRTH LOCATION COMBINING
     // =========================================================================
+    // Priority: Include the actual place name (clinic/hospital) + location parts
+    const lugarNacimiento = extractedData.lugar_nacimiento || extractedData['Place of Birth'] || '';
     const birthLocationParts = [
-        extractedData.pais_nacimiento || 'COLOMBIA',
-        extractedData.departamento_nacimiento,
-        extractedData.municipio_nacimiento
+        extractedData.pais_nacimiento || extractedData.country || 'COLOMBIA',
+        extractedData.departamento_nacimiento || extractedData.department,
+        extractedData.municipio_nacimiento || extractedData.municipality
     ].filter(Boolean);
 
-    if (birthLocationParts.length > 0) {
-        processed.birth_location_combined = birthLocationParts.join(' - ');
-        console.log(`[FieldProcessor] Combined birth location: ${processed.birth_location_combined}`);
+    // Build full place of birth: "CLINIC NAME (COUNTRY - DEPT - MUNICIPALITY)" or just location
+    let fullPlaceOfBirth = '';
+
+    if (lugarNacimiento && String(lugarNacimiento).trim()) {
+        const placeVal = String(lugarNacimiento).trim();
+        const locationStr = birthLocationParts.join(' - ');
+
+        // Check if the place value already contains location info to avoid duplication
+        // (The AI extractor is often instructed to include full location in lugar_nacimiento)
+        let alreadyHasLocation = false;
+
+        if (locationStr) {
+            // Check if it contains the municipality (most specific part)
+            const muni = extractedData.municipio_nacimiento || extractedData.municipality;
+            if (muni && placeVal.toLowerCase().includes(String(muni).toLowerCase())) {
+                alreadyHasLocation = true;
+            }
+            // Fallback: Check for parentheses which usually indicate included location
+            else if (placeVal.includes('(') && placeVal.includes(')')) {
+                alreadyHasLocation = true;
+            }
+        }
+
+        if (!alreadyHasLocation && locationStr) {
+            fullPlaceOfBirth = `${placeVal} (${locationStr})`;
+        } else {
+            fullPlaceOfBirth = placeVal;
+        }
+    } else if (birthLocationParts.length > 0) {
+        // Just location parts, no specific place
+        fullPlaceOfBirth = birthLocationParts.join(' - ');
     }
 
-    // Add lugar_nacimiento (specific place) if available
-    if (extractedData.lugar_nacimiento) {
-        processed.birth_place = String(extractedData.lugar_nacimiento);
+    if (fullPlaceOfBirth) {
+        processed.birth_location_combined = fullPlaceOfBirth;
+        processed['Place of Birth'] = fullPlaceOfBirth; // Also set with English key
+        console.log(`[FieldProcessor] Full place of birth: ${fullPlaceOfBirth}`);
+    }
+
+    // Also keep lugar_nacimiento separately for templates that have a dedicated field
+    if (lugarNacimiento) {
+        processed.birth_place = String(lugarNacimiento);
+        processed.lugar_nacimiento = String(lugarNacimiento);
     }
 
     // =========================================================================
@@ -227,7 +264,9 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
     const fieldPatterns: Record<string, string[]> = {
         // Resolved/Combined fields (highest priority)
         "nuip_resolved": ["nuip"],
-        "birth_location_combined": ["birth_country_dept_munic"],
+        "birth_location_combined": ["birth_country_dept_munic", "place_of_birth", "birth_place"],
+        "Place of Birth": ["birth_country_dept_munic", "place_of_birth"],
+        "lugar_nacimiento": ["birth_country_dept_munic", "place_of_birth", "birth_place"],
         "registry_location_combined": ["country_dept_munic"],
         "father_full_name": ["father_surnames_names"],
         "mother_full_name": ["mother_surnames_names"],

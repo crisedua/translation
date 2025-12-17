@@ -195,8 +195,25 @@ const AdminRequestReview = () => {
             alert('Document generated successfully!');
 
         } catch (err: any) {
-            console.error('Generation error:', err);
-            alert(`Generation failed: ${err.message}`);
+            console.error('Generation execution error:', err);
+
+            // Try to extract a meaningful message
+            let displayMessage = err.message || 'Generation failed';
+
+            if (err && typeof err === 'object') {
+                if (err.context && err.context.json) {
+                    try {
+                        const jsonBody = await err.context.json();
+                        console.error('Error Response Body:', jsonBody);
+                        if (jsonBody.error) displayMessage = jsonBody.error;
+                        if (jsonBody.stack) console.error('Error Stack:', jsonBody.stack);
+                    } catch (e) {
+                        console.error('Failed to parse error context JSON', e);
+                    }
+                }
+            }
+
+            alert(`Generation failed: ${displayMessage}`);
         } finally {
             setProcessing(false);
         }

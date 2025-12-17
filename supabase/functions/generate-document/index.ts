@@ -9,8 +9,13 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+    console.log("=== GENERATE-DOCUMENT FUNCTION INVOKED ===");
+    console.log("Method:", req.method);
+    console.log("URL:", req.url);
+
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
+        console.log("Handling CORS preflight");
         return new Response('ok', { headers: corsHeaders });
     }
 
@@ -53,10 +58,19 @@ serve(async (req) => {
             throw new Error("No extracted data found available for this request");
         }
 
+        if (!extractedData || Object.keys(extractedData).length === 0) {
+            throw new Error("No extracted data found available for this request (empty object)");
+        }
+
         // --- NEW: Process and standardize extracted data ---
-        console.log("Raw extracted data:", JSON.stringify(extractedData));
-        extractedData = processExtractedData(extractedData);
-        console.log("Processed extracted data:", JSON.stringify(extractedData));
+        console.log("Raw extracted data keys:", Object.keys(extractedData).join(", "));
+        try {
+            extractedData = processExtractedData(extractedData);
+        } catch (procError) {
+            console.error("Error processing extracted data:", procError);
+            throw new Error(`Failed to process extracted data: ${(procError as Error).message}`);
+        }
+        console.log("Processed extracted data keys:", Object.keys(extractedData).join(", "));
         // ---------------------------------------------------
 
         console.log(`Using template: ${template.name}`);
@@ -130,6 +144,11 @@ serve(async (req) => {
         }
 
         // 3. Fill PDF
+        if (!pdfBytes || pdfBytes.byteLength === 0) {
+            throw new Error("Downloaded PDF template is empty (0 bytes). Check storage path and permissions.");
+        }
+        console.log(`PDF Template loaded, size: ${pdfBytes.byteLength} bytes`);
+
         const pdfDoc = await PDFDocument.load(pdfBytes);
         const form = pdfDoc.getForm();
         const fields = form.getFields();
@@ -152,24 +171,62 @@ serve(async (req) => {
 
         let filledCount = 0;
 
+        // Helper to sanitize text for PDF (WinAnsi encoding only supports Latin-1)
+        // This removes or replaces characters that cannot be encoded
+        const sanitizeForPdf = (text: string): string => {
+            if (!text) return '';
+
+            // Map of common problematic characters to their ASCII equivalents
+            const replacements: Record<string, string> = {
+                // Smart quotes to regular quotes
+                '\u2018': "'", '\u2019': "'", '\u201B': "'",  // Single quotes
+                '\u201C': '"', '\u201D': '"', '\u201E': '"',  // Double quotes
+                '\u2032': "'", '\u2033': '"',                  // Prime marks
+                '\u00B4': "'", '\u0060': "'",                  // Accents as quotes
+                // Dashes
+                '\u2013': '-', '\u2014': '-', '\u2015': '-',  // En/Em dashes
+                // Ellipsis
+                '\u2026': '...',
+                // Spaces
+                '\u00A0': ' ', '\u2003': ' ', '\u2002': ' ',  // Non-breaking spaces
+                // Bullets
+                '\u2022': '*', '\u2023': '>',
+            };
+
+            let result = text;
+
+            // Apply known replacements
+            for (const [char, replacement] of Object.entries(replacements)) {
+                result = result.replace(new RegExp(char, 'g'), replacement);
+            }
+
+            // Remove any remaining non-Latin1 characters (anything above 0xFF)
+            // But keep common accented characters (Latin-1 supplement: 0x00A0 - 0x00FF)
+            result = result.replace(/[^\x00-\xFF]/g, '');
+
+            return result;
+        };
+
         // Helper to set text field safely with consistent font size
         const setField = (fieldName: string, value: string) => {
             try {
                 // PDF-lib is case sensitive normally, but let's try direct first
                 const field = form.getTextField(fieldName);
                 if (field) {
-                    field.setText(value);
+                    // Sanitize the value before setting it
+                    const sanitizedValue = sanitizeForPdf(value);
+                    field.setText(sanitizedValue);
                     // Set consistent font size for all fields
                     try {
                         field.setFontSize(10);
                     } catch (fontError) {
                         // Some fields might not support font size changes
                     }
-                    console.log(`Filled ${fieldName} with ${value}`);
+                    console.log(`Filled ${fieldName} with ${sanitizedValue.substring(0, 50)}${sanitizedValue.length > 50 ? '...' : ''}`);
                     return true;
                 }
             } catch (e) {
-                // Return silently if field issue
+                console.warn(`Failed to set field ${fieldName}:`, (e as Error).message);
             }
             return false;
         };
@@ -467,10 +524,27 @@ serve(async (req) => {
 
     } catch (error) {
         console.error("Error generating document:", error);
+
+        let errorMessage = "Unknown error occurred";
+        let errorStack = "";
+
+        if (error instanceof Error) {
+            errorMessage = error.message;
+            errorStack = error.stack || "";
+        } else if (typeof error === 'string') {
+            errorMessage = error;
+        } else {
+            errorMessage = JSON.stringify(error);
+        }
+
+        console.error("Error Details:", errorMessage);
+        if (errorStack) console.error("Stack:", errorStack);
+
         return new Response(
             JSON.stringify({
                 success: false,
-                error: (error as Error).message || "Unknown error occurred",
+                error: errorMessage,
+                stack: errorStack, // Include stack for debugging (remove in production if sensitive)
             }),
             {
                 status: 500,

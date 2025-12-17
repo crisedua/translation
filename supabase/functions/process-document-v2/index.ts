@@ -151,13 +151,19 @@ serve(async (req) => {
             throw new Error("No templates available. Please upload a template first.");
         }
 
-        // 7. Extract structured data with AI (Text-Only Mode)
-        console.log("Extracting structured data with AI (Text-Only Mode - Google Vision OCR)...");
+        // 7. Extract structured data with AI (using Google Vision OCR text)
+        console.log("Extracting structured data with AI (Google Vision OCR text)...");
         console.log(`Using OCR text (${extractedText.length} chars) for extraction`);
 
-        // Use text-only extraction (no vision) - relies on Google Vision OCR
+        // Use text-only extraction - relies on Google Vision OCR
+        // Pass undefined for visionDataUri to use text-only mode
         const extractedData = await extractData(extractedText, matchedTemplate, undefined);
         console.log(`Data extracted: ${Object.keys(extractedData || {}).length} fields`);
+
+        // Log key extracted fields for debugging
+        console.log(`Extracted lugar_nacimiento: ${extractedData?.lugar_nacimiento || 'NOT FOUND'}`);
+        console.log(`Extracted grupo_sanguineo: ${extractedData?.grupo_sanguineo || 'NOT FOUND'}`);
+        console.log(`Extracted factor_rh: ${extractedData?.factor_rh || 'NOT FOUND'}`);
 
         // 8. Validate & Save
         const validationResult = validateData(extractedData);

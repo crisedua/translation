@@ -15,7 +15,7 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
 Extract the following fields from the provided document image. Return ONLY valid JSON with the extracted values.
 
 MANDATORY FIELDS (Must be extracted if found, regardless of template):
-- margin_notes (Any text found in the "ESPACIO PARA NOTAS" section. Look specifically for "NUIP OTORGADO POR..." or "NUIP NUEVO..." and extract the full content verbatim including dates and numbers.)
+- margin_notes (Any text found in the "ESPACIO PARA NOTAS" section. Look specifically for "NUIP OTORGADO POR..." or "NUIP NUEVO..." and extract the full content verbatim including dates and numbers. This section is usually at the VERY BOTTOM of the document. INCLUDE HANDWRITTEN TEXT.)
 - authorizing_official (Name of the official found near "Nombre y firma del funcionario que autoriza")
 - acknowledgment_official (Name of the official found near "Nombre y firma del funcionario ante quien se hace el reconocimiento" - this is for paternal recognition)
 - nuip_top (CRITICAL NUIP EXTRACTION - READ CAREFULLY:
@@ -28,7 +28,7 @@ MANDATORY FIELDS (Must be extracted if found, regardless of template):
   * DO NOT extract from "NUIP NUEVO" section at the bottom
   * DO NOT extract from "NUIP OTORGADO" in notes section
   * DO NOT hallucinate or guess - extract ONLY what you see in the top-left NUIP box)
-- nuip_bottom (The NUIP code found at the BOTTOM/SIDE of the document. Usually a 10â€‘digit numeric value.)
+- nuip_bottom (The NUIP code found at the BOTTOM/SIDE of the document. Usually a 10-digit numeric value.)
 
 PRIMARY FIELDS (Defined by Template):
 ${fieldDescriptions.length > 0 ? fieldDescriptions : "No specific template fields defined."}
@@ -64,9 +64,23 @@ CRITICAL NAME EXTRACTION RULES:
 - fecha_nacimiento_day (day only, e.g., "19")
 - hora_nacimiento (time of birth - look for "HORA", hour/time near birth date)
 - pais_nacimiento (country of birth, default COLOMBIA)
-- departamento_nacimiento (department of birth)
-- municipio_nacimiento (municipality/city of birth)
-- lugar_nacimiento (specific birth place - hospital, clinic name, address, or "DOMICILIO" for home birth)
+- departamento_nacimiento (department of birth, e.g., "VALLE", "CAUCA", "CUNDINAMARCA")
+- municipio_nacimiento (municipality/city of birth, e.g., "CALI", "BOGOTA", "MEDELLIN")
+
+CRITICAL - LUGAR DE NACIMIENTO (Place of Birth):
+- This is the MOST IMPORTANT field for birth location
+- Look for "Lugar de nacimiento" row in the document
+- This contains the SPECIFIC PLACE: hospital name, clinic name, or address
+- EXAMPLES of what to extract:
+  * "CLINICA MATERNO INFANTIL FARALLONES (COLOMBIA.VALLE.CALI)"
+  * "HOSPITAL UNIVERSITARIO DEL VALLE"
+  * "CLINICA SAN FERNANDO"
+  * "DOMICILIO" (for home births)
+- This is NOT just "COLOMBIA - VALLE - CALI" - it includes the INSTITUTION NAME
+- lugar_nacimiento field should contain the FULL text from this row
+- If the document shows "CLINICA MATERNO INFANTIL FARALLONES (COLOMBIA.VALLE.CALI)", extract EXACTLY that
+
+- lugar_nacimiento (CRITICAL: Extract the COMPLETE text including hospital/clinic name AND location. Example: "CLINICA MATERNO INFANTIL FARALLONES (COLOMBIA.VALLE.CALI)")
 - vereda (township/vereda)
 - corregimiento
 
@@ -84,15 +98,19 @@ CRITICAL ANTI-DUPLICATION RULE:
 - padre_nacionalidad (father's nationality)
 
 ## MOTHER INFORMATION
-CRITICAL ANTI-DUPLICATION RULE:
-- Extract mother's name EXACTLY ONCE
-- If you see "HERRERA HERRERA ALBA YOLANDA", extract it as-is
-- DO NOT append additional surnames or repeat any part
-- Example: "HERRERA HERRERA ALBA YOLANDA" NOT "HERRERA HERRERA ALBA YOLANDA HERRERA"
+CRITICAL REPEATED SURNAME RULE:
+- Extract mother's name EXACTLY AS WRITTEN in the document.
+- If the document says "HERRERA HERRERA ALBA YOLANDA" (with "HERRERA" repeated), you MUST extract "HERRERA HERRERA ALBA YOLANDA".
+- DO NOT "fix" or "deduplicate" the name. If she has two identical surnames, INCLUDE BOTH.
+- This is common in Hispanic culture.
+- Example:
+  * Document: "HERRERA HERRERA ALBA YOLANDA"
+  * Extraction: "HERRERA HERRERA ALBA YOLANDA" (CORRECT)
+  * Extraction: "HERRERA ALBA YOLANDA" (WRONG - do not remove the second Herrera)
 
 - madre_nombres (mother's COMPLETE full name including all surnames - e.g., "HERRERA HERRERA ALBA YOLANDA")
 - madre_apellidos (mother's surnames only if separated - usually empty)
-- madre_identificacion (mother's ID number - CC, TI, passport number)
+- madre_identificacion (mother's ID number - CC, TI, PASAPORTE)
 - madre_tipo_documento (mother's document type - CC, TI, PASAPORTE)
 - madre_nacionalidad (mother's nationality)
 
@@ -170,13 +188,14 @@ CRITICAL - NUIP CONFLICT RESOLUTION:
 
 CRITICAL - NOTAS/NOTES FIELD:
 - Look for text after "NOTAS MARGINALES", "ESPACIO PARA NOTAS", or "SPACE FOR NOTES"
-- If there is handwritten or typed text in the notes section, extract it
+- If there is handwritten or typed text in the notes section, extract it. This is usually at the bottom of the document.
 - If blank or only decorative lines, return empty string
 
 CRITICAL - MARGIN NOTES (ESPACIO PARA NOTAS):
-- Specifically look for the section labeled "ESPACIO PARA NOTAS" (usually at the bottom)
+- Specifically look for the section labeled "ESPACIO PARA NOTAS" (usually at the very bottom)
 - Extract ANY text found in this area into the 'margin_notes' field
-- This often contains "NUIP OTORGADO POR..." or similar administrative notes
+- This often contains "NUIP OTORGADO POR..." or similar administrative notes with dates and handwritten text.
+- READ THE HANDWRITTEN TEXT CAREFULLY.
 
 CRITICAL - SIGNATURE/FUNCIONARIO FIELD:
 - Look for the authorizing official's name near "Nombre y firma", "Nombre y Firma del Funcionario", or "Nombre y firma del funcionario que autoriza"
@@ -188,9 +207,9 @@ CRITICAL - SIGNATURE/FUNCIONARIO FIELD:
 DYNAMIC EXTRACTION (CRITICAL FOR NEW FORMS):
 - Scan the document for ANY other labeled data fields that are not listed above.
 - If you see a label like "Name of Doctor", "Height", "Weight", "Date of Reference", etc., EXTRACT IT.
-140: - Generate a 'snake_case' key for these fields (e.g., 'doctor_name', 'height', 'weight').
-141: - This is vital for handling new types of forms automatically. Do not ignore visible data just because it's not in the primary list.
-142: - IF YOU CANNOT FIND STRUCTURED DATA: Extract all visible text into a single field called "raw_text_dump". Do not return an empty JSON.`;
+- Generate a 'snake_case' key for these fields (e.g., 'doctor_name', 'height', 'weight').
+- This is vital for handling new types of forms automatically. Do not ignore visible data just because it's not in the primary list.
+- IF YOU CANNOT FIND STRUCTURED DATA: Extract all visible text into a single field called "raw_text_dump". Do not return an empty JSON.`;
 
     const messages = [
         { role: "system", content: systemPrompt },
@@ -198,8 +217,8 @@ DYNAMIC EXTRACTION (CRITICAL FOR NEW FORMS):
             role: "user",
             content: fileUrl
                 ? [
-                    { 
-                        type: "text", 
+                    {
+                        type: "text",
                         text: `Extract ALL data from this Colombian document. 
                         
 CRITICAL INSTRUCTIONS:
@@ -211,17 +230,31 @@ CRITICAL INSTRUCTIONS:
 6. For fecha_nacimiento, extract: combined string AND fecha_nacimiento_year, fecha_nacimiento_month, fecha_nacimiento_day
 7. For fecha_registro, extract: combined string AND fecha_registro_year, fecha_registro_month, fecha_registro_day
 
-Return JSON with all extracted fields.` 
+Return JSON with all extracted fields.`
                     },
-                    { 
-                        type: "image_url", 
-                        image_url: { 
+                    {
+                        type: "image_url",
+                        image_url: {
                             // Handle both data URIs and regular URLs
                             url: fileUrl
-                        } 
+                        }
                     }
                 ]
-                : `Extract data from this Colombian document text:\n\n${text.substring(0, 8000)}` // Fallback to text if no image
+                : `Extract data from this Colombian birth certificate OCR text. 
+
+CRITICAL TEXT PARSING INSTRUCTIONS:
+1. The text is from Google Vision OCR - it may have unusual line breaks or spacing
+2. Look for "Lugar de nacimiento" followed by a hospital/clinic name like "CLINICA MATERNO INFANTIL FARALLONES"
+3. The place of birth often includes both the institution AND location like "(COLOMBIA.VALLE.CALI)" on the same or next line
+4. For lugar_nacimiento: Extract the FULL text including clinic name AND location, e.g., "CLINICA MATERNO INFANTIL FARALLONES (COLOMBIA.VALLE.CALI)"
+5. Blood type (grupo_sanguineo) is usually "O", "A", "B", or "AB" - look near "Sexo (en letras)" or "Grupo sanguineo"
+6. RH Factor (factor_rh) is usually "+" or "-" or "POSITIVO"/"NEGATIVO" - look near blood type
+7. If you see "FEMENINO" or "MASCULINO", that's the sex field, not blood type
+8. DUPLICATE SURNAMES: If you see "HERRERA HERRERA" in the text, extract BOTH. Do not deduplicate.
+9. NOTES: Look at the VERY END of the text for "ESPACIO PARA NOTAS" or "NUIP NUEVO". Extract this content into 'margin_notes'.
+
+OCR TEXT TO PARSE:
+${text.substring(0, 15000)}` // Increased limit for better context
         }
     ];
 
