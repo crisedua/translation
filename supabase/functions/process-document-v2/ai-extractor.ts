@@ -109,7 +109,7 @@ CRITICAL REPEATED SURNAME RULE:
   * Extraction: "HERRERA ALBA YOLANDA" (WRONG - do not remove the second Herrera)
 
 - madre_nombres (mother's COMPLETE full name including all surnames - e.g., "HERRERA HERRERA ALBA YOLANDA")
-- madre_apellidos (mother's surnames only if separated - usually empty)
+- madre_apellidos (ALWAYS LEAVE EMPTY - put the ENTIRE name string including all surnames in madre_nombres)
 - madre_identificacion (mother's ID number - CC, TI, PASAPORTE)
 - madre_tipo_documento (mother's document type - CC, TI, PASAPORTE)
 - madre_nacionalidad (mother's nationality)
