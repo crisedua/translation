@@ -244,12 +244,12 @@ Return JSON with all extracted fields.`
 
 CRITICAL TEXT PARSING INSTRUCTIONS:
 1. The text is from Google Vision OCR - it may have unusual line breaks or spacing
-2. Look for "Lugar de nacimiento" followed by a hospital/clinic name like "CLINICA MATERNO INFANTIL FARALLONES"
-3. The place of birth often includes both the institution AND location like "(COLOMBIA.VALLE.CALI)" on the same or next line
-4. For lugar_nacimiento: Extract the FULL text including clinic name AND location, e.g., "CLINICA MATERNO INFANTIL FARALLONES (COLOMBIA.VALLE.CALI)"
-5. Blood type (grupo_sanguineo) is usually "O", "A", "B", or "AB" - look near "Sexo (en letras)" or "Grupo sanguineo"
-6. RH Factor (factor_rh) is usually "+" or "-" or "POSITIVO"/"NEGATIVO" - look near blood type
-7. If you see "FEMENINO" or "MASCULINO", that's the sex field, not blood type
+2. "Lugar de nacimiento" Header: The value is strictly BELOW this header.
+3. LOOK FOR INSTITUTION NAMES: Scan the lines immediately following "Lugar de nacimiento". Look for "CLINICA", "HOSPITAL", "CENTRO DE SALUD", or "MATERNO".
+4. For lugar_nacimiento: You MUST extract the hospital/clinic name (e.g., "CLINICA MATERNO INFANTIL FARALLONES") AND the location logic (e.g. "COLOMBIA.VALLE.CALI").
+5. DO NOT extract only the location part (e.g. "(COLOMBIA...)") if there is a name before it.
+6. Blood type (grupo_sanguineo) is usually "O", "A", "B", or "AB" - look near "Sexo (en letras)" or "Grupo sanguineo"
+7. RH Factor (factor_rh) is usually "+" or "-" or "POSITIVO"/"NEGATIVO" - look near blood type
 8. DUPLICATE SURNAMES: If you see "HERRERA HERRERA" in the text, extract BOTH. Do not deduplicate.
 9. NOTES: Look at the VERY END of the text for "ESPACIO PARA NOTAS" or "NUIP NUEVO". Extract this content into 'margin_notes'.
 
