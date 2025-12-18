@@ -229,6 +229,8 @@ CRITICAL INSTRUCTIONS:
 5. If uncertain, return empty string for that field
 6. For fecha_nacimiento, extract: combined string AND fecha_nacimiento_year, fecha_nacimiento_month, fecha_nacimiento_day
 7. For fecha_registro, extract: combined string AND fecha_registro_year, fecha_registro_month, fecha_registro_day
+8. DUPLICATE SURNAMES: If you see "HERRERA HERRERA", extract BOTH.
+9. NOTES: Look at the BOTTOM of the document for "ESPACIO PARA NOTAS". Extract handwritten or typed text there into 'margin_notes'.
 
 Return JSON with all extracted fields.`
                     },
