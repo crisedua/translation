@@ -283,14 +283,15 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
         "reg_year": ["reg_year"],
 
         // Parents - Individual Fields
-        "padre_nombres": ["father_names", "father_surnames_names"],
-        "padre_apellidos": ["father_surnames", "father_surnames_names"],
+        "padre_nombres": ["father_names"],
+        "padre_apellidos": ["father_surnames"],
         "padre_identificacion": ["father_id_doc", "father_doc_number"],
         "padre_nacionalidad": ["father_nationality"],
-        "madre_nombres": ["mother_names", "mother_surnames_names"],
-        "madre_apellidos": ["mother_surnames", "mother_surnames_names"],
+        "madre_nombres": ["mother_names"],
+        "madre_apellidos": ["mother_surnames"],
         "madre_identificacion": ["mother_id_doc", "mother_doc_number"],
         "madre_nacionalidad": ["mother_nationality"],
+
 
         // Declarant
         "declarante_nombres": ["declarant_surnames_names"],
