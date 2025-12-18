@@ -104,7 +104,30 @@ export function processExtractedData(extractedData: Record<string, any>): Proces
     // 2. BIRTH LOCATION COMBINING
     // =========================================================================
     // Priority: Include the actual place name (clinic/hospital) + location parts
-    const lugarNacimiento = extractedData.lugar_nacimiento || extractedData['Place of Birth'] || '';
+    let lugarNacimiento = extractedData.lugar_nacimiento || extractedData['Place of Birth'] || '';
+
+    // FALLBACK: If lugar_nacimiento is just location parts (no institution name),
+    // scan ALL fields for institution keywords
+    const institutionKeywords = ['CLINICA', 'HOSPITAL', 'MATERNO', 'CENTRO DE SALUD', 'INFANTIL', 'SAN ', 'SANTA '];
+    const lugarUpper = String(lugarNacimiento).toUpperCase();
+    const hasInstitution = institutionKeywords.some(kw => lugarUpper.includes(kw));
+
+    if (!hasInstitution && lugarNacimiento) {
+        // Search all fields for any value that looks like an institution name
+        for (const [key, value] of Object.entries(extractedData)) {
+            if (value && typeof value === 'string') {
+                const valUpper = value.toUpperCase();
+                if (institutionKeywords.some(kw => valUpper.includes(kw))) {
+                    // Found an institution name in another field
+                    console.log(`[FieldProcessor] Found institution in field "${key}": ${value}`);
+                    // Prepend it to lugar_nacimiento
+                    lugarNacimiento = `${value} ${lugarNacimiento}`.trim();
+                    break;
+                }
+            }
+        }
+    }
+
     const birthLocationParts = [
         extractedData.pais_nacimiento || extractedData.country || 'COLOMBIA',
         extractedData.departamento_nacimiento || extractedData.department,

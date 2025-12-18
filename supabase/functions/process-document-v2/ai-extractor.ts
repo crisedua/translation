@@ -244,16 +244,21 @@ Return JSON with all extracted fields.`
                 ]
                 : `Extract data from this Colombian birth certificate OCR text. 
 
-CRITICAL TEXT PARSING INSTRUCTIONS:
+ABSOLUTELY CRITICAL - LUGAR DE NACIMIENTO (Place of Birth):
+- Search for text containing "CLINICA", "HOSPITAL", "MATERNO", "CENTRO", "SAN", "SANTA", "LOS", "LAS" near "Lugar de nacimiento"
+- The place of birth is NOT just "COLOMBIA - VALLE - CALI"
+- It MUST include the institution name like "CLINICA MATERNO INFANTIL FARALLONES"
+- If you see "CLINICA MATERNO INFANTIL FARALLONES" followed by "(COLOMBIA.VALLE.CALI)", combine them
+- WRONG: "COLOMBIA - VALLE - CALI" (missing institution)
+- CORRECT: "CLINICA MATERNO INFANTIL FARALLONES (COLOMBIA.VALLE.CALI)"
+- If you cannot find a clinic/hospital name, look harder - it's usually on the line AFTER "Lugar de nacimiento"
+
+OTHER INSTRUCTIONS:
 1. The text is from Google Vision OCR - it may have unusual line breaks or spacing
-2. "Lugar de nacimiento" Header: The value is strictly BELOW this header.
-3. LOOK FOR INSTITUTION NAMES: Scan the lines immediately following "Lugar de nacimiento". Look for "CLINICA", "HOSPITAL", "CENTRO DE SALUD", or "MATERNO".
-4. For lugar_nacimiento: You MUST extract the hospital/clinic name (e.g., "CLINICA MATERNO INFANTIL FARALLONES") AND the location logic (e.g. "COLOMBIA.VALLE.CALI").
-5. DO NOT extract only the location part (e.g. "(COLOMBIA...)") if there is a name before it.
-6. Blood type (grupo_sanguineo) is usually "O", "A", "B", or "AB" - look near "Sexo (en letras)" or "Grupo sanguineo"
-7. RH Factor (factor_rh) is usually "+" or "-" or "POSITIVO"/"NEGATIVO" - look near blood type
-8. DUPLICATE SURNAMES: If you see "HERRERA HERRERA" in the text, extract BOTH. Do not deduplicate.
-9. NOTES: Look at the VERY END of the text for "ESPACIO PARA NOTAS" or "NUIP NUEVO". Extract this content into 'margin_notes'.
+2. Blood type (grupo_sanguineo) is usually "O", "A", "B", or "AB"
+3. RH Factor (factor_rh) is usually "+" or "-" or "POSITIVO"/"NEGATIVO"
+4. DUPLICATE SURNAMES: If you see "HERRERA HERRERA" in the text, extract BOTH. Do not deduplicate.
+5. NOTES: Look at the VERY END of the text for "ESPACIO PARA NOTAS" or "NUIP NUEVO". Extract this content into 'margin_notes'.
 
 OCR TEXT TO PARSE:
 ${text.substring(0, 15000)}` // Increased limit for better context
