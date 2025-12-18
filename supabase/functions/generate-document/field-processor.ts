@@ -109,9 +109,14 @@ export function processExtractedData(extractedData: Record<string, any>): Proces
         extractedData.municipio_nacimiento
     ].filter(Boolean);
 
-    if (birthLocationParts.length > 0) {
+    // CRITICAL FIX: If we have a specific place name (clinic/hospital) extracted in lugar_nacimiento,
+    // use THAT as the combined string. Do NOT overwrite it with just the location parts.
+    if (extractedData.lugar_nacimiento) {
+        processed.birth_location_combined = String(extractedData.lugar_nacimiento);
+        console.log(`[FieldProcessor] Using specific place (clinic) for combined location: ${processed.birth_location_combined}`);
+    } else if (birthLocationParts.length > 0) {
         processed.birth_location_combined = birthLocationParts.join(' - ');
-        console.log(`[FieldProcessor] Combined birth location: ${processed.birth_location_combined}`);
+        console.log(`[FieldProcessor] Combined birth location from parts: ${processed.birth_location_combined}`);
     }
 
     // Add lugar_nacimiento (specific place) if available - THIS IS THE CLINIC NAME
