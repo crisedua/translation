@@ -231,6 +231,10 @@ CRITICAL INSTRUCTIONS:
 7. For fecha_registro, extract: combined string AND fecha_registro_year, fecha_registro_month, fecha_registro_day
 8. DUPLICATE SURNAMES: If you see "HERRERA HERRERA", extract BOTH.
 9. NOTES: Look at the BOTTOM of the document for "ESPACIO PARA NOTAS". Extract handwritten or typed text there into 'margin_notes'.
+10. LUGAR DE NACIMIENTO (CRITICAL): Find "Lugar de nacimiento" row. Extract the COMPLETE text including the clinic/hospital name.
+    - CORRECT: "CLINICA MATERNO INFANTIL FARALLONES (COLOMBIA.VALLE.CALI)"
+    - WRONG: Just "COLOMBIA - VALLE - CALI" without the institution name
+    - The institution name (CLINICA, HOSPITAL, etc.) MUST be included in lugar_nacimiento field.
 
 Return JSON with all extracted fields.`
                     },
