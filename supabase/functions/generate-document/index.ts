@@ -226,7 +226,11 @@ serve(async (req) => {
                     return true;
                 }
             } catch (e) {
-                console.warn(`Failed to set field ${fieldName}:`, (e as Error).message);
+                const msg = (e as Error).message;
+                // suppress "no form field" errors as they are expected with robust mapping
+                if (!msg.includes('no form field with the name')) {
+                    console.warn(`Failed to set field ${fieldName}:`, msg);
+                }
             }
             return false;
         };
