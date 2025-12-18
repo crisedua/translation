@@ -118,25 +118,19 @@ export function processExtractedData(extractedData: Record<string, any>): Proces
         const placeVal = String(lugarNacimiento).trim();
         const locationStr = birthLocationParts.join(' - ');
 
-        // Check if the place value already contains location info to avoid duplication
-        // (The AI extractor is often instructed to include full location in lugar_nacimiento)
-        let alreadyHasLocation = false;
+        // Check if lugar_nacimiento already has location in a structured format
+        // Look for parentheses like "(COLOMBIA.VALLE.CALI)" or dots like "COLOMBIA.VALLE.CALI"
+        const hasParentheses = placeVal.includes('(') && placeVal.includes(')');
+        const hasDots = placeVal.includes('.') && placeVal.split('.').length >= 3;
 
-        if (locationStr) {
-            // Check if it contains the municipality (most specific part)
-            const muni = extractedData.municipio_nacimiento || extractedData.municipality;
-            if (muni && placeVal.toLowerCase().includes(String(muni).toLowerCase())) {
-                alreadyHasLocation = true;
-            }
-            // Fallback: Check for parentheses which usually indicate included location
-            else if (placeVal.includes('(') && placeVal.includes(')')) {
-                alreadyHasLocation = true;
-            }
-        }
-
-        if (!alreadyHasLocation && locationStr) {
+        if (hasParentheses || hasDots) {
+            // AI already included location in a structured way, use as-is
+            fullPlaceOfBirth = placeVal;
+        } else if (locationStr) {
+            // No structured location found, append it
             fullPlaceOfBirth = `${placeVal} (${locationStr})`;
         } else {
+            // No location parts available, just use the place name
             fullPlaceOfBirth = placeVal;
         }
     } else if (birthLocationParts.length > 0) {
