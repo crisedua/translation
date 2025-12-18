@@ -326,6 +326,12 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
             const foundList = findFields(pattern);
             foundList.forEach(f => matchedFields.add(f));
         }
+        if (extractedField === 'registry_location_combined') {
+            const filtered = Array.from(matchedFields).filter(f => !f.toLowerCase().includes('birth'));
+            matchedFields.clear();
+            filtered.forEach(f => matchedFields.add(f));
+        }
+
         if (matchedFields.size > 0) {
             // Convert to array and sort again to be safe
             mappings[extractedField] = Array.from(matchedFields).sort((a, b) => {
