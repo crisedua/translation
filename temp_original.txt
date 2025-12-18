@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Field Processor Module
  * 
  * Centralizes all field processing logic to ensure consistent and robust
@@ -114,13 +114,9 @@ export function processExtractedData(extractedData: Record<string, any>): Proces
         console.log(`[FieldProcessor] Combined birth location: ${processed.birth_location_combined}`);
     }
 
-    // Add lugar_nacimiento (specific place) if available - THIS IS THE CLINIC NAME
+    // Add lugar_nacimiento (specific place) if available
     if (extractedData.lugar_nacimiento) {
         processed.birth_place = String(extractedData.lugar_nacimiento);
-        // CRITICAL: lugar_nacimiento is already copied from extractedData at line 63-66
-        // But let's ensure it's mapped correctly to PDF fields
-        processed['Place of Birth'] = String(extractedData.lugar_nacimiento);
-        console.log(`[FieldProcessor] Place of birth (clinic): ${extractedData.lugar_nacimiento}`);
     }
 
     // =========================================================================
@@ -210,34 +206,19 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
         pdfFieldLookup.set(name.toLowerCase(), name);
     });
 
-    // Helper to find actual PDF field names (case-insensitive, returns ALL matches)
-    const findFields = (pattern: string): string[] => {
+    // Helper to find actual PDF field name (case-insensitive)
+    const findField = (pattern: string): string | null => {
         const lower = pattern.toLowerCase();
-        const matches: Set<string> = new Set();
-
-        // Check exact match first
         if (pdfFieldLookup.has(lower)) {
-            matches.add(pdfFieldLookup.get(lower)!);
+            return pdfFieldLookup.get(lower)!;
         }
-
-        // Check partial matches
+        // Try partial match
         for (const [key, value] of pdfFieldLookup) {
-            // "notes" should match "Notes 1", "Notes_2", "SpaceForNotes"
-            // But we want to be careful not to match "footnotes" if we are looking for "notes" (maybe too greedy? for now let's be greedy as fallback is tough)
             if (key.includes(lower) || lower.includes(key)) {
-                matches.add(value);
+                return value;
             }
         }
-
-        // Sort matches to ensure order (e.g. Notes 1, Notes 2, Notes 3)
-        // This is important for sequential filling
-        return Array.from(matches).sort((a, b) => {
-            // Try to sort by embedded numbers if present
-            const numA = parseInt(a.replace(/\D/g, '') || '0');
-            const numB = parseInt(b.replace(/\D/g, '') || '0');
-            if (numA !== numB) return numA - numB;
-            return a.localeCompare(b);
-        });
+        return null;
     };
 
     const mappings: Record<string, string[]> = {};
@@ -246,14 +227,11 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
     const fieldPatterns: Record<string, string[]> = {
         // Resolved/Combined fields (highest priority)
         "nuip_resolved": ["nuip"],
-        "birth_location_combined": ["birth_country_dept_munic", "place_of_birth", "birth_place", "place of birth", "country", "department", "municipality", "township"],
-        "Place of Birth": ["birth_country_dept_munic", "place_of_birth", "place of birth", "country", "department", "municipality", "township"],
-        "lugar_nacimiento": ["birth_country_dept_munic", "place_of_birth", "birth_place", "place of birth", "country", "department", "municipality", "township"],
+        "birth_location_combined": ["birth_country_dept_munic"],
         "registry_location_combined": ["country_dept_munic"],
         "father_full_name": ["father_surnames_names"],
         "mother_full_name": ["mother_surnames_names"],
-        "notes_combined": ["notes1", "notes", "notas", "space for notes", "spacefornotes", "margin notes", "marginnotes", "observaciones"],
-        "margin_notes": ["notes1", "notes", "notas", "space for notes", "spacefornotes", "margin notes", "marginnotes", "observaciones"],
+        "notes_combined": ["notes1"],
 
         // Names
         "nombres": ["reg_names", "given_names", "names"],
@@ -316,19 +294,15 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
 
     // Build mappings based on what PDF fields actually exist
     for (const [extractedField, patterns] of Object.entries(fieldPatterns)) {
-        const matchedFields: Set<string> = new Set();
+        const matchedFields: string[] = [];
         for (const pattern of patterns) {
-            const foundList = findFields(pattern);
-            foundList.forEach(f => matchedFields.add(f));
+            const found = findField(pattern);
+            if (found && !matchedFields.includes(found)) {
+                matchedFields.push(found);
+            }
         }
-        if (matchedFields.size > 0) {
-            // Convert to array and sort again to be safe
-            mappings[extractedField] = Array.from(matchedFields).sort((a, b) => {
-                const numA = parseInt(a.replace(/\D/g, '') || '0');
-                const numB = parseInt(b.replace(/\D/g, '') || '0');
-                if (numA !== numB) return numA - numB;
-                return a.localeCompare(b);
-            });
+        if (matchedFields.length > 0) {
+            mappings[extractedField] = matchedFields;
         }
     }
 
