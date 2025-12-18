@@ -265,6 +265,41 @@ serve(async (req) => {
             normalizedMappings[normalizeKey(k)] = v;
         }
 
+        // === SPECIAL HANDLING: Ensure place of birth gets filled ===
+        // This is a critical field that often fails due to mapping issues
+        const placeOfBirthValue = extractedData.birth_location_combined ||
+            extractedData['Place of Birth'] ||
+            extractedData.lugar_nacimiento ||
+            extractedData['Lugar Nacimiento'] ||
+            extractedData.birth_place;
+
+        if (placeOfBirthValue) {
+            console.log(`[SPECIAL] Trying to fill Place of Birth with: ${placeOfBirthValue}`);
+
+            // Try every PDF field name directly
+            for (const pdfField of fieldNames) {
+                const fieldLower = pdfField.toLowerCase();
+                // Check if this field is related to birth place
+                if (fieldLower.includes('place') ||
+                    fieldLower.includes('birth') ||
+                    fieldLower.includes('country') ||
+                    fieldLower.includes('nacimiento') ||
+                    fieldLower.includes('lugar')) {
+
+                    // Exclude fields that are for registry location, not birth location
+                    if (fieldLower.includes('registro') || fieldLower.includes('registry')) continue;
+
+                    console.log(`[SPECIAL] Attempting field: ${pdfField}`);
+                    if (setField(pdfField, String(placeOfBirthValue))) {
+                        console.log(`[SPECIAL] SUCCESS: Filled "${pdfField}" with place of birth`);
+                        filledCount++;
+                        break; // Stop after first successful fill
+                    }
+                }
+            }
+        }
+        // === END SPECIAL HANDLING ===
+
         for (const [key, value] of Object.entries(extractedData)) {
             if (value === null || value === undefined || value === '') continue;
 

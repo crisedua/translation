@@ -296,9 +296,9 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
     const fieldPatterns: Record<string, string[]> = {
         // Resolved/Combined fields (highest priority)
         "nuip_resolved": ["nuip"],
-        "birth_location_combined": ["birth_country_dept_munic", "place_of_birth", "birth_place"],
-        "Place of Birth": ["birth_country_dept_munic", "place_of_birth"],
-        "lugar_nacimiento": ["birth_country_dept_munic", "place_of_birth", "birth_place"],
+        "birth_location_combined": ["birth_country_dept_munic", "place_of_birth", "birth_place", "place of birth", "country", "department", "municipality", "township"],
+        "Place of Birth": ["birth_country_dept_munic", "place_of_birth", "place of birth", "country", "department", "municipality", "township"],
+        "lugar_nacimiento": ["birth_country_dept_munic", "place_of_birth", "birth_place", "place of birth", "country", "department", "municipality", "township"],
         "registry_location_combined": ["country_dept_munic"],
         "father_full_name": ["father_surnames_names"],
         "mother_full_name": ["mother_surnames_names"],
