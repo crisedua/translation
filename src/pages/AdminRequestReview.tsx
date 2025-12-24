@@ -24,6 +24,7 @@ const AdminRequestReview = () => {
     const [error, setError] = useState<string>('');
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [showOCRModal, setShowOCRModal] = useState(false);
+    const [showQAModal, setShowQAModal] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
     const [processing, setProcessing] = useState(false);
     const [formData, setFormData] = useState<Record<string, string>>({});
@@ -299,10 +300,13 @@ const AdminRequestReview = () => {
                             <div className="col-span-2 mt-2 pt-2 border-t border-gray-200">
                                 <span className="text-sm text-gray-600 block mb-1">QA / Validation Status</span>
                                 {(request.validation_errors && (Array.isArray(request.validation_errors) ? request.validation_errors.length > 0 : Object.keys(request.validation_errors).length > 0)) ? (
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    <button
+                                        onClick={() => setShowQAModal(true)}
+                                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 hover:bg-red-200 transition-colors cursor-pointer"
+                                    >
                                         <AlertCircle className="w-3 h-3 mr-1" />
-                                        Issues Found
-                                    </span>
+                                        Issues Found - Click to View
+                                    </button>
                                 ) : (
                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                         <CheckCircle className="w-3 h-3 mr-1" />
@@ -561,6 +565,77 @@ const AdminRequestReview = () => {
                         <div className="p-4 border-t border-gray-200 bg-gray-50 rounded-b-lg flex justify-end">
                             <button
                                 onClick={() => setShowOCRModal(false)}
+                                className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 border border-gray-300 transition-colors"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* QA Errors Modal */}
+            {showQAModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+                        <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-red-50 rounded-t-lg">
+                            <h3 className="text-xl font-semibold text-red-900 flex items-center">
+                                <AlertCircle className="w-6 h-6 mr-2 text-red-600" />
+                                QA Validation Errors
+                            </h3>
+                            <button
+                                onClick={() => setShowQAModal(false)}
+                                className="text-gray-500 hover:text-gray-700 transition-colors"
+                            >
+                                <XCircle className="w-6 h-6" />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-auto p-6 bg-white">
+                            {request.validation_errors && (
+                                <ul className="space-y-3">
+                                    {Array.isArray(request.validation_errors) ? (
+                                        request.validation_errors.map((error: string, index: number) => {
+                                            const isQA = error.startsWith('[QA]');
+                                            const cleanError = isQA ? error.replace('[QA]', '').trim() : error;
+                                            return (
+                                                <li
+                                                    key={index}
+                                                    className={`p-3 rounded-lg border ${isQA ? 'bg-blue-50 border-blue-200' : 'bg-yellow-50 border-yellow-200'}`}
+                                                >
+                                                    <div className="flex items-start">
+                                                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold mr-2 ${isQA ? 'bg-blue-200 text-blue-800' : 'bg-yellow-200 text-yellow-800'}`}>
+                                                            {isQA ? 'AI Audit' : 'Validation'}
+                                                        </span>
+                                                    </div>
+                                                    <p className={`mt-2 text-sm ${isQA ? 'text-blue-900' : 'text-yellow-900'}`}>
+                                                        {cleanError}
+                                                    </p>
+                                                </li>
+                                            );
+                                        })
+                                    ) : (
+                                        Object.entries(request.validation_errors).map(([key, value]) => (
+                                            <li
+                                                key={key}
+                                                className="p-3 rounded-lg border bg-yellow-50 border-yellow-200"
+                                            >
+                                                <div className="flex items-start">
+                                                    <span className="inline-block px-2 py-0.5 rounded text-xs font-bold mr-2 bg-yellow-200 text-yellow-800">
+                                                        Field Error
+                                                    </span>
+                                                </div>
+                                                <p className="mt-2 text-sm text-yellow-900">
+                                                    <span className="font-medium">{key}:</span> {String(value)}
+                                                </p>
+                                            </li>
+                                        ))
+                                    )}
+                                </ul>
+                            )}
+                        </div>
+                        <div className="p-4 border-t border-gray-200 bg-gray-50 rounded-b-lg flex justify-end">
+                            <button
+                                onClick={() => setShowQAModal(false)}
                                 className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 border border-gray-300 transition-colors"
                             >
                                 Close
