@@ -369,16 +369,43 @@ const AdminRequestReview = () => {
                     )}
 
                     {/* Validation Errors */}
-                    {request.validation_errors && Object.keys(request.validation_errors).length > 0 && (
-                        <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                            <h3 className="font-semibold text-yellow-900 mb-2">Validation Warnings</h3>
-                            <ul className="text-sm text-yellow-800 space-y-1">
-                                {Object.entries(request.validation_errors).map(([key, value]) => (
-                                    <li key={key}>• {key}: {String(value)}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
+                    {request.validation_errors && (
+                        (Array.isArray(request.validation_errors) && request.validation_errors.length > 0) ||
+                        (!Array.isArray(request.validation_errors) && Object.keys(request.validation_errors).length > 0)
+                    ) && (
+                            <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <h3 className="font-semibold text-yellow-900 mb-2 flex items-center">
+                                    <AlertCircle className="w-5 h-5 mr-2 text-yellow-600" />
+                                    Validation Issues
+                                </h3>
+                                <ul className="text-sm space-y-2">
+                                    {/* Handle Array of Strings (New Format) */}
+                                    {Array.isArray(request.validation_errors) ? (
+                                        request.validation_errors.map((error: string, index: number) => {
+                                            const isQA = error.startsWith('[QA]');
+                                            const cleanError = isQA ? error.replace('[QA]', '').trim() : error;
+                                            return (
+                                                <li key={index} className={`flex items-start ${isQA ? 'text-blue-800' : 'text-yellow-800'}`}>
+                                                    <span className="mr-2 mt-0.5">•</span>
+                                                    <span>
+                                                        {isQA && <span className="font-bold text-blue-600 mr-1">[AI Audit]</span>}
+                                                        {cleanError}
+                                                    </span>
+                                                </li>
+                                            );
+                                        })
+                                    ) : (
+                                        /* Handle Object (Legacy Format) */
+                                        Object.entries(request.validation_errors).map(([key, value]) => (
+                                            <li key={key} className="text-yellow-800 flex items-start">
+                                                <span className="mr-2">•</span>
+                                                <span className="font-medium mr-1">{key}:</span> {String(value)}
+                                            </li>
+                                        ))
+                                    )}
+                                </ul>
+                            </div>
+                        )}
 
                     {/* OCR Text (Expandable) */}
                     {request.ocr_text && (
