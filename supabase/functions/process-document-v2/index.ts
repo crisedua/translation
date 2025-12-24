@@ -135,9 +135,8 @@ serve(async (req) => {
         console.log(`Templates fetched: ${templates?.length || 0}, error: ${templatesError?.message || 'none'}`);
 
         // 6. Match template
-        console.log("Matching template with AI (Text-Only Mode - Google Vision OCR)...");
-        // Use text-only matching (no vision) for simplicity and reliability
-        let matchedTemplate = await matchTemplateWithAI(extractedText, templates || [], undefined);
+        console.log(`Matching template with AI (Vision Mode: ${visionDataUri ? 'ENABLED' : 'DISABLED'})...`);
+        let matchedTemplate = await matchTemplateWithAI(extractedText, templates || [], visionDataUri);
 
         // RESILIENCE: If no match but templates exist, use first one
         if (!matchedTemplate && templates && templates.length > 0) {
@@ -152,13 +151,12 @@ serve(async (req) => {
             throw new Error("No templates available. Please upload a template first.");
         }
 
-        // 7. Extract structured data with AI (using Google Vision OCR text)
-        console.log("Extracting structured data with AI (Google Vision OCR text)...");
-        console.log(`Using OCR text (${extractedText.length} chars) for extraction`);
+        // 7. Extract structured data with AI (using Google Vision OCR text + OpenAI Vision)
+        console.log("Extracting structured data with AI...");
+        console.log(`Using OCR text (${extractedText.length} chars) + Vision for extraction`);
 
-        // Use text-only extraction - relies on Google Vision OCR
-        // Pass undefined for visionDataUri to use text-only mode
-        const extractedData = await extractData(extractedText, matchedTemplate, undefined);
+        // Use Vision extraction if available, otherwise fallback to text
+        const extractedData = await extractData(extractedText, matchedTemplate, visionDataUri);
         console.log(`Data extracted: ${Object.keys(extractedData || {}).length} fields`);
 
         // Log key extracted fields for debugging
