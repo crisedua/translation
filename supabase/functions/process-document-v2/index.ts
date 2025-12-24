@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { matchTemplateWithAI } from "./template-matcher-ai.ts";
 import { extractData } from "./ai-extractor.ts";
 import { validateData } from "./validator.ts";
+import { performSemanticQA } from "./qa-validator.ts";
 import { sendNotification } from "./email-notifier.ts";
 import { extractTextWithGoogleVision, extractTextFromImages } from "./google-vision.ts";
 import { convertPdfToImage } from "./pdf-converter.ts";
@@ -166,8 +167,23 @@ serve(async (req) => {
         console.log(`Extracted factor_rh: ${extractedData?.factor_rh || 'NOT FOUND'}`);
 
         // 8. Validate & Save
-        const validationResult = validateData(extractedData);
-        console.log(`Validation: ${validationResult.valid ? 'PASSED' : 'FAILED'}`);
+        let validationResult = validateData(extractedData);
+        console.log(`Heuristic Validation: ${validationResult.valid ? 'PASSED' : 'FAILED'}`);
+
+        // 9. Semantic QA (Only if Heuristic passed)
+        if (validationResult.valid) {
+            console.log("Running Semantic QA Validation...");
+            // Use visionDataUri if available (best context), otherwise ocrText
+            const qaResult = await performSemanticQA(extractedText, extractedData, visionDataUri);
+
+            if (!qaResult.valid) {
+                console.log("Semantic QA FAILED. Discrepancies found.");
+                validationResult.valid = false;
+                validationResult.errors.push(...qaResult.discrepancies.map(d => `[QA] ${d}`));
+            } else {
+                console.log("Semantic QA PASSED.");
+            }
+        }
 
         let request: any;
         const dbData = {
