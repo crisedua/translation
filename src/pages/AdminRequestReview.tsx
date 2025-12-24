@@ -295,8 +295,25 @@ const AdminRequestReview = () => {
                                 <span className="text-sm text-gray-600">Template Matched</span>
                                 <p className="font-medium">{(request as any).document_templates?.name || 'Unknown'}</p>
                             </div>
+                            {/* QA Status Badge */}
+                            <div className="col-span-2 mt-2 pt-2 border-t border-gray-200">
+                                <span className="text-sm text-gray-600 block mb-1">QA / Validation Status</span>
+                                {(request.validation_errors && (Array.isArray(request.validation_errors) ? request.validation_errors.length > 0 : Object.keys(request.validation_errors).length > 0)) ? (
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        <AlertCircle className="w-3 h-3 mr-1" />
+                                        Issues Found
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <CheckCircle className="w-3 h-3 mr-1" />
+                                        Passed
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </div>
+
+
 
                     {/* Extracted Fields - Editable Form */}
                     {Object.keys(formData).length > 0 ? (
