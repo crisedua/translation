@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import { PDFDocument } from 'https://esm.sh/pdf-lib@1.17.1';
 import { processExtractedData } from './field-processor.ts';
 import { getTemplateMappings, isNotesField } from './template-field-mapper.ts';
+import { getDirectMapping, isNotesFieldDirect, logMappingAttempt, DIRECT_MAPPINGS } from './direct-mapper.ts';
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -347,16 +348,45 @@ serve(async (req) => {
             const normalizedKey = normalizeKey(key);
             let filled = false;
 
+            // === STRATEGY 0: Use Direct Mapper (highest priority, most reliable) ===
+            const directTargets = getDirectMapping(key);
+            if (directTargets.length > 0) {
+                // Handle notes fields specially (distribute across multiple fields)
+                if (isNotesFieldDirect(key) && directTargets.length > 1) {
+                    const parts = strValue.split('\n').map(p => p.trim()).filter(p => p);
+                    directTargets.forEach((target, index) => {
+                        if (index < parts.length) {
+                            if (setField(target, parts[index])) {
+                                filled = true;
+                                filledCount++;
+                                logMappingAttempt(key, directTargets, true, target);
+                            }
+                        }
+                    });
+                } else {
+                    // Standard: try each target until one works
+                    for (const target of directTargets) {
+                        if (setField(target, strValue)) {
+                            filled = true;
+                            filledCount++;
+                            logMappingAttempt(key, directTargets, true, target);
+                            break; // Stop after first success
+                        }
+                    }
+                }
+            }
+
             // 1. Try exact match (Canonical Key -> PDF Field Name)
             // Sometimes the extracted key IS the pdf field name
-            if (setField(key, strValue)) {
+            if (!filled && setField(key, strValue)) {
                 filled = true;
                 filledCount++;
             }
 
             // 2. Try DB-configured mappings (with normalized key)
-            if (normalizedMappings[normalizedKey]) {
+            if (!filled && normalizedMappings[normalizedKey]) {
                 const targets = normalizedMappings[normalizedKey];
+
 
                 // SPECIAL HANDLING: For "notes" fields, distribute text across fields instead of repeating
                 // This prevents the same note from appearing 5 times in the list

@@ -1,0 +1,191 @@
+/**
+ * DIRECT FIELD MAPPER
+ * 
+ * Simple, reliable direct mapping from extracted field names to PDF field names.
+ * No pattern matching, no complex validation - just straightforward lookup.
+ */
+
+// ============================================================================
+// COMPREHENSIVE MAPPING TABLE
+// Key: Extracted field name (from AI extractor)
+// Value: Array of PDF field names to fill (tries each until success)
+// ============================================================================
+
+export const DIRECT_MAPPINGS: Record<string, string[]> = {
+    // === REGISTRANT NAMES ===
+    "nombres": ["names", "reg_names", "given_names", "first_names", "nombre", "Given Name(s)"],
+    "primer_apellido": ["first_surname", "reg_1_surname", "surname1", "apellido1", "First Surname"],
+    "segundo_apellido": ["second_surname", "reg_2_surname", "surname2", "apellido2", "Second Surname"],
+    "Registrant's Names": ["names", "reg_names", "given_names"],
+    "First Surname": ["first_surname", "reg_1_surname"],
+    "Second Surname": ["second_surname", "reg_2_surname"],
+    "Given Name(s)": ["names", "reg_names"],
+
+    // === NUIP AND IDENTIFIERS ===
+    "nuip": ["nuip", "NUIP", "id_basic_part"],
+    "nuip_top": ["nuip", "NUIP", "id_basic_part", "id_add_part"],
+    "nuip_resolved": ["nuip", "NUIP"],
+    "serial_indicator": ["serial_indicator", "serial", "indicativo", "Serial Indicator"],
+    "Serial Indicator": ["serial_indicator", "serial"],
+    "codigo": ["reg_code", "code", "qr_code", "Code"],
+    "Code": ["reg_code", "code"],
+    "acta": ["birth_cert_number", "cert_number", "Acta"],
+
+    // === PERSONAL DATA ===
+    "sexo": ["sex", "sexo", "gender", "Sex (in words)"],
+    "Sex": ["sex", "sexo"],
+    "Sex (in words)": ["sex", "sexo"],
+    "grupo_sanguineo": ["blood_type", "blood", "tipo_sangre", "Blood Type"],
+    "Blood Type": ["blood_type", "blood"],
+    "factor_rh": ["rh_factor", "rh", "factor", "Rh Factor"],
+    "Rh Factor": ["rh_factor", "rh"],
+
+    // === BIRTH DATE ===
+    "fecha_nacimiento": ["date_of_birth", "birth_date", "Date of Birth"],
+    "Date of Birth": ["date_of_birth", "birth_date"],
+    "birth_day": ["birth_day", "day", "Day"],
+    "birth_month": ["birth_month", "month", "Month"],
+    "birth_year": ["birth_year", "year", "Year"],
+    "hora_nacimiento": ["time", "birth_time", "hora"],
+    "Time": ["time", "birth_time"],
+
+    // === BIRTH LOCATION ===
+    "pais_nacimiento": ["country_birth", "country", "pais"],
+    "departamento_nacimiento": ["dept_birth", "department", "departamento"],
+    "municipio_nacimiento": ["muni_birth", "municipality", "municipio"],
+    "lugar_nacimiento": ["township_birth", "birth_place", "place", "birth_country_dept_munic", "Place of Birth"],
+    "birth_location_combined": ["birth_country_dept_munic", "place_of_birth", "birth_place"],
+    "Place of Birth": ["birth_country_dept_munic", "place_of_birth", "birth_place"],
+    "Place of Birth (Country - Department - Municipality - Township and/or Police Station)": ["birth_country_dept_munic", "place_of_birth"],
+
+    // === FATHER INFORMATION ===
+    "padre_nombres": ["father_names", "father_surnames_names"],
+    "padre_apellidos": ["father_surnames", "father_surnames_names"],
+    "padre_identificacion": ["father_doc_number", "father_id_doc", "father_id"],
+    "padre_nacionalidad": ["father_nationality"],
+    "father_full_name": ["father_surnames_names"],
+    "Father's Surnames and Full Names": ["father_surnames_names", "father_names"],
+    "Father's Identification Document": ["father_id_doc", "father_doc_number"],
+    "Father's Identification Document (Type and Number)": ["father_id_doc", "father_doc_number"],
+    "Father's Nationality": ["father_nationality"],
+
+    // === MOTHER INFORMATION ===
+    "madre_nombres": ["mother_names", "mother_surnames_names"],
+    "madre_apellidos": ["mother_surnames", "mother_surnames_names"],
+    "madre_identificacion": ["mother_doc_number", "mother_id_doc", "mother_id_number"],
+    "madre_nacionalidad": ["mother_nationality"],
+    "mother_full_name": ["mother_surnames_names"],
+    "Mother's Surnames and Full Names": ["mother_surnames_names", "mother_names"],
+    "Mother's Identification Document": ["mother_id_doc", "mother_doc_number"],
+    "Mother's Identification Document (Type and Number)": ["mother_id_doc", "mother_doc_number"],
+    "Mother's Nationality": ["mother_nationality"],
+
+    // === DECLARANT INFORMATION ===
+    "declarante_nombres": ["declarant_surnames_names", "declarant_name"],
+    "declarante_identificacion": ["declarant_id_doc", "declarant_id"],
+    "Declarant's Surnames and Full Names": ["declarant_surnames_names", "declarant_name"],
+    "Declarant's Identification Document": ["declarant_id_doc", "declarant_id"],
+    "Declarant's Identification Document (Type and Number)": ["declarant_id_doc", "declarant_id"],
+
+    // === WITNESS INFORMATION ===
+    "testigo1_nombres": ["witness1_surnames_names", "witness1_name"],
+    "testigo1_identificacion": ["witness1_id_doc", "witness1_id"],
+    "testigo2_nombres": ["witness2_surnames_names", "witness2_name"],
+    "testigo2_identificacion": ["witness2_id_doc", "witness2_id"],
+    "First Witness's Surnames and Full Names": ["witness1_surnames_names", "witness1_name"],
+    "First Witness's Identification Document": ["witness1_id_doc", "witness1_id"],
+    "First Witness's Identification Document (Type and Number)": ["witness1_id_doc", "witness1_id"],
+    "Second Witness's Surnames and Full Names": ["witness2_surnames_names", "witness2_name"],
+    "Second Witness's Identification Document": ["witness2_id_doc", "witness2_id"],
+    "Second Witness's Identification Document (Type and Number)": ["witness2_id_doc", "witness2_id"],
+
+    // === REGISTRY INFORMATION ===
+    "oficina": ["office_type", "notary_number", "office"],
+    "numero_oficina": ["notary_number", "office_number"],
+    "Notary Number": ["notary_number", "office_number"],
+    "Registry Office": ["reg_office", "office"],
+    "departamento_registro": ["dept_office", "country_dept_munic"],
+    "municipio_registro": ["muni_office", "country_dept_munic"],
+    "fecha_registro": ["date_registration", "date_registered"],
+    "Date Registered": ["date_registration", "reg_date"],
+    "reg_day": ["reg_day"],
+    "reg_month": ["reg_month"],
+    "reg_year": ["reg_year"],
+    "registry_location_combined": ["country_dept_munic"],
+    "Country - Department - Municipality - Township and/or Police Station": ["country_dept_munic"],
+
+    // === NOTES ===
+    "notas": ["notes1", "notes2", "notes3", "notes4", "notes5", "notes", "Space For Notes"],
+    "margin_notes": ["notes1", "notes2", "notes3", "notes4", "notes5", "notes6", "notes7", "Space For Notes"],
+    "notes_combined": ["notes1", "notes2", "notes3", "notes4", "notes5"],
+    "Notes": ["notes1", "notes", "Space For Notes"],
+    "SPACE FOR NOTES": ["notes1", "notes2", "Space For Notes"],
+
+    // === OFFICIALS ===
+    "authorizing_official": ["official_name&signature", "official_name", "funcionario", "Name and Signature of Authorizing Official"],
+    "acknowledgment_official": ["ack_official_name&signature", "ack_official", "Name and Signature of Official before whom the Acknowledgment is Made"],
+    "funcionario_nombre": ["official_name&signature", "name_director", "official_name"],
+    "Name and Signature of Authorizing Official": ["official_name&signature", "official_name"],
+    "Name and Signature of Official before whom the Acknowledgment is Made": ["ack_official_name&signature", "ack_official"],
+
+    // === PRIOR DOCUMENT ===
+    "tipo_documento_anterior": ["prior_doc", "prior_document"],
+    "Type of Prior Document or Witness Statement": ["prior_doc", "prior_document"],
+    "Live Birth Certificate Number": ["live_birth_cert", "birth_cert_number"],
+
+    // === OTHER ===
+    "tomo": ["tomo", "volume"],
+    "folio": ["folio", "page"],
+    "libro": ["libro", "book"],
+    "Paternal Recognition": ["paternal_recognition", "recognition"]
+};
+
+/**
+ * Find PDF field targets for an extracted field name
+ */
+export function getDirectMapping(extractedFieldName: string): string[] {
+    // Try exact match first
+    if (DIRECT_MAPPINGS[extractedFieldName]) {
+        return DIRECT_MAPPINGS[extractedFieldName];
+    }
+
+    // Try case-insensitive match
+    const lower = extractedFieldName.toLowerCase();
+    for (const [key, targets] of Object.entries(DIRECT_MAPPINGS)) {
+        if (key.toLowerCase() === lower) {
+            return targets;
+        }
+    }
+
+    // Try normalized match (remove special chars)
+    const normalized = extractedFieldName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    for (const [key, targets] of Object.entries(DIRECT_MAPPINGS)) {
+        const keyNorm = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (keyNorm === normalized) {
+            return targets;
+        }
+    }
+
+    return [];
+}
+
+/**
+ * Check if a field name is a notes-type field (needs special distribution)
+ */
+export function isNotesFieldDirect(fieldName: string): boolean {
+    const lower = fieldName.toLowerCase();
+    return lower.includes('note') || lower.includes('nota') || lower.includes('margin');
+}
+
+/**
+ * Log mapping result for debugging
+ */
+export function logMappingAttempt(extractedField: string, pdfTargets: string[], success: boolean, filledField?: string) {
+    if (success) {
+        console.log(`✅ MAPPED: "${extractedField}" -> "${filledField}"`);
+    } else if (pdfTargets.length > 0) {
+        console.log(`❌ FAILED: "${extractedField}" -> tried [${pdfTargets.slice(0, 3).join(', ')}...] but no match in PDF`);
+    } else {
+        console.log(`⚠️ NO MAPPING: "${extractedField}" has no mapping defined`);
+    }
+}
