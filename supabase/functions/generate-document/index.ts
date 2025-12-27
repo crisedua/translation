@@ -267,8 +267,15 @@ serve(async (req) => {
             try {
                 // WARN: Check if field is already filled
                 if (filledPdfFields.has(fieldName)) {
-                    console.warn(`[OVERWRITE BLOCKED] Field "${fieldName}" already set. Skipping value: "${String(value).substring(0, 30)}..."`);
-                    return true; // Return true so flow continues as if handled
+                    // Check if the current value is effectively empty
+                    const existingField = form.getTextField(fieldName);
+                    const existingText = existingField ? existingField.getText() : '';
+                    if (existingText && existingText.trim().length > 0) {
+                        console.warn(`[OVERWRITE BLOCKED] Field "${fieldName}" already set to "${existingText}". Skipping new value: "${String(value).substring(0, 30)}..."`);
+                        return true; // Return true so flow continues as if handled
+                    } else {
+                        console.log(`[OVERWRITE ALLOWED] Field "${fieldName}" was previously empty/whitespace. Overwriting with: "${String(value).substring(0, 30)}..."`);
+                    }
                 }
 
                 // PDF-lib is case sensitive normally, but let's try direct first
@@ -344,7 +351,8 @@ serve(async (req) => {
         }
 
         // Prioritize specific atomic fields over composite or fuzzy fields
-        const priorityFields = ['nuip', 'nuip_top', 'nombres', 'Apellidos', 'apellidos', 'names', 'surnames', 'pais_registro', 'Pais Registro', 'fecha_registro', 'reg_day', 'reg_month', 'reg_year', 'oficina', 'reg_office'];
+        // Prioritize specific atomic fields over composite or fuzzy fields
+        const priorityFields = ['nuip', 'nuip_top', 'nombres', 'Apellidos', 'apellidos', 'names', 'surnames', 'pais_registro', 'Pais Registro', 'fecha_expedicion', 'issue_date', 'fecha_registro', 'reg_day', 'reg_month', 'reg_year', 'oficina', 'reg_office'];
 
         const sortedEntries = Object.entries(extractedData).sort(([keyA], [keyB]) => {
             const idxA = priorityFields.indexOf(keyA);
