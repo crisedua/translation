@@ -411,11 +411,21 @@ serve(async (req) => {
                     "Type of Prior Document or Witness Statement": ["prior_doc"],
                     "tipo_documento_anterior": ["prior_doc"],
 
-                    // Signature / Officials
+                    // Signature / Officials - use actual PDF field names
                     "Signature": ["signature"],
-                    "authorizing_official": ["Name and Signature of Authorizing Official", "auth_official", "funcionario_autoriza"],
-                    "acknowledgment_official": ["Name and Signature of Official before whom the Acknowledgment is Made", "ack_official", "funcionario_reconocimiento"],
-                    "funcionario_nombre": ["Name and Signature of Authorizing Official", "auth_official"]
+                    "authorizing_official": ["official_name&signature", "Name and Signature of Authorizing Official", "auth_official", "funcionario_autoriza"],
+                    "acknowledgment_official": ["ack_official_name&signature", "Name and Signature of Official before whom the Acknowledgment is Made", "ack_official", "funcionario_reconocimiento"],
+                    "funcionario_nombre": ["official_name&signature", "Name and Signature of Authorizing Official", "auth_official"],
+
+                    // Witnesses - use actual PDF field names
+                    "testigo1_nombres": ["witness1_surnames_names"],
+                    "testigo1_identificacion": ["witness1_id_doc"],
+                    "testigo2_nombres": ["witness2_surnames_names"],
+                    "testigo2_identificacion": ["witness2_id_doc"],
+                    "First Witness's Surnames and Full Names": ["witness1_surnames_names"],
+                    "First Witness's Identification Document": ["witness1_id_doc"],
+                    "Second Witness's Surnames and Full Names": ["witness2_surnames_names"],
+                    "Second Witness's Identification Document": ["witness2_id_doc"]
                 };
 
                 // Normalize key for comparison (handle apostrophe variations)

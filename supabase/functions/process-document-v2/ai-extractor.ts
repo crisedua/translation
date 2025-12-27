@@ -14,10 +14,38 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     const systemPrompt = `You are an expert at extracting structured data from Colombian civil registry documents.
 Extract the following fields from the provided document image. Return ONLY valid JSON with the extracted values.
 
-MANDATORY FIELDS (Must be extracted if found, regardless of template):
+#############################################
+## GLOBAL ANTI-HALLUCINATION RULES (CRITICAL)
+#############################################
+BEFORE extracting ANY field, apply these rules:
+
+1. EMPTY FIELD DETECTION:
+   - If a field contains ONLY dots (......), dashes (------), blank space, or no text, return EMPTY STRING ""
+   - If a field has a label but no written/typed value, return EMPTY STRING ""
+   - NEVER fill an empty field with data from another section of the document
+
+2. FIELD ISOLATION:
+   - Each field in the document has its OWN designated area/box
+   - Data from one section MUST NOT be copied to another section
+   - Example: The child's name "KATERINE" belongs ONLY to "Datos del inscrito" section
+   - Example: Witness names are in "Datos primer testigo" and "Datos segundo testigo" sections ONLY
+
+3. NO CROSS-CONTAMINATION:
+   - If "Datos primer testigo" is empty, testigo1_nombres = "" (NOT the child's name)
+   - If "Datos segundo testigo" is empty, testigo2_nombres = "" (NOT the mother's name)
+   - If "Datos del declarante" is empty, declarante_nombres = "" (NOT the father's name)
+   - If "Reconocimiento paterno" is empty, acknowledgment_official = ""
+
+4. VERIFICATION BEFORE OUTPUT:
+   - For each extracted value, mentally verify: "Did I see this EXACT text in THIS SPECIFIC field's location?"
+   - If uncertain, return EMPTY STRING rather than guess
+
+#############################################
+## MANDATORY FIELDS
+#############################################
 - margin_notes (Any text found in the "ESPACIO PARA NOTAS" section. Look specifically for "NUIP OTORGADO POR..." or "NUIP NUEVO..." and extract the full content verbatim including dates and numbers. This section is usually at the VERY BOTTOM of the document. INCLUDE HANDWRITTEN TEXT.)
-- authorizing_official (Name of the official found near "Nombre y firma del funcionario que autoriza")
-- acknowledgment_official (Name of the official found near "Nombre y firma del funcionario ante quien se hace el reconocimiento" - this is for paternal recognition)
+- authorizing_official (Name of the official found near "Nombre y firma del funcionario que autoriza" - ONLY if actually present, otherwise "")
+- acknowledgment_official (Name of the official found near "Nombre y firma del funcionario ante quien se hace el reconocimiento" - ONLY if "Reconocimiento paterno" section is filled, otherwise "")
 - nuip_top (CRITICAL NUIP EXTRACTION - READ CAREFULLY:
   * LOCATION: Look at the VERY TOP-LEFT corner of the document
   * VISUAL CUE: There is a small box/rectangle with the label "NUIP" or "N.U.I.P."
@@ -121,16 +149,25 @@ CRITICAL ROLE DISTINCTION:
 - These are DIFFERENT people - do NOT confuse them
 - Look for "Datos del declarante" section for declarant information
 - The official's name (like "HOLMES RAFAEL CARDONA MONTOYA") goes in 'authorizing_official', NOT here
+- If "Datos del declarante" section is EMPTY (dots/blank), return "" for all declarant fields
 
-- declarante_nombres (declarant's full names and surnames - the person declaring, NOT the official)
-- declarante_identificacion (declarant's ID number)
-- declarante_tipo_documento (declarant's document type)
+- declarante_nombres (declarant's full names and surnames - ONLY if section is filled, otherwise "")
+- declarante_identificacion (declarant's ID number - ONLY if section is filled, otherwise "")
+- declarante_tipo_documento (declarant's document type - ONLY if section is filled, otherwise "")
 
 ## WITNESS INFORMATION
-- testigo1_nombres (first witness's full names and surnames)
-- testigo1_identificacion (first witness's ID number)
-- testigo2_nombres (second witness's full names and surnames)
-- testigo2_identificacion (second witness's ID number)
+CRITICAL - EMPTY WITNESS FIELDS:
+- Look specifically for "Datos primer testigo" and "Datos segundo testigo" sections
+- These sections may be EMPTY (filled with dots, blank, or no handwritten text)
+- If you see ONLY dots (......) or blank lines in the witness name fields, return EMPTY STRING ""
+- DO NOT confuse the child's name (from "Datos del inscrito") with witness names
+- DO NOT copy any other names to the witness fields if they are blank in the original
+- Witness names are SEPARATE people who witnessed the birth, NOT the child or parents
+
+- testigo1_nombres (first witness's full names and surnames - ONLY if actually filled in)
+- testigo1_identificacion (first witness's ID number - ONLY if actually filled in)
+- testigo2_nombres (second witness's full names and surnames - ONLY if actually filled in)
+- testigo2_identificacion (second witness's ID number - ONLY if actually filled in)
 
 ## REGISTRY OFFICE INFORMATION
 - oficina (office name - e.g., "NOTARÃA 21 CALI")
@@ -235,6 +272,12 @@ CRITICAL INSTRUCTIONS:
     - CORRECT: "CLINICA MATERNO INFANTIL FARALLONES (COLOMBIA.VALLE.CALI)"
     - WRONG: Just "COLOMBIA - VALLE - CALI" without the institution name
     - The institution name (CLINICA, HOSPITAL, etc.) MUST be included in lugar_nacimiento field.
+11. EMPTY FIELDS (CRITICAL): 
+    - If witness sections (Datos primer/segundo testigo) are EMPTY (just dots or blank), return "" for testigo fields
+    - If declarant section (Datos del declarante) is EMPTY, return "" for declarante fields
+    - If paternal recognition section is EMPTY, return "" for acknowledgment_official
+    - NEVER copy a name from one section to fill an empty different section
+12. FIELD LOCATION VERIFICATION: Before outputting any value, verify it came from the CORRECT section of the document.
 
 Return JSON with all extracted fields.`
                     },

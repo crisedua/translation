@@ -13,40 +13,78 @@ export const performSemanticQA = async (ocrText: string, extractedData: any, fil
 
     console.log("Starting Semantic QA Audit...");
 
-    const systemPrompt = `You are a strict QA Auditor for document digitization.
-Your job is to COMPARE the original document content (provided as OCR text or Image) against the EXTRACTED JSON data.
+    const systemPrompt = `You are a STRICT QA Auditor for document digitization. Your job is to find ERRORS in the extraction.
 
-Your Goal: Verify that the JSON data accurately represents the document.
+## YOUR GOAL
+Compare the original document content against the EXTRACTED JSON data and flag any discrepancies.
 
-RULES:
-1. Compare fields strictly. "John Doe" != "John A. Doe".
-2. Allow for minor OCR quirks (e.g., '0' vs 'O') if the intent is clear, but flag it if uncertain.
-3. CRITICAL: Check dates, IDs (NUIP), and Names carefully.
-4. If a field is missing in the Extraction but present in the Document, flag it.
-5. If a field is present in Extraction but NOT in Document (hallucination), flag it.
-6. Return a JSON object with:
-   - "valid": boolean (true if NO material errors found)
-   - "discrepancies": array of strings (list each error found, be specific)
-   - "confidence": number (0-100)
+## CRITICAL VALIDATION RULES
 
-OUTPUT FORMAT:
+### 1. HALLUCINATION DETECTION (MOST IMPORTANT)
+- If extractedData contains a value that is NOT visible in the original document, FLAG IT
+- If a field in the original is EMPTY (dots, blank, no text) but extractedData has a value, FLAG IT as "HALLUCINATION"
+- Pay special attention to:
+  * testigo1_nombres, testigo2_nombres (witness names)
+  * declarante_nombres (declarant name)
+  * acknowledgment_official (paternal recognition official)
+
+### 2. CROSS-CONTAMINATION DETECTION
+- The child's name (from "Datos del inscrito") should ONLY appear in nombres/primer_apellido/segundo_apellido
+- The child's name should NEVER appear in testigo, declarante, or official fields
+- The father's name should ONLY appear in padre_nombres
+- The mother's name should ONLY appear in madre_nombres
+- If you see the same name appearing in multiple unrelated fields, FLAG IT
+
+### 3. EMPTY FIELD VALIDATION
+- Look at each section of the original document:
+  * "Datos primer testigo" - If empty, testigo1_nombres should be ""
+  * "Datos segundo testigo" - If empty, testigo2_nombres should be ""
+  * "Datos del declarante" - If empty, declarante_nombres should be ""
+  * "Reconocimiento paterno" - If empty or not filled, acknowledgment_official should be ""
+- If the extraction filled these with non-empty values when the original section is empty, FLAG IT
+
+### 4. BASIC VALIDATION
+- Names must match exactly (allow minor OCR variations like 0/O)
+- Dates must match exactly
+- IDs (NUIP, CC numbers) must match exactly
+- If a field exists in document but missing in extraction, flag it
+- If a field in extraction doesn't exist in document (hallucination), flag it
+
+## OUTPUT FORMAT
+Return a JSON object:
 {
   "valid": false,
-  "discrepancies": ["Name mismatch: Document says 'Carlos', Extracted 'Karlos'", "Date mismatch: Document '2023', Extracted '2024'"],
+  "discrepancies": [
+    "HALLUCINATION: testigo1_nombres contains 'KATERINE' but witness section is EMPTY in original",
+    "CROSS-CONTAMINATION: Child's name 'KATERINE' incorrectly copied to testigo2_nombres",
+    "MISMATCH: fecha_nacimiento shows '19/08/2000' but document says '19/08/2001'"
+  ],
   "confidence": 95
-}`;
+}
+
+Be STRICT. If you are uncertain whether a field value is correct, flag it. It's better to have false positives than miss errors.`;
 
     const userContent = `
-ORIGINAL DOCUMENT CONTEXT:
-${fileUrl ? "Image provided via Vision." : "OCR Text provided below."}
+## ORIGINAL DOCUMENT
+${fileUrl ? "Image provided via Vision - examine it carefully." : "OCR Text provided below."}
 
-OCR TEXT (Reference):
-${ocrText.substring(0, 5000)}
+## OCR TEXT (Reference):
+${ocrText.substring(0, 6000)}
 
-EXTRACTED DATA (To Validate):
+## EXTRACTED DATA (To Validate):
 ${JSON.stringify(extractedData, null, 2)}
 
-Please Audit this extraction.`;
+## YOUR TASK
+1. Look at the original document carefully
+2. For each field in the extracted data, verify it exists in the CORRECT LOCATION in the original
+3. Pay SPECIAL ATTENTION to:
+   - Are witness fields (testigo1_nombres, testigo2_nombres) actually filled in the original? Or are they empty (dots/blank)?
+   - Are declarant fields actually filled? Or empty?
+   - Is the paternal recognition section filled? Or empty?
+4. Flag ANY discrepancies, especially hallucinations and cross-contamination
+5. Return the JSON result`;
+
+
 
     const messages = [
         { role: "system", content: systemPrompt },
