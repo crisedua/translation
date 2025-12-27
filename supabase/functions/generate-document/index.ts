@@ -222,6 +222,9 @@ serve(async (req) => {
         // -----------------------------------------------------------
 
         let filledCount = 0;
+        // Track which PDF fields have been filled to prevent overwriting
+        // This is critical to stop bad mappings (e.g. official name -> Names field) from overwriting good data
+        const filledPdfFields = new Set<string>();
 
         // Helper to sanitize text for PDF (WinAnsi encoding only supports Latin-1)
         // This removes or replaces characters that cannot be encoded
@@ -262,12 +265,22 @@ serve(async (req) => {
         // Helper to set text field safely with consistent font size
         const setField = (fieldName: string, value: string) => {
             try {
+                // WARN: Check if field is already filled
+                if (filledPdfFields.has(fieldName)) {
+                    console.warn(`[OVERWRITE BLOCKED] Field "${fieldName}" already set. Skipping value: "${String(value).substring(0, 30)}..."`);
+                    return true; // Return true so flow continues as if handled
+                }
+
                 // PDF-lib is case sensitive normally, but let's try direct first
                 const field = form.getTextField(fieldName);
                 if (field) {
                     // Sanitize the value before setting it
                     const sanitizedValue = sanitizeForPdf(value);
                     field.setText(sanitizedValue);
+
+                    // Mark as filled
+                    filledPdfFields.add(fieldName);
+
                     // Set consistent font size for all fields
                     try {
                         field.setFontSize(10);
