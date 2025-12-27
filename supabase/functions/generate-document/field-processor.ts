@@ -216,7 +216,7 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
     });
 
     // Helper to find actual PDF field names (case-insensitive, returns ALL matches)
-    const findFields = (pattern: string): string[] => {
+    const findFields = (pattern: string, excludePatterns: string[] = []): string[] => {
         const lower = pattern.toLowerCase();
         const matches: Set<string> = new Set();
 
@@ -227,6 +227,15 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
 
         // Check partial matches
         for (const [key, value] of pdfFieldLookup) {
+            // Skip if this field matches any exclusion pattern
+            const shouldExclude = excludePatterns.some(excl =>
+                key.toLowerCase().includes(excl.toLowerCase())
+            );
+
+            if (shouldExclude) {
+                continue; // Skip this PDF field
+            }
+
             // "notes" should match "Notes 1", "Notes_2", "SpaceForNotes"
             // But we want to be careful not to match "footnotes" if we are looking for "notes" (maybe too greedy? for now let's be greedy as fallback is tough)
             if (key.includes(lower) || lower.includes(key)) {
@@ -323,8 +332,14 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
     // Build mappings based on what PDF fields actually exist
     for (const [extractedField, patterns] of Object.entries(fieldPatterns)) {
         const matchedFields: Set<string> = new Set();
+
+        // Define exclusions for fields that should never match witness/declarant fields
+        const isChildNameField = ['nombres', 'primer_apellido', 'segundo_apellido',
+            'apellidos', 'reg_names', 'given_names'].includes(extractedField);
+        const exclusions = isChildNameField ? ['witness', 'testigo', 'declarant', 'declarante'] : [];
+
         for (const pattern of patterns) {
-            const foundList = findFields(pattern);
+            const foundList = findFields(pattern, exclusions);
             foundList.forEach(f => matchedFields.add(f));
         }
         if (extractedField === 'registry_location_combined') {
