@@ -205,6 +205,10 @@ export function processExtractedData(extractedData: Record<string, any>): Proces
 }
 
 /**
+ * @deprecated Use getTemplateMappings from './template-field-mapper.ts' instead.
+ * This function provides hardcoded mappings and is kept for backward compatibility.
+ * The new template-field-mapper prioritizes template-specific mappings from the database.
+ * 
  * Get the robust field mappings - maps processed fields to PDF form fields
  * This is the definitive mapping that should be used for all templates
  */

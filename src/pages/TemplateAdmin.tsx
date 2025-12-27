@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { FileText, Trash2, Eye, Edit2, Check, X } from 'lucide-react';
+import { FileText, Trash2, Eye, Edit2, Check, X, RefreshCw } from 'lucide-react';
 
 interface Template {
     id: string;
@@ -24,6 +24,7 @@ const TemplateAdmin = () => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
     const [editCategoryId, setEditCategoryId] = useState('');
+    const [reanalyzing, setReanalyzing] = useState<string | null>(null);
 
     useEffect(() => {
         fetchTemplates();
@@ -181,6 +182,27 @@ const TemplateAdmin = () => {
         }
     };
 
+    const handleReanalyze = async (templateId: string) => {
+        if (!confirm('Re-analyze this template? This will update the field mappings.')) return;
+
+        setReanalyzing(templateId);
+        try {
+            const { data, error } = await supabase.functions.invoke('recheck-template', {
+                body: { templateId }
+            });
+
+            if (error) throw error;
+
+            alert(`Template re-analyzed!\n\nPDF Fields: ${data.pdfFieldCount}\nMappings: ${data.mappingCount}`);
+            fetchTemplates();
+        } catch (error: any) {
+            console.error('Re-analyze error:', error);
+            alert(`Re-analyze failed: ${error.message}`);
+        } finally {
+            setReanalyzing(null);
+        }
+    };
+
     if (loading) {
         return <div className="p-8">Loading...</div>;
     }
@@ -332,6 +354,14 @@ const TemplateAdmin = () => {
                                             >
                                                 <Eye className="w-5 h-5" />
                                             </a>
+                                            <button
+                                                onClick={() => handleReanalyze(template.id)}
+                                                disabled={reanalyzing === template.id}
+                                                className="p-2 text-orange-600 hover:bg-orange-50 rounded disabled:opacity-50"
+                                                title="Re-analyze Template"
+                                            >
+                                                <RefreshCw className={`w-5 h-5 ${reanalyzing === template.id ? 'animate-spin' : ''}`} />
+                                            </button>
                                             <button
                                                 onClick={() => handleDelete(template.id)}
                                                 className="p-2 text-red-600 hover:bg-red-50 rounded"

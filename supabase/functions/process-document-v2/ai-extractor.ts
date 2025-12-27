@@ -11,6 +11,16 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     const templateFields = template?.field_definitions || [];
     const fieldDescriptions = templateFields.map((f: any) => `- ${f.name}: ${f.description || 'No description'}`).join('\n');
 
+    // Get PDF mappings from template for guiding extraction
+    const pdfMappings = template?.content_profile?.pdf_mappings || {};
+    const pdfFields = template?.content_profile?.pdfFields || [];
+    const mappingFieldNames = Object.keys(pdfMappings);
+
+    // Create a list of expected extraction field names from the mappings
+    const expectedFields = mappingFieldNames.length > 0
+        ? `\n## EXPECTED EXTRACTION FIELD NAMES\nUse these exact field names in your response for proper mapping:\n${mappingFieldNames.map(f => `- ${f}`).join('\n')}`
+        : '';
+
     // 1. Determine Document Type and Context
     const docType = template?.content_profile?.documentType
         ? template.content_profile.documentType.replace(/_/g, ' ').toUpperCase()
@@ -18,10 +28,11 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     const docName = template?.name || 'Colombian Document';
 
     // 2. Feature Flags based on Template Fields
-    const hasAckOfficial = templateFields.some((f: any) => f.name === 'acknowledgment_official');
-    const hasWitnesses = templateFields.some((f: any) => f.name.includes('testigo'));
-    const hasNuip = templateFields.some((f: any) => f.name.includes('nuip'));
+    const hasAckOfficial = templateFields.some((f: any) => f.name === 'acknowledgment_official') || mappingFieldNames.includes('acknowledgment_official');
+    const hasWitnesses = templateFields.some((f: any) => f.name.includes('testigo')) || mappingFieldNames.some(f => f.includes('testigo'));
+    const hasNuip = templateFields.some((f: any) => f.name.includes('nuip')) || mappingFieldNames.some(f => f.includes('nuip'));
     const isBirthCertificate = docType.includes('BIRTH') || docType.includes('NACIMIENTO') || docType.includes('CIVIL REGISTRY');
+
 
     // 3. Construct Dynamic Strict Rules
     let strictRules = "";
@@ -130,6 +141,7 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     - If you see "Name of Doctor", "Height", "Weight", etc., EXTRACT IT.
     - Create reasonable keys (e.g. 'doctor_name').
     - IF NO STRUCTURED DATA FOUND: Extract all visible text into "raw_text_dump".
+    ${expectedFields}
     `;
 
     const messages = [

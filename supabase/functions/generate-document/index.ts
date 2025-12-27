@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import { PDFDocument } from 'https://esm.sh/pdf-lib@1.17.1';
-import { processExtractedData, getRobustMappings } from './field-processor.ts';
+import { processExtractedData } from './field-processor.ts';
+import { getTemplateMappings, isNotesField } from './template-field-mapper.ts';
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -193,17 +194,15 @@ serve(async (req) => {
 
         console.log("PDF Fields found:", fieldNames.join(', '));
 
-        // --- NEW: Use robust mappings based on ACTUAL PDF fields ---
-        // This takes precedence over DB mappings and default mappings
-        const robustMappings = getRobustMappings(fieldNames);
-        console.log("Robust Mappings:", JSON.stringify(robustMappings));
+        // --- Use template-specific mappings first, then fallback to standard mappings ---
+        const mappingResult = getTemplateMappings(template, fieldNames);
+        console.log("Field Mappings:", JSON.stringify(mappingResult.mappings));
+        console.log("Mapping sources:", JSON.stringify(mappingResult.mappingSources));
+        if (mappingResult.unmappedPdf.length > 0) {
+            console.log("Unmapped PDF fields:", mappingResult.unmappedPdf.join(', '));
+        }
 
-        // Combine DB mappings with robust mappings (robust wins)
-        const contentProfile = template.content_profile || {};
-        const dbMappings = contentProfile.pdf_mappings || {};
-
-        const fieldMappings: Record<string, string[]> = { ...dbMappings, ...robustMappings };
-        console.log("Final Field Mappings:", JSON.stringify(fieldMappings));
+        const fieldMappings = mappingResult.mappings;
         // -----------------------------------------------------------
 
         let filledCount = 0;
@@ -361,9 +360,9 @@ serve(async (req) => {
 
                 // SPECIAL HANDLING: For "notes" fields, distribute text across fields instead of repeating
                 // This prevents the same note from appearing 5 times in the list
-                const isNoteField = key.toLowerCase().includes('note') || key.toLowerCase().includes('nota');
+                const isNoteFieldCheck = isNotesField(key);
 
-                if (isNoteField && targets.length > 1) {
+                if (isNoteFieldCheck && targets.length > 1) {
                     console.log(`Distributing notes for ${key} across ${targets.length} fields`);
 
                     // Split content by newlines first

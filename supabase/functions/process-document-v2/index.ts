@@ -125,28 +125,27 @@ serve(async (req) => {
 
         console.log(`OCR text length: ${extractedText.length}, Vision URI: ${visionDataUri ? 'SET' : 'NOT SET'}`);
 
-        // 5. Fetch templates
-        console.log(`Fetching templates for categoryId: ${categoryId || 'ALL'}...`);
+        // 5. Fetch templates - AI AUTO-DETECT MODE
+        // We fetch ALL templates and let the AI decide which one matches best
+        // This makes the system truly template-driven and category-agnostic
+        console.log(`Fetching ALL templates for AI-based detection...`);
+        console.log(`Category hint from user: ${categoryId || 'NONE'}`);
 
-        let templates: any[] | null = null;
-        let query = supabase.from('document_templates').select('*');
+        const { data: templates, error } = await supabase
+            .from('document_templates')
+            .select('*');
 
-        if (categoryId && categoryId.length > 10) {
-            query = query.eq('category_id', categoryId);
-        }
-
-        const { data, error } = await query;
         if (error) {
             console.error("Error fetching templates:", error);
+            throw new Error("Failed to load templates from database.");
         }
-
-        templates = data || [];
-        console.log(`Templates fetched: ${templates.length}`);
 
         if (!templates || templates.length === 0) {
-            console.error(`CRITICAL: No templates found for category ${categoryId || 'ALL'}!`);
-            throw new Error(`No templates configured for this category (${categoryId}). Please ask an admin to create a template.`);
+            console.error("CRITICAL: No templates exist in the system!");
+            throw new Error("No templates configured in the system. Please create at least one template first.");
         }
+
+        console.log(`Loaded ${templates.length} templates for AI matching`);
 
         // 6. Match template
         console.log(`Matching template with AI (Vision Mode: ${visionDataUri ? 'ENABLED' : 'DISABLED'})...`);

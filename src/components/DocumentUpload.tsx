@@ -116,7 +116,9 @@ const DocumentUpload = () => {
                 });
 
             if (functionError) {
-                console.warn('Processing function error (continuing anyway):', functionError);
+                // Parse the error message if possible
+                console.error('Processing function error:', functionError);
+                throw new Error(functionError.message || 'Error processing document. Please check the logs.');
             }
 
             setUploadStatus('success');

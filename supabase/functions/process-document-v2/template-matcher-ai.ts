@@ -50,16 +50,41 @@ AVAILABLE TEMPLATES:
 ${JSON.stringify(templateSummaries, null, 2)}
 
 Match the uploaded document to the BEST template. Consider:
-1. VISUAL LAYOUT & STRUCTURE (If image provided)
-2. Document type (birth certificate, passport, etc.)
-3. Format indicators (old vs new format - old has LIBRO/FOLIO, new has NUIP/barcodes)
-4. Keyword presence
+
+1. VISUAL LAYOUT & STRUCTURE (If image provided):
+   - Look for QR codes, barcodes, or neither
+   - Check for digital signature text ("digitally signed document")
+   - Observe overall layout and formatting style
+
+2. Document type (birth certificate, passport, marriage certificate, etc.)
+
+3. Format indicators - CRITICAL for Birth Certificates:
+   Birth certificates have 3 main variants in Colombia:
+   
+   a) OLD/MEDIUM Format:
+      - Contains: "ORDINALS", "MONTH CODES", "Superintendence of Notaries"
+      - Does NOT have: NUIP, barcode, QR code
+      - Visual: Older structured format with coded month fields
+   
+   b) NEW Format (Medium):
+      - Contains: "NUIP", "barcode", "ELECTORAL ORGANIZATION", "NATIONAL CIVIL REGISTRY DIRECTORATE"
+      - Does NOT have: QR code, digital signature
+      - Visual: Modern format with NUIP box at top and barcode
+   
+   c) NEW Format (Newest/Digital):
+      - Contains: "NUIP", "QR code", "digitally signed document", "Valid for 3 months"
+      - Contains: "Digital Civil Status Registration", "Civil Registry Information System"
+      - Visual: Fully digital format with QR code and digital signatures
+
+4. Keyword presence and marker matching:
+   - Count how many specific markers from each template appear in the document
+   - Prioritize templates with the most unique marker matches
 
 Return JSON:
 {
   "matchedTemplateIndex": <0-based index>,
   "confidence": <0-100>,
-  "reasoning": "Why this template matches best"
+  "reasoning": "Explain which specific markers were found (e.g., 'Found NUIP + QR code + digital signature text, indicating newest birth certificate format')"
 }
 
 If no template is a good match, set confidence below 40.`;

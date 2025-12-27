@@ -382,6 +382,7 @@ Return a JSON object with:
                     formatIndicators,
                     semanticDescription,
                     pdf_mappings: pdfMappings,
+                    pdfFields: pdfFieldNames,  // Store complete PDF field list for reference
                     pdfFieldCount: pdfFieldNames.length,
                     mappingCount: Object.keys(pdfMappings).length
                 }
