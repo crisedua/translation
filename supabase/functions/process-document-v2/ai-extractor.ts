@@ -350,6 +350,55 @@ ${text.substring(0, 15000)}` // Increased limit for better context
                 extractedData.pais_registro = 'COLOMBIA';
             }
 
+            // =====================================================
+            // POST-PROCESSING: CROSS-CONTAMINATION DETECTION
+            // =====================================================
+            // This is a safety net to catch when the AI incorrectly 
+            // puts the child's name in witness/declarant fields
+
+            const childName = extractedData.nombres?.trim()?.toUpperCase() || '';
+            const childFirstSurname = extractedData.primer_apellido?.trim()?.toUpperCase() || '';
+            const childSecondSurname = extractedData.segundo_apellido?.trim()?.toUpperCase() || '';
+
+            // Fields that should NEVER contain the child's name
+            const fieldsToCheck = [
+                'testigo1_nombres',
+                'testigo2_nombres',
+                'testigo1_identificacion',
+                'testigo2_identificacion'
+            ];
+
+            for (const field of fieldsToCheck) {
+                const fieldValue = extractedData[field]?.trim()?.toUpperCase() || '';
+
+                // If the field value matches the child's given name, it's cross-contamination
+                if (childName && fieldValue === childName) {
+                    console.log(`[POST-PROCESS] CLEARED ${field}: contained child's name "${childName}"`);
+                    extractedData[field] = '';
+                }
+
+                // If the field value contains ONLY the child's surname(s), it's likely wrong
+                if (childFirstSurname && fieldValue === childFirstSurname) {
+                    console.log(`[POST-PROCESS] CLEARED ${field}: contained only child's first surname`);
+                    extractedData[field] = '';
+                }
+            }
+
+            // Additional check: If witness names are identical to each other AND match child's name
+            const witness1 = extractedData.testigo1_nombres?.trim()?.toUpperCase() || '';
+            const witness2 = extractedData.testigo2_nombres?.trim()?.toUpperCase() || '';
+
+            if (witness1 && witness2 && witness1 === witness2) {
+                // Both witnesses have identical names - very suspicious
+                if (witness1 === childName || witness1 === childFirstSurname) {
+                    console.log(`[POST-PROCESS] CLEARED both witness fields: identical and match child's info`);
+                    extractedData.testigo1_nombres = '';
+                    extractedData.testigo2_nombres = '';
+                }
+            }
+
+            console.log('[POST-PROCESS] Cross-contamination check complete');
+
         } catch (parseError) {
             console.error("Failed to parse OpenAI response:", extractedText);
             throw new Error("Invalid JSON response from OpenAI");
