@@ -71,17 +71,41 @@ serve(async (req) => {
             throw new Error(`Failed to process extracted data: ${(procError as Error).message}`);
         }
 
-        // POST-PROCESSING: Clear duplicate officials
-        // If acknowledgment_official equals authorizing_official, clear it (likely a hallucination/duplication)
-        if (extractedData.acknowledgment_official && extractedData.authorizing_official) {
-            const authOff = String(extractedData.authorizing_official).trim().toUpperCase();
-            const ackOff = String(extractedData.acknowledgment_official).trim().toUpperCase();
 
-            if (authOff === ackOff && authOff.length > 0) {
-                console.log(`[CLEANUP] Clearing duplicate acknowledgment_official: "${extractedData.acknowledgment_official}"`);
-                extractedData.acknowledgment_official = '';
+        // POST-PROCESSING: Clear duplicate officials (robust - handles all field name variations)
+        // If acknowledgment_official equals authorizing_official, clear it (likely a hallucination/duplication)
+
+        // Try multiple field name variations
+        const authVariations = ['authorizing_official', 'Authorizing Official', 'authorizingOfficial'];
+        const ackVariations = ['acknowledgment_official', 'Acknowledgment Official', 'acknowledgmentOfficial'];
+
+        let authValue = '';
+        let ackValue = '';
+        let ackFieldName = '';
+
+        // Find authorizing official value
+        for (const variant of authVariations) {
+            if (extractedData[variant]) {
+                authValue = String(extractedData[variant]).trim().toUpperCase();
+                break;
             }
         }
+
+        // Find acknowledgment official value and field name
+        for (const variant of ackVariations) {
+            if (extractedData[variant]) {
+                ackValue = String(extractedData[variant]).trim().toUpperCase();
+                ackFieldName = variant;
+                break;
+            }
+        }
+
+        // Clear if duplicate
+        if (authValue && ackValue && authValue === ackValue && authValue.length > 0) {
+            console.log(`[CLEANUP] Clearing duplicate acknowledgment_official (${ackFieldName}): "${ackValue}"`);
+            extractedData[ackFieldName] = '';
+        }
+
 
         console.log("Processed extracted data keys:", Object.keys(extractedData).join(", "));
         // ---------------------------------------------------
