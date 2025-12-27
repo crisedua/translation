@@ -117,6 +117,18 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     - margin_notes (Any text found in the "ESPACIO PARA NOTAS" section. Look specifically for "NUIP OTORGADO POR..." or "NUIP NUEVO..." and extract the full content verbatim including dates and numbers. This section is usually at the VERY BOTTOM of the document. INCLUDE HANDWRITTEN TEXT.)
     - authorizing_official (Name of the official found near "Nombre y firma del funcionario que autoriza" - ONLY if actually present, otherwise "")
     - tipo_documento (The type of document, e.g. "TRANSCRIPT OF BIRTH CERTIFICATE", "BIRTH CERTIFICATE", "MARRIAGE CERTIFICATE")
+    - padre_tipo_documento (CRITICAL - PARENT ID DOCUMENT TYPE:
+      * LOCATION: In the "Datos del Padre" / "Father's Information" section
+      * LOOK FOR: A field labeled "Tipo de documento" near the father's ID number
+      * CONTENT: The type of ID document, e.g. "CEDULA DE CIUDADANIA", "C.C.", "PASAPORTE", "TARJETA DE IDENTIDAD"
+      * Extract the EXACT text shown, do NOT abbreviate
+      * If not visible or empty, return "")
+    - madre_tipo_documento (CRITICAL - PARENT ID DOCUMENT TYPE:
+      * LOCATION: In the "Datos de la Madre" / "Mother's Information" section
+      * LOOK FOR: A field labeled "Tipo de documento" near the mother's ID number
+      * CONTENT: The type of ID document, e.g. "CEDULA DE CIUDADANIA", "C.C.", "PASAPORTE", "TARJETA DE IDENTIDAD"
+      * Extract the EXACT text shown, do NOT abbreviate
+      * If not visible or empty, return "")
     ${hasAckOfficial ? `- acknowledgment_official (CRITICAL - READ CAREFULLY:
       * This is the official who witnessed a PATERNAL RECOGNITION ("Reconocimiento paterno")
       * LOCATION: This signature box is in the PATERNAL RECOGNITION section, NOT the main registration section

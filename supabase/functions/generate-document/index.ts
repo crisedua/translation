@@ -212,6 +212,13 @@ serve(async (req) => {
         console.log("Extracted Data Keys:", Object.keys(extractedData).join(', '));
         console.log("Document Type in extraction:", extractedData['tipo_documento'] || extractedData['Document Type']);
 
+        // === DIAGNOSTIC: Parent Document Type Fields ===
+        console.log("[DIAG] padre_tipo_documento:", extractedData['padre_tipo_documento'] || 'NOT_FOUND');
+        console.log("[DIAG] madre_tipo_documento:", extractedData['madre_tipo_documento'] || 'NOT_FOUND');
+        console.log("[DIAG] PDF fields containing 'type' or 'doc':", fieldNames.filter(f => f.toLowerCase().includes('type') || f.toLowerCase().includes('doc')).join(', '));
+        console.log("[DIAG] PDF fields containing 'father' or 'mother':", fieldNames.filter(f => f.toLowerCase().includes('father') || f.toLowerCase().includes('mother')).join(', '));
+        // === END DIAGNOSTIC ===
+
         // --- Use template-specific mappings first, then fallback to standard mappings ---
         const mappingResult = getTemplateMappings(template, fieldNames);
         console.log("Field Mappings:", JSON.stringify(mappingResult.mappings));
