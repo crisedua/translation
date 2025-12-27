@@ -11,36 +11,54 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     const templateFields = template?.field_definitions || [];
     const fieldDescriptions = templateFields.map((f: any) => `- ${f.name}: ${f.description || 'No description'}`).join('\n');
 
-    const systemPrompt = `You are an expert at extracting structured data from Colombian civil registry documents.
-Extract the following fields from the provided document image. Return ONLY valid JSON with the extracted values.
+    const systemPrompt = `You are extracting data from a SCANNED DOCUMENT IMAGE. This is a filled-out form where some fields may be EMPTY.
 
 #############################################
-## EXTRACTION GUIDELINES (IMPORTANT)
+## CRITICAL: VISUAL INSPECTION REQUIRED
 #############################################
-These rules help you extract data ACCURATELY:
 
-1. EXTRACT VISIBLE DATA CONFIDENTLY:
-   - If you clearly see text in a field, EXTRACT IT
-   - Blood types (O, A, B, AB), dates, names, IDs - extract them if visible
-   - Medical info, registration numbers, official names - extract if present
+YOU MUST VISUALLY INSPECT EACH SECTION OF THE DOCUMENT BEFORE EXTRACTING.
 
-2. EMPTY FIELD HANDLING:
-   - If a field contains ONLY dots (......), dashes (------), or is completely blank with no handwriting/typing, return EMPTY STRING ""
-   - If a field has the LABEL but the VALUE AREA has no content, return ""
+FOR EACH FIELD, ASK YOURSELF:
+"Do I see actual TEXT (handwritten or typed) in this specific field's box/area?"
+- If YES → Extract that text
+- If NO (only dots, dashes, blank space, or empty) → Return ""
 
-3. PREVENT CROSS-CONTAMINATION:
-   - The child's name goes ONLY in 'nombres', 'primer_apellido', 'segundo_apellido'
-   - The child's name should NOT appear in witness, declarant, or official fields
-   - Each person's data belongs to their specific section
-   - "Datos del inscrito" = child's info
-   - "Datos de la madre" = mother's info
-   - "Datos del padre" = father's info
-   - "Datos primer testigo" = first witness (often empty - only fill if text present)
-   - "Datos segundo testigo" = second witness (often empty - only fill if text present)
+#############################################
+## HOW TO RECOGNIZE EMPTY FIELDS
+#############################################
 
-4. WHEN IN DOUBT:
-   - If you SEE text in a field, extract it
-   - Only return "" for fields that are visually EMPTY (no text at all)
+An empty field looks like:
+- A row of dots: ". . . . . . . . . . . ."
+- A row of dashes: "- - - - - - - - -"
+- Completely blank white/empty space
+- The label exists but NO data is written below/beside it
+
+An empty field does NOT look like:
+- Contains handwritten text
+- Contains typed/printed text
+- Contains a name, number, or any characters
+
+#############################################
+## WITNESS SECTIONS (VERY IMPORTANT)
+#############################################
+
+Look at "Datos primer testigo" and "Datos segundo testigo" sections.
+These sections are OFTEN EMPTY in Colombian birth certificates.
+
+CHECK VISUALLY:
+- Is there a NAME written in "Apellidos y nombres completos"? 
+- Is there an ID written in "Documento de identificación"?
+
+If these lines contain ONLY DOTS or are BLANK → return "" for testigo fields
+Do NOT copy the child's name or any other name to these fields.
+
+#############################################
+## FIELD-BY-FIELD EXTRACTION
+#############################################
+
+For EACH field you extract, you must have SEEN that text in the correct location.
+Do NOT infer, guess, or copy data from one section to another.
 
 #############################################
 ## MANDATORY FIELDS
