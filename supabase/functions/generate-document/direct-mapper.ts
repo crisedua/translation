@@ -140,14 +140,14 @@ export const DIRECT_MAPPINGS: Record<string, string[]> = {
     "Type of Prior Document or Witness Statement": ["prior_doc", "prior_document"],
 
     // === DOCUMENT METADATA ===
-    "tipo_documento": ["Document Type", "doc_type", "type"],
-    "Document Type": ["Document Type", "doc_type"],
+    "tipo_documento": ["Document Type", "doc_type", "type", "document_type_header"],
+    "Document Type": ["Document Type", "doc_type", "document_type_header"],
 
     // === ISSUE DATE (Expedition) ===
     "fecha_expedicion": ["issue_date", "date_issue", "Date of Issue"],
-    "issue_day": ["issue_day", "Day"],
-    "issue_month": ["issue_month", "Month"],
-    "issue_year": ["issue_year", "Year"],
+    "issue_day": ["issue_day", "Day", "Issue_Day", "expedition_day"],
+    "issue_month": ["issue_month", "Month", "Issue_Month", "expedition_month"],
+    "issue_year": ["issue_year", "Year", "Issue_Year", "expedition_year"],
     "Live Birth Certificate Number": ["live_birth_cert", "birth_cert_number"],
 
     // === OTHER ===

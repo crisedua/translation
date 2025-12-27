@@ -279,7 +279,21 @@ serve(async (req) => {
                 }
 
                 // PDF-lib is case sensitive normally, but let's try direct first
-                const field = form.getTextField(fieldName);
+                let fieldExists = fieldNames.includes(fieldName);
+                let targetName = fieldName;
+
+                if (!fieldExists) {
+                    // Try case-insensitive fallback
+                    const lowerTarget = fieldName.toLowerCase();
+                    const ciMatch = fieldNames.find(fn => fn.toLowerCase() === lowerTarget);
+                    if (ciMatch) {
+                        console.log(`[CASE-INSENSITIVE MATCH] Requested "${fieldName}", found "${ciMatch}"`);
+                        targetName = ciMatch;
+                        fieldExists = true;
+                    }
+                }
+
+                const field = fieldExists ? form.getTextField(targetName) : null;
                 if (field) {
                     // Sanitize the value before setting it
                     const sanitizedValue = sanitizeForPdf(value);
@@ -351,7 +365,8 @@ serve(async (req) => {
         }
 
         // Prioritize specific atomic fields over composite or fuzzy fields
-        const priorityFields = ['nuip', 'nuip_top', 'tipo_documento', 'Document Type', 'nombres', 'Apellidos', 'apellidos', 'names', 'surnames', 'pais_registro', 'Pais Registro', 'fecha_expedicion', 'issue_date', 'fecha_registro', 'reg_day', 'reg_month', 'reg_year', 'oficina', 'reg_office'];
+        // Prioritize specific atomic fields over composite or fuzzy fields
+        const priorityFields = ['nuip', 'nuip_top', 'tipo_documento', 'Document Type', 'nombres', 'Apellidos', 'apellidos', 'names', 'surnames', 'pais_registro', 'Pais Registro', 'fecha_expedicion', 'issue_date', 'issue_day', 'issue_month', 'issue_year', 'fecha_registro', 'reg_day', 'reg_month', 'reg_year', 'oficina', 'reg_office'];
 
         const sortedEntries = Object.entries(extractedData).sort(([keyA], [keyB]) => {
             const idxA = priorityFields.indexOf(keyA);
