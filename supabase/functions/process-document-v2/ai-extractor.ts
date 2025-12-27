@@ -65,7 +65,16 @@ Do NOT infer, guess, or copy data from one section to another.
 #############################################
 - margin_notes (Any text found in the "ESPACIO PARA NOTAS" section. Look specifically for "NUIP OTORGADO POR..." or "NUIP NUEVO..." and extract the full content verbatim including dates and numbers. This section is usually at the VERY BOTTOM of the document. INCLUDE HANDWRITTEN TEXT.)
 - authorizing_official (Name of the official found near "Nombre y firma del funcionario que autoriza" - ONLY if actually present, otherwise "")
-- acknowledgment_official (Name of the official found near "Nombre y firma del funcionario ante quien se hace el reconocimiento" - ONLY if "Reconocimiento paterno" section is filled, otherwise "")
+- acknowledgment_official (CRITICAL - READ CAREFULLY:
+  * This is the official who witnessed a PATERNAL RECOGNITION ("Reconocimiento paterno")
+  * LOCATION: This signature box is in the PATERNAL RECOGNITION section, NOT the main registration section
+  * VISUAL CHECK: Look for a section titled "RECONOCIMIENTO PATERNO" or "Paternal Recognition"
+  * If the "Reconocimiento paterno" section is EMPTY (blank, dots, no father signature) → return ""
+  * If you see "Reconocimiento paterno" section filled with father's signature → look for the official's name near "Nombre y firma del funcionario ante quien se hace el reconocimiento"
+  * DO NOT confuse this with "authorizing_official" (different person, different section)
+  * DO NOT extract from the main registration signature box
+  * IMPORTANT: In most birth certificates, this field is EMPTY because there is no paternal recognition
+  * If uncertain or no paternal recognition section → return "")
 - nuip_top (CRITICAL NUIP EXTRACTION - READ CAREFULLY:
   * LOCATION: Look at the VERY TOP-LEFT corner of the document
   * VISUAL CUE: There is a small box/rectangle with the label "NUIP" or "N.U.I.P."
