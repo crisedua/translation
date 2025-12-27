@@ -126,9 +126,13 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     - LOOK CAREFULLY FOR ANY HANDWRITTEN NOTES ON THE MARGINS OR BOTTOM.
     - Extract any text about "NUIP", "Corrections", "Replacements".
 
-    ## OFFICIALS
-    - funcionario_nombre (authorizing official's name - look near "Nombre y firma" or "Funcionario")
-    - funcionario_cargo (authorizing official's position)
+    ## OFFICIALS (CRITICAL - EXTRACT FULL NAMES)
+    - authorizing_official: Extract the COMPLETE FULL NAME (all surnames and first names) near "Nombre y firma del funcionario"
+    - funcionario_nombre: Same as authorizing_official - extract EVERY word of the name
+    - **IMPORTANT**: Names often have multiple parts like "MARIA CRISTINA LOPEZ HERNANDEZ" - extract ALL parts
+    - Do NOT truncate names. If you see "CARLOS ALBERTO GOMEZ RODRIGUEZ", extract the entire string
+    - Look for names near signatures, stamps, or "Funcionario" labels
+
 
     ## CRITICAL RULES
     1. Prioritize predefined fields.
@@ -155,7 +159,7 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
                         text: `Extract ALL data from this ${docName}. 
                         
 CRITICAL INSTRUCTIONS:
-    1. Look at the TOP-LEFT corner for NUIP box (if present) - extract that value.
+    1. Look at the TOP-LEFT corner for NUIP box (if present) - extract the COMPLETE value.
     2. For dates, extract BOTH combined (DD/MM/YYYY) AND separate components (year, month, day).
     3. EXTRACT EVERY visible field - if you see text, extract it!
     4. For fields with NO text (just dots or blank), return empty string "".
@@ -166,8 +170,12 @@ CRITICAL INSTRUCTIONS:
        - Declarant section - return "" ONLY if no name written.
        - Do NOT confuse empty fields with filled fields!
     8. REMEMBER: Your job is to EXTRACT what you see. If data is visible, EXTRACT IT.
+    9. **FULL NAMES**: For ALL person names (officials, parents, witnesses, declarants), extract the COMPLETE name. 
+       Include ALL surnames and first names. Do NOT truncate. Example: "CARLOS ALBERTO GOMEZ RODRIGUEZ" not just "RODRIGUEZ".
+    10. **NUIP**: Extract the COMPLETE NUIP including any letters at the start (e.g., "V2A0001156" not "2A0001156").
 
 Return JSON with all extracted fields.`
+
                     },
                     {
                         type: "image_url",
