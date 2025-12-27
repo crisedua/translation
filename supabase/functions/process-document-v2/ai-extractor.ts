@@ -15,30 +15,32 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
 Extract the following fields from the provided document image. Return ONLY valid JSON with the extracted values.
 
 #############################################
-## GLOBAL ANTI-HALLUCINATION RULES (CRITICAL)
+## EXTRACTION GUIDELINES (IMPORTANT)
 #############################################
-BEFORE extracting ANY field, apply these rules:
+These rules help you extract data ACCURATELY:
 
-1. EMPTY FIELD DETECTION:
-   - If a field contains ONLY dots (......), dashes (------), blank space, or no text, return EMPTY STRING ""
-   - If a field has a label but no written/typed value, return EMPTY STRING ""
-   - NEVER fill an empty field with data from another section of the document
+1. EXTRACT VISIBLE DATA CONFIDENTLY:
+   - If you clearly see text in a field, EXTRACT IT
+   - Blood types (O, A, B, AB), dates, names, IDs - extract them if visible
+   - Medical info, registration numbers, official names - extract if present
 
-2. FIELD ISOLATION:
-   - Each field in the document has its OWN designated area/box
-   - Data from one section MUST NOT be copied to another section
-   - Example: The child's name "KATERINE" belongs ONLY to "Datos del inscrito" section
-   - Example: Witness names are in "Datos primer testigo" and "Datos segundo testigo" sections ONLY
+2. EMPTY FIELD HANDLING:
+   - If a field contains ONLY dots (......), dashes (------), or is completely blank with no handwriting/typing, return EMPTY STRING ""
+   - If a field has the LABEL but the VALUE AREA has no content, return ""
 
-3. NO CROSS-CONTAMINATION:
-   - If "Datos primer testigo" is empty, testigo1_nombres = "" (NOT the child's name)
-   - If "Datos segundo testigo" is empty, testigo2_nombres = "" (NOT the mother's name)
-   - If "Datos del declarante" is empty, declarante_nombres = "" (NOT the father's name)
-   - If "Reconocimiento paterno" is empty, acknowledgment_official = ""
+3. PREVENT CROSS-CONTAMINATION:
+   - The child's name goes ONLY in 'nombres', 'primer_apellido', 'segundo_apellido'
+   - The child's name should NOT appear in witness, declarant, or official fields
+   - Each person's data belongs to their specific section
+   - "Datos del inscrito" = child's info
+   - "Datos de la madre" = mother's info
+   - "Datos del padre" = father's info
+   - "Datos primer testigo" = first witness (often empty - only fill if text present)
+   - "Datos segundo testigo" = second witness (often empty - only fill if text present)
 
-4. VERIFICATION BEFORE OUTPUT:
-   - For each extracted value, mentally verify: "Did I see this EXACT text in THIS SPECIFIC field's location?"
-   - If uncertain, return EMPTY STRING rather than guess
+4. WHEN IN DOUBT:
+   - If you SEE text in a field, extract it
+   - Only return "" for fields that are visually EMPTY (no text at all)
 
 #############################################
 ## MANDATORY FIELDS
@@ -259,25 +261,20 @@ DYNAMIC EXTRACTION (CRITICAL FOR NEW FORMS):
                         text: `Extract ALL data from this Colombian document. 
                         
 CRITICAL INSTRUCTIONS:
-1. Look at the TOP-LEFT corner for NUIP box - extract ONLY that value (e.g., "V2A0001156")
+1. Look at the TOP-LEFT corner for NUIP box - extract that value (e.g., "V2A0001156")
 2. For dates, extract BOTH combined (DD/MM/YYYY) AND separate components (year, month, day)
-3. Extract EVERY visible field, even if not in standard list
-4. DO NOT guess or hallucinate - only extract what you clearly see
-5. If uncertain, return empty string for that field
-6. For fecha_nacimiento, extract: combined string AND fecha_nacimiento_year, fecha_nacimiento_month, fecha_nacimiento_day
-7. For fecha_registro, extract: combined string AND fecha_registro_year, fecha_registro_month, fecha_registro_day
-8. DUPLICATE SURNAMES: If you see "HERRERA HERRERA", extract BOTH.
-9. NOTES: Look at the BOTTOM of the document for "ESPACIO PARA NOTAS". Extract handwritten or typed text there into 'margin_notes'.
-10. LUGAR DE NACIMIENTO (CRITICAL): Find "Lugar de nacimiento" row. Extract the COMPLETE text including the clinic/hospital name.
-    - CORRECT: "CLINICA MATERNO INFANTIL FARALLONES (COLOMBIA.VALLE.CALI)"
-    - WRONG: Just "COLOMBIA - VALLE - CALI" without the institution name
-    - The institution name (CLINICA, HOSPITAL, etc.) MUST be included in lugar_nacimiento field.
-11. EMPTY FIELDS (CRITICAL): 
-    - If witness sections (Datos primer/segundo testigo) are EMPTY (just dots or blank), return "" for testigo fields
-    - If declarant section (Datos del declarante) is EMPTY, return "" for declarante fields
-    - If paternal recognition section is EMPTY, return "" for acknowledgment_official
-    - NEVER copy a name from one section to fill an empty different section
-12. FIELD LOCATION VERIFICATION: Before outputting any value, verify it came from the CORRECT section of the document.
+3. EXTRACT EVERY visible field - if you see text, extract it!
+4. For fields with NO text (just dots or blank), return empty string ""
+5. For fecha_nacimiento, extract: combined string AND fecha_nacimiento_year, fecha_nacimiento_month, fecha_nacimiento_day
+6. For fecha_registro, extract: combined string AND fecha_registro_year, fecha_registro_month, fecha_registro_day
+7. DUPLICATE SURNAMES: If you see "HERRERA HERRERA", extract BOTH.
+8. NOTES: Look at the BOTTOM of the document for "ESPACIO PARA NOTAS". Extract handwritten or typed text there.
+9. LUGAR DE NACIMIENTO: Find "Lugar de nacimiento" row. Extract the COMPLETE text including clinic/hospital name.
+10. EMPTY SECTIONS ONLY:
+    - Witness sections (Datos primer/segundo testigo) - return "" ONLY if section has no names written
+    - Declarant section (Datos del declarante) - return "" ONLY if no name written
+    - Do NOT confuse empty fields with filled fields!
+11. REMEMBER: Your job is to EXTRACT what you see. If data is visible, EXTRACT IT.
 
 Return JSON with all extracted fields.`
                     },
