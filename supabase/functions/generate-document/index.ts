@@ -66,12 +66,19 @@ serve(async (req) => {
 
         // --- NEW: Process and standardize extracted data ---
         console.log("Raw extracted data keys:", Object.keys(extractedData).join(", "));
+
+        // DEBUG: Log NUIP values before processing
+        console.log(`[NUIP DEBUG] Before processing: nuip=${extractedData.nuip}, nuip_top=${extractedData.nuip_top}, NUIP=${extractedData.NUIP}`);
+
         try {
             extractedData = processExtractedData(extractedData);
         } catch (procError) {
             console.error("Error processing extracted data:", procError);
             throw new Error(`Failed to process extracted data: ${(procError as Error).message}`);
         }
+
+        // DEBUG: Log NUIP values after processing
+        console.log(`[NUIP DEBUG] After processing: nuip=${extractedData.nuip}, nuip_resolved=${extractedData.nuip_resolved}`);
 
 
         // POST-PROCESSING: Clear duplicate officials (robust - handles all field name variations)
