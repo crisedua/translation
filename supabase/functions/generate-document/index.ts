@@ -344,7 +344,7 @@ serve(async (req) => {
         }
 
         // Prioritize specific atomic fields over composite or fuzzy fields
-        const priorityFields = ['nuip', 'nuip_top', 'nombres', 'apellidos', 'names', 'surnames', 'pais_registro', 'Pais Registro', 'fecha_registro', 'reg_day', 'reg_month', 'reg_year', 'oficina', 'reg_office'];
+        const priorityFields = ['nuip', 'nuip_top', 'nombres', 'Apellidos', 'apellidos', 'names', 'surnames', 'pais_registro', 'Pais Registro', 'fecha_registro', 'reg_day', 'reg_month', 'reg_year', 'oficina', 'reg_office'];
 
         const sortedEntries = Object.entries(extractedData).sort(([keyA], [keyB]) => {
             const idxA = priorityFields.indexOf(keyA);
