@@ -608,6 +608,76 @@ serve(async (req) => {
             }
         }
 
+        // ============================================================================
+        // VERIFICATION STEP: Validate that extracted data made it into the PDF
+        // ============================================================================
+        console.log("\n[VERIFICATION REPORT] Validating generated document content...");
+        let matchCount = 0;
+        let mismatchCount = 0;
+        const contentProfile = template.content_profile || {};
+
+        for (const [key, value] of Object.entries(extractedData)) {
+            if (!value || String(value).trim() === '') continue; // Skip empty fields
+
+            const strValue = String(value).trim();
+            const sanitizedExpected = sanitizeForPdf(strValue); // What we expect to be in the PDF
+
+            // Determine where this field should have gone
+            // 1. Check direct mappings
+            const directTargets = getDirectMapping(key);
+            // 2. Check template mappings
+            let templateTargets: string[] = [];
+            const normalizedKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (contentProfile.pdf_mappings && contentProfile.pdf_mappings[normalizedKey]) {
+                templateTargets = contentProfile.pdf_mappings[normalizedKey];
+            }
+            // 3. Exact match
+            const exactTarget = fieldNames.includes(key) ? key : null;
+
+            const allPotentialTargets = [...new Set([...directTargets, ...templateTargets, ...(exactTarget ? [exactTarget] : [])])];
+
+            let foundInPdf = false;
+            let actualValueInPdf = "";
+            let matchedField = "";
+
+            // Check if any of the target fields contains our expected value
+            for (const targetField of allPotentialTargets) {
+                try {
+                    const pdfField = form.getTextField(targetField);
+                    if (pdfField) {
+                        const val = pdfField.getText() || "";
+                        if (val.includes(sanitizedExpected) || sanitizedExpected.includes(val)) {
+                            foundInPdf = true;
+                            actualValueInPdf = val;
+                            matchedField = targetField;
+                            break;
+                        } else if (filledPdfFields.has(targetField)) {
+                            // It was filled, but maybe value doesn't match exactly?
+                            // Keep looking, but remember this potential candidate
+                            actualValueInPdf = val;
+                        }
+                    }
+                } catch (e) {
+                    // Ignore error if field type mismatch or missing
+                }
+            }
+
+            if (foundInPdf) {
+                matchCount++;
+                console.log(`✅ MATCH: "${key}" (${strValue}) found in PDF field "${matchedField}"`);
+            } else {
+                mismatchCount++;
+                if (allPotentialTargets.length > 0) {
+                    console.warn(`❌ MISMATCH: "${key}" (${strValue}) NOT found in targets [${allPotentialTargets.join(', ')}]. PDF has: "${actualValueInPdf}"`);
+                } else {
+                    console.warn(`⚠️ UNMAPPED: "${key}" (${strValue}) has NO mapped targets!`);
+                }
+            }
+        }
+
+        console.log(`[VERIFICATION SUMMARY] Matches: ${matchCount}, Mismatches/Unmapped: ${mismatchCount}`);
+        console.log("===========================================================================\n");
+
         console.log(`Filled ${filledCount} fields`);
 
         // Flatten the form (optional, makes it uneditable)
