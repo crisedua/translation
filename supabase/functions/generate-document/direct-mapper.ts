@@ -55,9 +55,9 @@ export const DIRECT_MAPPINGS: Record<string, string[]> = {
     "Time": ["time", "birth_time"],
 
     // === BIRTH LOCATION ===
-    "pais_nacimiento": ["country_birth", "country", "pais"],
-    "departamento_nacimiento": ["dept_birth", "department", "departamento"],
-    "municipio_nacimiento": ["muni_birth", "municipality", "municipio"],
+    "pais_nacimiento": ["country_birth", "birth_country"],
+    "departamento_nacimiento": ["dept_birth", "birth_department"],
+    "municipio_nacimiento": ["muni_birth", "birth_municipality"],
     "lugar_nacimiento": ["township_birth", "birth_place", "place", "birth_country_dept_munic", "Place of Birth"],
     "birth_location_combined": ["birth_country_dept_munic", "place_of_birth", "birth_place"],
     "Place of Birth": ["birth_country_dept_munic", "place_of_birth", "birth_place"],
@@ -111,8 +111,8 @@ export const DIRECT_MAPPINGS: Record<string, string[]> = {
     "Registry Office": ["reg_office", "office"],
     "pais_registro": ["country_office", "country", "pais", "Country"],
     "Pais Registro": ["country_office", "country", "pais", "Country"],
-    "departamento_registro": ["dept_office", "country_dept_munic", "Department"],
-    "municipio_registro": ["muni_office", "country_dept_munic", "Municipality"],
+    "departamento_registro": ["dept_office", "Department"],
+    "municipio_registro": ["muni_office", "Municipality"],
     "fecha_registro": ["date_registration", "date_registered"],
     "Date Registered": ["date_registration", "reg_date"],
     "reg_day": ["reg_day"],
