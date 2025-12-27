@@ -70,6 +70,19 @@ serve(async (req) => {
             console.error("Error processing extracted data:", procError);
             throw new Error(`Failed to process extracted data: ${(procError as Error).message}`);
         }
+
+        // POST-PROCESSING: Clear duplicate officials
+        // If acknowledgment_official equals authorizing_official, clear it (likely a hallucination/duplication)
+        if (extractedData.acknowledgment_official && extractedData.authorizing_official) {
+            const authOff = String(extractedData.authorizing_official).trim().toUpperCase();
+            const ackOff = String(extractedData.acknowledgment_official).trim().toUpperCase();
+
+            if (authOff === ackOff && authOff.length > 0) {
+                console.log(`[CLEANUP] Clearing duplicate acknowledgment_official: "${extractedData.acknowledgment_official}"`);
+                extractedData.acknowledgment_official = '';
+            }
+        }
+
         console.log("Processed extracted data keys:", Object.keys(extractedData).join(", "));
         // ---------------------------------------------------
 
