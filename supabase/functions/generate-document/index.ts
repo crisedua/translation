@@ -644,7 +644,12 @@ serve(async (req) => {
             if (!value || String(value).trim() === '') continue; // Skip empty fields
 
             // SKIP VALIDATION FOR VIRTUAL/HELPER FIELDS
-            if (key.endsWith('_combined') || key.endsWith('_resolved') || key.endsWith('_top') || key.endsWith('_full_name') || key === 'authorizing_official') {
+            if (key.endsWith('_combined') ||
+                key.endsWith('_resolved') ||
+                key.endsWith('_top') ||
+                key.endsWith('_full_name') ||
+                key === 'authorizing_official' ||
+                ['birth_day', 'birth_month', 'birth_year', 'issue_day', 'issue_month', 'issue_year'].includes(key)) {
                 console.log(`[QA SKIP] Skipping virtual field: ${key}`);
                 continue;
             }
