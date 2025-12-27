@@ -501,6 +501,8 @@ serve(async (req) => {
                     "Mother's Nationality": ["mother_nationality"],
                     "madre_nombres": ["mother_surnames_names"],
                     "padre_nombres": ["father_surnames_names"],
+                    "padre_tipo_documento": ["father_id_type", "father_doc_type", "father_document_type", "Type of Document (Father)", "Father Document Type"],
+                    "madre_tipo_documento": ["mother_id_type", "mother_doc_type", "mother_document_type", "Type of Document (Mother)", "Mother Document Type"],
 
                     // Office
                     "Notary Number": ["notary_number"],
