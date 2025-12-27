@@ -15,6 +15,11 @@ const TemplateAdmin = () => {
     const [templates, setTemplates] = useState<Template[]>([]);
     const [categories, setCategories] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [uploading, setUploading] = useState(false);
+
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [templateName, setTemplateName] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('');
 
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
@@ -45,6 +50,64 @@ const TemplateAdmin = () => {
 
         if (!error && data) {
             setCategories(data);
+        }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setSelectedFile(e.target.files[0]);
+        }
+    };
+
+    const handleUpload = async () => {
+        if (!selectedFile || !templateName || !selectedCategory) {
+            alert('Please fill all fields');
+            return;
+        }
+
+        setUploading(true);
+
+        try {
+            const fileExt = selectedFile.name.split('.').pop();
+            const fileName = `${Date.now()}.${fileExt}`;
+            const filePath = `templates/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('documents')
+                .upload(filePath, selectedFile);
+
+            if (uploadError) throw uploadError;
+
+            const { data: urlData, error: urlError } = await supabase.storage
+                .from('documents')
+                .createSignedUrl(filePath, 3600);
+
+            if (urlError) throw urlError;
+
+            const templateUrl = urlData.signedUrl;
+
+            const { error: functionError } = await supabase.functions
+                .invoke('analyze-template', {
+                    body: {
+                        templateUrl,
+                        templateName,
+                        categoryId: selectedCategory
+                    }
+                });
+
+            if (functionError) throw functionError;
+
+            alert('Template uploaded and analyzed successfully!');
+            setSelectedFile(null);
+            setTemplateName('');
+            setSelectedCategory('');
+            fetchTemplates();
+
+        } catch (error: any) {
+            console.error('Upload error:', error);
+            alert(`Upload failed: ${error.message}`);
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -126,6 +189,59 @@ const TemplateAdmin = () => {
     return (
         <div className="p-8 max-w-6xl mx-auto">
             <h1 className="text-3xl font-bold mb-8">Template Management</h1>
+
+            {/* Upload Section */}
+            <div className="bg-white p-6 rounded-lg shadow mb-8">
+                <h2 className="text-xl font-semibold mb-4">Upload New Template</h2>
+
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium mb-2">Template Name</label>
+                        <input
+                            type="text"
+                            value={templateName}
+                            onChange={(e) => setTemplateName(e.target.value)}
+                            className="w-full p-2 border rounded"
+                            placeholder="e.g., Birth Certificate - Old Format"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium mb-2">Category</label>
+                        <select
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            className="w-full p-2 border rounded"
+                        >
+                            <option value="">Select category...</option>
+                            {categories.map(cat => (
+                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium mb-2">PDF Template</label>
+                        <input
+                            type="file"
+                            accept=".pdf"
+                            onChange={handleFileChange}
+                            className="w-full p-2 border rounded"
+                        />
+                        {selectedFile && (
+                            <p className="text-sm text-gray-600 mt-1">{selectedFile.name}</p>
+                        )}
+                    </div>
+
+                    <button
+                        onClick={handleUpload}
+                        disabled={uploading || !selectedFile || !templateName || !selectedCategory}
+                        className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
+                    >
+                        {uploading ? 'Uploading & Analyzing...' : 'Upload Template'}
+                    </button>
+                </div>
+            </div>
 
             {/* Templates List */}
             <div className="bg-white rounded-lg shadow">
