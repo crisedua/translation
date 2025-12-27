@@ -369,50 +369,62 @@ ${text.substring(0, 15000)}` // Increased limit for better context
             }
 
             // =====================================================
-            // POST-PROCESSING: CROSS-CONTAMINATION DETECTION
+            // ROBUST POST-PROCESSING: SAFETY NET
             // =====================================================
-            // This is a safety net to catch when the AI incorrectly 
-            // puts the child's name in witness/declarant fields
 
-            const childName = extractedData.nombres?.trim()?.toUpperCase() || '';
-            const childFirstSurname = extractedData.primer_apellido?.trim()?.toUpperCase() || '';
-            const childSecondSurname = extractedData.segundo_apellido?.trim()?.toUpperCase() || '';
+            // Helper to normalize strings for comparison (remove spaces/punctuation)
+            const normalize = (str: any) => str ? String(str).toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
 
-            // Fields that should NEVER contain the child's name
+            const childName = normalize(extractedData.nombres);
+            const childSurname = normalize(extractedData.primer_apellido);
+
+            // 1. CLEAR WITNESS/DECLARANT/OFFICIAL FIELDS IF THEY CONTAIN CHILD INFO
+            // These fields should NEVER contain the child's name
             const fieldsToCheck = [
-                'testigo1_nombres',
-                'testigo2_nombres',
-                'testigo1_identificacion',
-                'testigo2_identificacion'
+                'testigo1_nombres', 'testigo2_nombres',
+                'testigo1_identificacion', 'testigo2_identificacion',
+                'declarante_nombres', 'acknowledgment_official'
             ];
 
             for (const field of fieldsToCheck) {
-                const fieldValue = extractedData[field]?.trim()?.toUpperCase() || '';
+                const val = normalize(extractedData[field]);
+                const rawVal = extractedData[field]; // Keep raw for logging
 
-                // If the field value matches the child's given name, it's cross-contamination
-                if (childName && fieldValue === childName) {
-                    console.log(`[POST-PROCESS] CLEARED ${field}: contained child's name "${childName}"`);
+                if (!val) continue;
+
+                // A. EXACT MATCH with Child Name
+                if (childName && val === childName) {
+                    console.log(`[SAFETY] Cleared ${field}: "${rawVal}" matched child name`);
                     extractedData[field] = '';
+                    continue;
                 }
 
-                // If the field value contains ONLY the child's surname(s), it's likely wrong
-                if (childFirstSurname && fieldValue === childFirstSurname) {
-                    console.log(`[POST-PROCESS] CLEARED ${field}: contained only child's first surname`);
+                // B. EXACT MATCH with Child First Surname (only if surname > 2 chars)
+                // Prevents witnesses being just "QUEVEDO"
+                if (childSurname && childSurname.length > 2 && val === childSurname) {
+                    console.log(`[SAFETY] Cleared ${field}: "${rawVal}" matched child surname`);
                     extractedData[field] = '';
+                    continue;
                 }
             }
 
-            // Additional check: If witness names are identical to each other AND match child's name
-            const witness1 = extractedData.testigo1_nombres?.trim()?.toUpperCase() || '';
-            const witness2 = extractedData.testigo2_nombres?.trim()?.toUpperCase() || '';
+            // 2. CLEAR DUPLICATE OFFICIALS (Hallucination of copying auth official to ack official)
+            const authOfficial = normalize(extractedData.authorizing_official);
+            const ackOfficial = normalize(extractedData.acknowledgment_official);
 
-            if (witness1 && witness2 && witness1 === witness2) {
-                // Both witnesses have identical names - very suspicious
-                if (witness1 === childName || witness1 === childFirstSurname) {
-                    console.log(`[POST-PROCESS] CLEARED both witness fields: identical and match child's info`);
-                    extractedData.testigo1_nombres = '';
-                    extractedData.testigo2_nombres = '';
-                }
+            if (authOfficial && ackOfficial && authOfficial === ackOfficial) {
+                console.log(`[SAFETY] Cleared acknowledgment_official: duplicate of authorizing_official`);
+                extractedData.acknowledgment_official = '';
+            }
+
+            // 3. CLEAR IDENTICAL WITNESSES
+            const wit1 = normalize(extractedData.testigo1_nombres);
+            const wit2 = normalize(extractedData.testigo2_nombres);
+            if (wit1 && wit2 && wit1 === wit2) {
+                // Identical witnesses usually means AI hallucinated the same name twice
+                // Clear the second one at least
+                console.log(`[SAFETY] Cleared testigo2_nombres: duplicate of testigo1`);
+                extractedData.testigo2_nombres = '';
             }
 
             console.log('[POST-PROCESS] Cross-contamination check complete');
