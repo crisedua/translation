@@ -334,42 +334,21 @@ serve(async (req) => {
             normalizedMappings[normalizeKey(k)] = v;
         }
 
-        // === SPECIAL HANDLING: Ensure place of birth gets filled ===
-        // This is a critical field that often fails due to mapping issues
-        const placeOfBirthValue = extractedData.birth_location_combined ||
-            extractedData['Place of Birth'] ||
-            extractedData.lugar_nacimiento ||
-            extractedData['Lugar Nacimiento'] ||
-            extractedData.birth_place;
 
-        if (placeOfBirthValue) {
-            console.log(`[SPECIAL] Trying to fill Place of Birth with: ${placeOfBirthValue}`);
 
-            // Try every PDF field name directly
-            for (const pdfField of fieldNames) {
-                const fieldLower = pdfField.toLowerCase();
-                // Check if this field is related to birth place
-                if (fieldLower.includes('place') ||
-                    fieldLower.includes('birth') ||
-                    fieldLower.includes('country') ||
-                    fieldLower.includes('nacimiento') ||
-                    fieldLower.includes('lugar')) {
+        // Prioritize specific atomic fields over composite or fuzzy fields
+        const priorityFields = ['nuip', 'nuip_top', 'nombres', 'apellidos', 'names', 'surnames', 'pais_registro', 'Pais Registro', 'fecha_registro', 'reg_day', 'reg_month', 'reg_year', 'oficina', 'reg_office'];
 
-                    // Exclude fields that are for registry location, not birth location
-                    if (fieldLower.includes('registro') || fieldLower.includes('registry')) continue;
+        const sortedEntries = Object.entries(extractedData).sort(([keyA], [keyB]) => {
+            const idxA = priorityFields.indexOf(keyA);
+            const idxB = priorityFields.indexOf(keyB);
+            if (idxA !== -1 && idxB !== -1) return idxA - idxB; // Both in list, sort by index
+            if (idxA !== -1) return -1; // A is in list, A comes first
+            if (idxB !== -1) return 1;  // B is in list, B comes first
+            return 0; // Neither in list, keep order
+        });
 
-                    console.log(`[SPECIAL] Attempting field: ${pdfField}`);
-                    if (setField(pdfField, String(placeOfBirthValue))) {
-                        console.log(`[SPECIAL] SUCCESS: Filled "${pdfField}" with place of birth`);
-                        filledCount++;
-                        break; // Stop after first successful fill
-                    }
-                }
-            }
-        }
-        // === END SPECIAL HANDLING ===
-
-        for (const [key, value] of Object.entries(extractedData)) {
+        for (const [key, value] of sortedEntries) {
             if (value === null || value === undefined || value === '') continue;
 
             const strValue = String(value);
@@ -607,6 +586,43 @@ serve(async (req) => {
                 }
             }
         }
+
+        // === SPECIAL HANDLING: Ensure place of birth gets filled ===
+        // Moved AFTER main loop so it acts as a specific fallback, not an override
+        // This prevents it from clobbering generic fields like "Country" which should be filled by pais_registro
+        const placeOfBirthValue = extractedData.birth_location_combined ||
+            extractedData['Place of Birth'] ||
+            extractedData.lugar_nacimiento ||
+            extractedData['Lugar Nacimiento'] ||
+            extractedData.birth_place;
+
+        if (placeOfBirthValue) {
+            console.log(`[SPECIAL] Trying to fill Place of Birth (Fallback) with: ${placeOfBirthValue}`);
+
+            // Try every PDF field name directly
+            for (const pdfField of fieldNames) {
+                const fieldLower = pdfField.toLowerCase();
+                // Check if this field is related to birth place
+                if (fieldLower.includes('place') ||
+                    fieldLower.includes('birth') ||
+                    fieldLower.includes('country') ||
+                    fieldLower.includes('nacimiento') ||
+                    fieldLower.includes('lugar')) {
+
+                    // Exclude fields that are for registry location, not birth location
+                    if (fieldLower.includes('registro') || fieldLower.includes('registry')) continue;
+
+                    // Since this runs late, overwrite protection will save us if "Country" is already set by pais_registro
+                    if (setField(pdfField, String(placeOfBirthValue))) {
+                        console.log(`[SPECIAL] SUCCESS: Filled "${pdfField}" with place of birth`);
+                        filledCount++;
+                        break; // Stop after first successful fill (wait, should we break? maybe filling multiple is okay if not set?)
+                        // Original logic had break, keeping it for safety
+                    }
+                }
+            }
+        }
+        // === END SPECIAL HANDLING ===
 
         // ============================================================================
         // VERIFICATION STEP: Validate that extracted data made it into the PDF
