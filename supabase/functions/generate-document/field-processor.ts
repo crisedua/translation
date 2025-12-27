@@ -333,10 +333,14 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
     for (const [extractedField, patterns] of Object.entries(fieldPatterns)) {
         const matchedFields: Set<string> = new Set();
 
-        // Define exclusions for fields that should never match witness/declarant fields
-        const isChildNameField = ['nombres', 'primer_apellido', 'segundo_apellido',
-            'apellidos', 'reg_names', 'given_names'].includes(extractedField);
-        const exclusions = isChildNameField ? ['witness', 'testigo', 'declarant', 'declarante'] : [];
+        // Define exclusions for fields that should incorrect matches
+        let exclusions: string[] = [];
+
+        if (['nombres', 'primer_apellido', 'segundo_apellido', 'apellidos', 'reg_names', 'given_names'].includes(extractedField)) {
+            exclusions = ['witness', 'testigo', 'declarant', 'declarante'];
+        } else if (['authorizing_official', 'funcionario_nombre', 'funcionario_autoriza'].includes(extractedField)) {
+            exclusions = ['acknowledgment', 'reconocimiento', 'ack_'];
+        }
 
         for (const pattern of patterns) {
             const foundList = findFields(pattern, exclusions);
