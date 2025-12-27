@@ -630,6 +630,7 @@ serve(async (req) => {
         console.log("\n[VERIFICATION REPORT] Validating generated document content...");
         let matchCount = 0;
         let mismatchCount = 0;
+        const verificationDetails: any[] = [];
         const contentProfile = template.content_profile || {};
 
         for (const [key, value] of Object.entries(extractedData)) {
@@ -680,9 +681,11 @@ serve(async (req) => {
 
             if (foundInPdf) {
                 matchCount++;
+                verificationDetails.push({ key, status: "MATCH", expected: strValue, field: matchedField });
                 console.log(`✅ MATCH: "${key}" (${strValue}) found in PDF field "${matchedField}"`);
             } else {
                 mismatchCount++;
+                verificationDetails.push({ key, status: "MISMATCH", expected: strValue, targets: allPotentialTargets, actual: actualValueInPdf });
                 if (allPotentialTargets.length > 0) {
                     console.warn(`❌ MISMATCH: "${key}" (${strValue}) NOT found in targets [${allPotentialTargets.join(', ')}]. PDF has: "${actualValueInPdf}"`);
                 } else {
@@ -729,12 +732,26 @@ serve(async (req) => {
         const generatedUrl = urlData.signedUrl;
 
         // 6. Update Request
+        const isQaFailed = mismatchCount > 0;
+
+        const qaErrors = verificationDetails
+            .filter(d => d.status === 'MISMATCH')
+            .map(d => `[GEN-QA] Field '${d.key}' mismatch: Expected '${d.expected.substring(0, 50)}...', Found '${d.actual.substring(0, 50)}...'`);
+
+        const updatePayload: any = {
+            generated_document_url: generatedUrl,
+            updated_at: new Date().toISOString()
+        };
+
+        if (isQaFailed) {
+            console.warn("Generation QA FAILED. Updating status to needs_correction.");
+            updatePayload.status = 'needs_correction';
+            updatePayload.validation_errors = qaErrors;
+        }
+
         const { error: updateError } = await supabase
             .from('document_requests')
-            .update({
-                generated_document_url: generatedUrl,
-                updated_at: new Date().toISOString()
-            })
+            .update(updatePayload)
             .eq('id', requestId);
 
         if (updateError) throw new Error(`Failed to update request: ${updateError.message}`);
@@ -744,7 +761,12 @@ serve(async (req) => {
                 success: true,
                 requestId: requestId,
                 generatedUrl: generatedUrl,
-                filledFields: filledCount
+                filledFields: filledCount,
+                verification: {
+                    matches: matchCount,
+                    mismatches: mismatchCount,
+                    details: verificationDetails
+                }
             }),
             {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
