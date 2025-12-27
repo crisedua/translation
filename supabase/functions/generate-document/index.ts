@@ -80,6 +80,14 @@ serve(async (req) => {
         // DEBUG: Log NUIP values after processing
         console.log(`[NUIP DEBUG] After processing: nuip=${extractedData.nuip}, nuip_resolved=${extractedData.nuip_resolved}`);
 
+        // DEBUG: Log ALL extracted field names and their values (first 50 chars)
+        console.log("[EXTRACTED DATA DUMP]:");
+        for (const [key, value] of Object.entries(extractedData)) {
+            const strVal = String(value || '').substring(0, 50);
+            console.log(`  "${key}": "${strVal}"${strVal.length >= 50 ? '...' : ''}`);
+        }
+
+
 
         // POST-PROCESSING: Clear duplicate officials (robust - handles all field name variations)
         // If acknowledgment_official equals authorizing_official, clear it (likely a hallucination/duplication)

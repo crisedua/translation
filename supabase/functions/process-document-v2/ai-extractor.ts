@@ -76,12 +76,40 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     ${strictRules}
 
     #############################################
+    ## CRITICAL: DOCUMENT SECTION IDENTIFICATION
+    #############################################
+    Colombian birth certificates have DISTINCT SECTIONS. You MUST identify each section correctly:
+    
+    **SECTION 1: REGISTRANT ("Datos del inscrito" / "Registrant's Information")**
+    - Located near the TOP of the document
+    - Contains: "Nombres" (Given Names), "Apellidos" (Surnames) of the CHILD
+    - These are SHORT names like "MICAELA", "JUAN CARLOS", "MARIA"
+    - The surnames are like "TOBAR BOTERO", "GOMEZ HERNANDEZ"
+    - DO NOT put the official's name here!
+    
+    **SECTION 2: PARENTS ("Datos del Padre" / "Datos de la Madre")**
+    - Contains: Mother's names/surnames AND Father's names/surnames
+    - Each parent has their OWN Nombres + Apellidos + ID + Nationality
+    - Mother and Father are in SEPARATE sub-sections
+    
+    **SECTION 3: OFFICIALS (At the BOTTOM of the document)**
+    - Contains: "Nombre y firma del funcionario" (Official's Name and Signature)
+    - This is a LONG name like "MARIA CRISTINA MANZANO LOPEZ"
+    - This name goes in 'authorizing_official' or 'funcionario_nombre'
+    - This is NOT the registrant! DO NOT confuse with registrant's names!
+    
+    **CRITICAL RULE**: The official's signature at the bottom is NOT the registrant. 
+    If you see a long name at the bottom near "Funcionario" → that's the OFFICIAL.
+    The registrant's name is in the "Datos del inscrito" section at the TOP.
+
+    #############################################
     ## FIELD VISUAL GUIDES (GENERIC)
     #############################################
     ${hasNuip ? '- **NUIP / NIUP:** Look for a box labeled "NUIP", "N.U.I.P". Alphanumeric (e.g. "1234567890", "V2A...").' : ''}
     - **Registrant's Name:** Look for "Datos del Inscrito", "Datos del Contrayente" (Marriage), or "Datos del Fallecido" (Death).
     - **Parents:** Look for "Datos del Padre" and "Datos de la Madre".
-    - **Officials:** 'authorizing_official' (Notary/Registrar).
+    - **Officials:** 'authorizing_official' (Notary/Registrar) - at the BOTTOM, near signatures.
+
 
     #############################################
     ## MANDATORY FIELDS (If present in template)
