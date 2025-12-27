@@ -563,20 +563,36 @@ serve(async (req) => {
             if (isDateKey) {
                 const { day, month, year } = parseDate(strValue);
                 if (day && month && year) {
-                    // Try standard names
-                    setField('day', day);
-                    setField('month', month);
-                    setField('year', year);
+                    const lowerKey = key.toLowerCase();
 
-                    // Try birth_ prefixed
-                    setField('birth_day', day);
-                    setField('birth_month', month);
-                    setField('birth_year', year);
+                    // CASE 1: Birth Date (nacimiento, dob)
+                    if (lowerKey.includes('nacimiento') || lowerKey.includes('dob') || lowerKey.includes('birth')) {
+                        setField('birth_day', day);
+                        setField('birth_month', month);
+                        setField('birth_year', year);
+                        // Do NOT fill generic 'day' etc.
+                    }
 
-                    // Try reg_ prefixed
-                    setField('reg_day', day);
-                    setField('reg_month', month);
-                    setField('reg_year', year);
+                    // CASE 2: Registration Date (registro, reg)
+                    else if (lowerKey.includes('registro') || lowerKey.includes('reg_')) {
+                        setField('reg_day', day);
+                        setField('reg_month', month);
+                        setField('reg_year', year);
+                    }
+
+                    // CASE 3: Issue/Expedition Date (expedicion, issue)
+                    // These often correspond to the generic "Day", "Month", "Year" fields on the form footer
+                    else if (lowerKey.includes('expedicion') || lowerKey.includes('issue')) {
+                        // Fill specific maps
+                        setField('issue_day', day);
+                        setField('issue_month', month);
+                        setField('issue_year', year);
+
+                        // Fill generic maps (FALLBACK for Issue Date)
+                        setField('day', day);
+                        setField('month', month);
+                        setField('year', year);
+                    }
                 }
             }
 
