@@ -637,7 +637,7 @@ serve(async (req) => {
             if (!value || String(value).trim() === '') continue; // Skip empty fields
 
             // SKIP VALIDATION FOR VIRTUAL/HELPER FIELDS
-            if (key.endsWith('_combined') || key.endsWith('_resolved') || key.endsWith('_top')) {
+            if (key.endsWith('_combined') || key.endsWith('_resolved') || key.endsWith('_top') || key.endsWith('_full_name') || key === 'authorizing_official') {
                 console.log(`[QA SKIP] Skipping virtual field: ${key}`);
                 continue;
             }
