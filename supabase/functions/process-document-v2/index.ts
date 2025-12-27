@@ -126,13 +126,27 @@ serve(async (req) => {
         console.log(`OCR text length: ${extractedText.length}, Vision URI: ${visionDataUri ? 'SET' : 'NOT SET'}`);
 
         // 5. Fetch templates
-        console.log("Fetching templates...");
+        console.log(`Fetching templates for categoryId: ${categoryId || 'ALL'}...`);
+
+        let templates: any[] | null = null;
         let query = supabase.from('document_templates').select('*');
+
         if (categoryId && categoryId.length > 10) {
             query = query.eq('category_id', categoryId);
         }
-        const { data: templates, error: templatesError } = await query;
-        console.log(`Templates fetched: ${templates?.length || 0}, error: ${templatesError?.message || 'none'}`);
+
+        const { data, error } = await query;
+        if (error) {
+            console.error("Error fetching templates:", error);
+        }
+
+        templates = data || [];
+        console.log(`Templates fetched: ${templates.length}`);
+
+        if (!templates || templates.length === 0) {
+            console.error(`CRITICAL: No templates found for category ${categoryId || 'ALL'}!`);
+            throw new Error(`No templates configured for this category (${categoryId}). Please ask an admin to create a template.`);
+        }
 
         // 6. Match template
         console.log(`Matching template with AI (Vision Mode: ${visionDataUri ? 'ENABLED' : 'DISABLED'})...`);
@@ -165,8 +179,8 @@ serve(async (req) => {
         console.log(`Extracted factor_rh: ${extractedData?.factor_rh || 'NOT FOUND'}`);
 
         // 8. Validate & Save
-        let validationResult = validateData(extractedData);
-        console.log(`Heuristic Validation: ${validationResult.valid ? 'PASSED' : 'FAILED'}`);
+        let validationResult = validateData(extractedData, matchedTemplate);
+        console.log(`Validator Result: ${validationResult.valid ? 'PASSED' : 'FAILED'}`);
 
         // 9. Semantic QA (Only if Heuristic passed)
         if (validationResult.valid) {

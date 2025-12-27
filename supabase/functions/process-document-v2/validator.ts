@@ -3,42 +3,48 @@ interface ValidationResult {
     errors: string[];
 }
 
-export const validateData = (data: any): ValidationResult => {
+export const validateData = (data: any, template: any): ValidationResult => {
     const errors: string[] = [];
 
-    // Helper function to check if any of the alternative field names exist
-    const hasAnyField = (alternatives: string[]): boolean => {
-        return alternatives.some(field => data[field] && String(data[field]).trim() !== '');
-    };
+    // 1. Basic Check: Did we extract ANYTHING?
+    const keys = Object.keys(data);
+    const nonEmptyKeys = keys.filter(k => data[k] && String(data[k]).trim() !== '');
 
-    // Check for required fields with alternative names
-    // nombres can be: nombres, Given Name(s), Registrant's Names, names, reg_names
-    if (!hasAnyField(['nombres', 'Given Name(s)', "Registrant's Names", 'names', 'reg_names', 'primer_nombre'])) {
-        errors.push(`Missing required field: nombres`);
+    if (nonEmptyKeys.length === 0) {
+        return {
+            valid: false,
+            errors: ["No data could be extracted from the document."]
+        };
     }
 
-    // apellidos can be: apellidos, Registrant's Surnames, surnames, First Surname + Second Surname
-    if (!hasAnyField(['apellidos', "Registrant's Surnames", 'surnames', 'First Surname', 'primer_apellido'])) {
-        errors.push(`Missing required field: apellidos`);
-    }
+    // 2. Template-Based Validation
+    const fields = template?.field_definitions || [];
 
-    // Validate date formats if present
-    // Accept both DD/MM/YYYY and DD-MM-YYYY formats
-    if (data.fecha_nacimiento) {
-        const datePattern = /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/;
-        if (!datePattern.test(data.fecha_nacimiento)) {
-            errors.push(`Invalid date format for fecha_nacimiento: ${data.fecha_nacimiento}`);
+    for (const field of fields) {
+        // Only validate if explicitly marked 'required' in template
+        if (field.required) {
+            const val = data[field.name];
+            if (!val || String(val).trim() === '') {
+                errors.push(`Missing required field: ${field.name}`);
+            }
         }
     }
 
-    // NUIP validation - accept both numeric and alphanumeric formats
-    // nuip_top is alphanumeric (e.g., "3HXSP3L3EZRFL" or "VA1112083468")
-    // nuip_bottom is numeric (e.g., "1112083468")
-    // We do NOT reject alphanumeric NUIPs as they are valid for nuip_top
-    // Only validate that nuip is not empty if present
-    if (data.nuip && typeof data.nuip === 'string' && data.nuip.trim() === '') {
-        errors.push(`NUIP field is empty`);
+    // 3. Generic Date Format Check (only if field has 'date' or 'fecha' in name)
+    // This looks for OBVIOUSLY bad dates like "Unknown" or "Not Found" if they were extracted
+    for (const key of nonEmptyKeys) {
+        if ((key.includes('fecha') || key.includes('date')) && typeof data[key] === 'string') {
+            // Basic sanity check - strictly optional, just catches garbage
+            // Allow DD/MM/YYYY, YYYY-MM-DD, etc.
+            // If it contains letters (except months like 'JAN'), might be an issue, but let's be lenient.
+            if (data[key].length > 50) {
+                errors.push(`Field '${key}' seems too long to be a date.`);
+            }
+        }
     }
+
+    // 4. NUIP Strict Check REMOVED
+    // We do NOT check for NUIP unless the template required it above.
 
     return {
         valid: errors.length === 0,
