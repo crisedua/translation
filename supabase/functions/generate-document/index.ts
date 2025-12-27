@@ -674,6 +674,23 @@ serve(async (req) => {
         }
         // === END SPECIAL HANDLING ===
 
+        // === SPECIAL HANDLING: Document Type ===
+        const docTypeValue = extractedData.tipo_documento || extractedData['Document Type'];
+        if (docTypeValue) {
+            console.log(`[SPECIAL] Trying to fill Document Type (Fallback) with: ${docTypeValue}`);
+            for (const pdfField of fieldNames) {
+                const fieldLower = pdfField.toLowerCase();
+                if (fieldLower.includes('document') && fieldLower.includes('type')) {
+                    if (setField(pdfField, String(docTypeValue))) {
+                        console.log(`[SPECIAL] SUCCESS: Filled "${pdfField}" with document type`);
+                        filledCount++;
+                        // Don't break here, fill all instances if multiple exist
+                    }
+                }
+            }
+        }
+        // === END SPECIAL HANDLING ===
+
         // ============================================================================
         // VERIFICATION STEP: Validate that extracted data made it into the PDF
         // ============================================================================
@@ -687,13 +704,17 @@ serve(async (req) => {
             if (!value || String(value).trim() === '') continue; // Skip empty fields
 
             // SKIP VALIDATION FOR VIRTUAL/HELPER FIELDS
-            if (key.endsWith('_combined') ||
-                key.endsWith('_resolved') ||
-                key.endsWith('_top') ||
-                key.endsWith('_full_name') ||
-                key === 'authorizing_official' ||
-                ['birth_day', 'birth_month', 'birth_year', 'issue_day', 'issue_month', 'issue_year'].includes(key)) {
-                console.log(`[QA SKIP] Skipping virtual field: ${key}`);
+            const lowerKey = key.toLowerCase();
+            if (lowerKey.endsWith('_combined') ||
+                lowerKey.endsWith('_resolved') ||
+                lowerKey.endsWith('_top') ||
+                lowerKey.endsWith('_full_name') ||
+                lowerKey === 'authorizing_official' ||
+                lowerKey.includes('birth_day') || lowerKey.includes('birth_month') || lowerKey.includes('birth_year') ||
+                lowerKey.includes('issue_day') || lowerKey.includes('issue_month') || lowerKey.includes('issue_year') ||
+                lowerKey.includes('reg_day') || lowerKey.includes('reg_month') || lowerKey.includes('reg_year') ||
+                ['day', 'month', 'year'].includes(lowerKey)) {
+                console.log(`[QA SKIP] Skipping virtual or split date field: ${key}`);
                 continue;
             }
 

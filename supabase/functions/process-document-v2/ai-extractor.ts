@@ -107,7 +107,7 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     #############################################
     ${hasNuip ? '- **NUIP / NIUP:** Look for a box labeled "NUIP", "N.U.I.P". Alphanumeric (e.g. "1234567890", "V2A...").' : ''}
     - **Registrant's Name:** Look for "Datos del Inscrito", "Datos del Contrayente" (Marriage), or "Datos del Fallecido" (Death).
-    - **Parents:** Look for "Datos del Padre" and "Datos de la Madre".
+    - **Parents:** Look for "Datos del Padre" and "Datos de la Madre". Extract "Tipo de documento" (e.g., C.C., Cédula de Ciudadanía).
     - **Officials:** 'authorizing_official' (Notary/Registrar) - at the BOTTOM, near signatures.
 
 
@@ -143,8 +143,10 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     2. Extract Names, Surnames, ID.
     
     ## PARENTS INFORMATION
+    ## PARENTS INFORMATION
     - Find "Datos del Padre" and "Datos de la Madre"
     - Extract Names, IDs, Nationalities.
+    - **CRITICAL**: Extract the "Tipo de documento" (Document Type) for each parent into 'padre_tipo_documento' and 'madre_tipo_documento'. Example: "CEDULA DE CIUDADANIA", "PASAPORTE", "C.C.".
     
     ## REGISTRY INFORMATION
     - "Fecha de Inscripción" / "Fecha de Registro"

@@ -36,12 +36,14 @@ const STANDARD_MAPPINGS: Record<string, string[]> = {
     "padre_nombres": ["father_names", "father_surnames_names", "father_surname"],
     "padre_apellidos": ["father_surnames", "father_surnames_names", "father_surname"],
     "padre_identificacion": ["father_doc_number", "father_id_doc", "father_id"],
+    "padre_tipo_documento": ["father_id_type", "father_doc_type", "father_type_id"],
     "padre_nacionalidad": ["father_nationality", "father_nation"],
 
     // Mother Information
     "madre_nombres": ["mother_names", "mother_surnames_names"],
     "madre_apellidos": ["mother_surnames", "mother_surnames_names"],
     "madre_identificacion": ["mother_doc_number", "mother_id_doc", "mother_id_number"],
+    "madre_tipo_documento": ["mother_id_type", "mother_doc_type", "mother_type_id"],
     "madre_nacionalidad": ["mother_nationality", "nationality_mother"],
 
     // Declarant Information
