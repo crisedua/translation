@@ -334,7 +334,14 @@ serve(async (req) => {
             normalizedMappings[normalizeKey(k)] = v;
         }
 
-
+        // === PRE-PROCESSING: Combine Surnames ===
+        // If we have separate surname fields but no combined one, create it.
+        // This ensures that if the PDF has a single "Surnames" field, it gets the full value.
+        if (extractedData['primer_apellido'] && extractedData['segundo_apellido'] && !extractedData['Apellidos']) {
+            const combinedSurnames = `${extractedData['primer_apellido']} ${extractedData['segundo_apellido']}`.trim();
+            console.log(`[PRE-PROCESS] Combining surnames: "${combinedSurnames}"`);
+            extractedData['Apellidos'] = combinedSurnames;
+        }
 
         // Prioritize specific atomic fields over composite or fuzzy fields
         const priorityFields = ['nuip', 'nuip_top', 'nombres', 'apellidos', 'names', 'surnames', 'pais_registro', 'Pais Registro', 'fecha_registro', 'reg_day', 'reg_month', 'reg_year', 'oficina', 'reg_office'];
