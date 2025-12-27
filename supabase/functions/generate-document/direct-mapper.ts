@@ -15,9 +15,9 @@ export const DIRECT_MAPPINGS: Record<string, string[]> = {
     // === REGISTRANT NAMES (Spanish and English variations) ===
     "nombres": ["names", "reg_names", "given_names", "first_names", "nombre", "Given Name(s)"],
     "Nombres": ["names", "reg_names", "given_names", "first_names", "nombre", "Given Name(s)"],
-    "Apellidos": ["surnames", "first_surname", "second_surname"],
-    "primer_apellido": ["first_surname", "reg_1_surname", "surname1", "apellido1", "First Surname"],
-    "segundo_apellido": ["second_surname", "reg_2_surname", "surname2", "apellido2", "Second Surname"],
+    "Apellidos": ["surnames", "first_surname", "second_surname", "Apellidos"],
+    "primer_apellido": ["first_surname", "reg_1_surname", "surname1", "apellido1", "First Surname", "surnames", "Apellidos"],
+    "segundo_apellido": ["second_surname", "reg_2_surname", "surname2", "apellido2", "Second Surname", "surnames", "Apellidos"],
     "Registrant's Names": ["names", "reg_names", "given_names"],
     "First Surname": ["first_surname", "reg_1_surname"],
     "Second Surname": ["second_surname", "reg_2_surname"],

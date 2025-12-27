@@ -636,6 +636,12 @@ serve(async (req) => {
         for (const [key, value] of Object.entries(extractedData)) {
             if (!value || String(value).trim() === '') continue; // Skip empty fields
 
+            // SKIP VALIDATION FOR VIRTUAL/HELPER FIELDS
+            if (key.endsWith('_combined') || key.endsWith('_resolved') || key.endsWith('_top')) {
+                console.log(`[QA SKIP] Skipping virtual field: ${key}`);
+                continue;
+            }
+
             const strValue = String(value).trim();
             const sanitizedExpected = sanitizeForPdf(strValue); // What we expect to be in the PDF
 
