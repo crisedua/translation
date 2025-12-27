@@ -719,6 +719,9 @@ serve(async (req) => {
                 lowerKey.endsWith('_top') ||
                 lowerKey.endsWith('_full_name') ||
                 lowerKey === 'authorizing_official' ||
+                lowerKey === 'birth_place' ||
+                lowerKey === 'lugar_nacimiento' ||
+                lowerKey === 'place of birth' ||
                 lowerKey.includes('birth_day') || lowerKey.includes('birth_month') || lowerKey.includes('birth_year') ||
                 lowerKey.includes('issue_day') || lowerKey.includes('issue_month') || lowerKey.includes('issue_year') ||
                 lowerKey.includes('reg_day') || lowerKey.includes('reg_month') || lowerKey.includes('reg_year') ||

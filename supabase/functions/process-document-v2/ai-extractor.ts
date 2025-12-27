@@ -216,8 +216,12 @@ CRITICAL INSTRUCTIONS:
     9. **FULL NAMES**: For ALL person names (officials, parents, witnesses, declarants), extract the COMPLETE name. 
        Include ALL surnames and first names. Do NOT truncate. Example: "CARLOS ALBERTO GOMEZ RODRIGUEZ" not just "RODRIGUEZ".
     10. **NUIP**: Extract the COMPLETE NUIP including any letters at the start (e.g., "V2A0001156" not "2A0001156").
+    11. **PARENT DOCUMENT TYPES (CRITICAL)**:
+       - In "Datos del Padre" section, find "Tipo de documento" and extract into "padre_tipo_documento" (e.g., "CEDULA DE CIUDADANIA")
+       - In "Datos de la Madre" section, find "Tipo de documento" and extract into "madre_tipo_documento" (e.g., "CEDULA DE CIUDADANIA")
+       - These are the ID document types for the parents, NOT the overall document type!
 
-Return JSON with all extracted fields.`
+Return JSON with all extracted fields including padre_tipo_documento and madre_tipo_documento.`
 
                     },
                     {
@@ -287,6 +291,11 @@ ${text.substring(0, 15000)}`
             if (!extractedData.pais_registro || extractedData.pais_registro.trim() === '') {
                 extractedData.pais_registro = 'COLOMBIA';
             }
+
+            // === DIAGNOSTIC: Log parent document type extraction ===
+            console.log(`[AI EXTRACTOR] padre_tipo_documento: ${extractedData.padre_tipo_documento || 'NOT EXTRACTED'}`);
+            console.log(`[AI EXTRACTOR] madre_tipo_documento: ${extractedData.madre_tipo_documento || 'NOT EXTRACTED'}`);
+            // === END DIAGNOSTIC ===
 
             // =====================================================
             // ROBUST POST-PROCESSING: SAFETY NET
