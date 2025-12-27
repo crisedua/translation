@@ -140,8 +140,8 @@ export const DIRECT_MAPPINGS: Record<string, string[]> = {
     "Type of Prior Document or Witness Statement": ["prior_doc", "prior_document"],
 
     // === DOCUMENT METADATA ===
-    "tipo_documento": ["Document Type", "doc_type", "type", "document_type_header"],
-    "Document Type": ["Document Type", "doc_type", "document_type_header"],
+    "tipo_documento": ["Document Type", "doc_type", "type", "document_type_header", "Document Type_1", "Document Type_2", "Document Type_3", "Type of Document", "TypeofDocument"],
+    "Document Type": ["Document Type", "doc_type", "document_type_header", "Document Type_1", "Document Type_2", "Document Type_3", "Type of Document", "TypeofDocument"],
 
     // === ISSUE DATE (Expedition) ===
     "fecha_expedicion": ["issue_date", "date_issue", "Date of Issue"],

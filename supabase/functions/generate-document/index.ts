@@ -209,6 +209,8 @@ serve(async (req) => {
         const fieldNames = fields.map(f => f.getName());
 
         console.log("PDF Fields found:", fieldNames.join(', '));
+        console.log("Extracted Data Keys:", Object.keys(extractedData).join(', '));
+        console.log("Document Type in extraction:", extractedData['tipo_documento'] || extractedData['Document Type']);
 
         // --- Use template-specific mappings first, then fallback to standard mappings ---
         const mappingResult = getTemplateMappings(template, fieldNames);
