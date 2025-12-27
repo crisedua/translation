@@ -351,7 +351,6 @@ serve(async (req) => {
         }
 
         // Prioritize specific atomic fields over composite or fuzzy fields
-        // Prioritize specific atomic fields over composite or fuzzy fields
         const priorityFields = ['nuip', 'nuip_top', 'tipo_documento', 'Document Type', 'nombres', 'Apellidos', 'apellidos', 'names', 'surnames', 'pais_registro', 'Pais Registro', 'fecha_expedicion', 'issue_date', 'fecha_registro', 'reg_day', 'reg_month', 'reg_year', 'oficina', 'reg_office'];
 
         const sortedEntries = Object.entries(extractedData).sort(([keyA], [keyB]) => {
@@ -598,8 +597,11 @@ serve(async (req) => {
 
                         // Fill generic maps (FALLBACK for Issue Date)
                         setField('day', day);
+                        setField('Day', day); // Capitalized
                         setField('month', month);
+                        setField('Month', month); // Capitalized
                         setField('year', year);
+                        setField('Year', year); // Capitalized
                     }
                 }
             }

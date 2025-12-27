@@ -144,7 +144,7 @@ export const DIRECT_MAPPINGS: Record<string, string[]> = {
     "Document Type": ["Document Type", "doc_type"],
 
     // === ISSUE DATE (Expedition) ===
-    "fecha_expedicion": ["issue_date", "date_issue", "Date of Issue", "Day", "Month", "Year"],
+    "fecha_expedicion": ["issue_date", "date_issue", "Date of Issue"],
     "issue_day": ["issue_day", "Day"],
     "issue_month": ["issue_month", "Month"],
     "issue_year": ["issue_year", "Year"],
