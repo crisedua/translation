@@ -13,60 +13,53 @@ export const performSemanticQA = async (ocrText: string, extractedData: any, fil
 
     console.log("Starting Semantic QA Audit...");
 
-    const systemPrompt = `You are a STRICT QA Auditor for document digitization. Your job is to find ERRORS in the extraction.
+    const systemPrompt = `You are an ACCURATE QA Auditor for document digitization. Your job is to find REAL ERRORS, not flag false positives.
 
 ## YOUR GOAL
-Compare the original document content against the EXTRACTED JSON data and flag any discrepancies.
+Compare the original document content against the EXTRACTED JSON data and flag ONLY genuine discrepancies.
 
-## CRITICAL VALIDATION RULES
+## CRITICAL ACCURACY RULES - READ CAREFULLY
 
-### 1. HALLUCINATION DETECTION (MOST IMPORTANT)
-- If extractedData contains a value that is NOT visible in the original document, FLAG IT
-- If a field in the original is EMPTY (dots, blank, no text) but extractedData has a value, FLAG IT as "HALLUCINATION"
-- Pay special attention to:
-  * testigo1_nombres, testigo2_nombres (witness names)
-  * declarante_nombres (declarant name)
-  * acknowledgment_official (paternal recognition official)
+### 1. VALID EXTRACTION PATTERNS (DO NOT FLAG THESE AS ERRORS)
+- **Blood Type**: Blood types like "O", "A", "B", "AB" appear as SMALL SINGLE LETTERS in the document. If you see the letter in "Grupo sanguíneo" section, it is NOT a hallucination.
+- **RH Factor**: "+", "-", "(+)", "(-)" are valid RH factors. Look carefully near blood type.
+- **Double Surnames**: Hispanic names often have REPEATED surnames (e.g., "HERRERA HERRERA ALBA YOLANDA"). This is CORRECT and NOT cross-contamination. If the document shows "HERRERA HERRERA", the extraction should also say "HERRERA HERRERA".
+- **Official Names with Stamps**: The authorizing official's name is often partially obscured by stamps/seals. Accept partial matches or names visible through the stamp.
+- **Date Components**: If the document has separate Year/Month/Day fields, the combined date is valid.
 
-### 2. CROSS-CONTAMINATION DETECTION
-- The child's name (from "Datos del inscrito") should ONLY appear in nombres/primer_apellido/segundo_apellido
-- The child's name should NEVER appear in testigo, declarante, or official fields
-- The father's name should ONLY appear in padre_nombres
-- The mother's name should ONLY appear in madre_nombres
-- If you see the same name appearing in multiple unrelated fields, FLAG IT
+### 2. WHAT TO FLAG AS ERRORS
+- **Empty Section Hallucination**: If a section (like witness, declarant) is filled with ONLY dots (.......) or completely blank, but the extraction has a name, FLAG IT.
+- **Cross-Section Contamination**: If the CHILD'S name appears in witness/declarant/official fields, FLAG IT.
+- **Complete Mismatch**: If the extracted value is clearly different from what's in the document (different name entirely).
+- **Wrong Numbers**: Dates, IDs (NUIP, CC) that don't match the document.
 
-### 3. EMPTY FIELD VALIDATION
-- Look at each section of the original document:
-  * "Datos primer testigo" - If empty, testigo1_nombres should be ""
-  * "Datos segundo testigo" - If empty, testigo2_nombres should be ""
-  * "Datos del declarante" - If empty, declarante_nombres should be ""
-  * "Reconocimiento paterno" - If empty or not filled, acknowledgment_official should be ""
-- If the extraction filled these with non-empty values when the original section is empty, FLAG IT
+### 3. EMPTY FIELD VALIDATION (BE CAREFUL)
+Look at each section in the original document:
+- "Datos primer testigo" - Check if there is HANDWRITTEN or TYPED text. If only dots/blanks, testigo1_nombres should be ""
+- "Datos segundo testigo" - Same as above for testigo2_nombres  
+- "Datos del declarante" - Check if filled. Can be same as father/mother if they are the declarant.
+- "Reconocimiento paterno" - Check if the section has an official's name filled in
 
-### 4. BASIC VALIDATION
-- Names must match exactly (allow minor OCR variations like 0/O)
-- Dates must match exactly
-- IDs (NUIP, CC numbers) must match exactly
-- If a field exists in document but missing in extraction, flag it
-- If a field in extraction doesn't exist in document (hallucination), flag it
+### 4. DO NOT FLAG AS ERRORS
+- Blood type values that appear in the document (even small letters)
+- Double surnames that match the document exactly
+- RH factors
+- Partial official names obscured by stamps
+- Values that are visible in the document but hard to read
 
 ## OUTPUT FORMAT
 Return a JSON object:
 {
-  "valid": false,
-  "discrepancies": [
-    "HALLUCINATION: testigo1_nombres contains 'KATERINE' but witness section is EMPTY in original",
-    "CROSS-CONTAMINATION: Child's name 'KATERINE' incorrectly copied to testigo2_nombres",
-    "MISMATCH: fecha_nacimiento shows '19/08/2000' but document says '19/08/2001'"
-  ],
+  "valid": true,  // Set to true if NO genuine errors found
+  "discrepancies": [],  // Empty if valid, or list only REAL errors
   "confidence": 95
 }
 
-Be STRICT. If you are uncertain whether a field value is correct, flag it. It's better to have false positives than miss errors.`;
+IMPORTANT: Only flag GENUINE errors. Do NOT flag uncertainties. If you're not sure if something is wrong, assume the extraction is correct.`;
 
     const userContent = `
 ## ORIGINAL DOCUMENT
-${fileUrl ? "Image provided via Vision - examine it carefully." : "OCR Text provided below."}
+${fileUrl ? "Image provided via Vision - examine it VERY carefully before flagging errors." : "OCR Text provided below."}
 
 ## OCR TEXT (Reference):
 ${ocrText.substring(0, 6000)}
@@ -75,13 +68,16 @@ ${ocrText.substring(0, 6000)}
 ${JSON.stringify(extractedData, null, 2)}
 
 ## YOUR TASK
-1. Look at the original document carefully
-2. For each field in the extracted data, verify it exists in the CORRECT LOCATION in the original
-3. Pay SPECIAL ATTENTION to:
-   - Are witness fields (testigo1_nombres, testigo2_nombres) actually filled in the original? Or are they empty (dots/blank)?
-   - Are declarant fields actually filled? Or empty?
-   - Is the paternal recognition section filled? Or empty?
-4. Flag ANY discrepancies, especially hallucinations and cross-contamination
+1. Look at the original document VERY carefully
+2. For each field, verify it matches the document - but allow for:
+   - Small blood type letters (O, A, B, AB)
+   - Double surnames in Hispanic names
+   - Partially visible official names under stamps
+3. ONLY flag genuine errors:
+   - Empty sections filled with data from elsewhere
+   - Complete name mismatches
+   - Wrong dates/IDs
+4. If the extraction looks reasonable and matches what you see, return valid: true
 5. Return the JSON result`;
 
 
