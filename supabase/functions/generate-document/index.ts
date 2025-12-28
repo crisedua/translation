@@ -416,6 +416,66 @@ serve(async (req) => {
         }
 
 
+        // === CRITICAL EARLY FILL: Parent Full Names and Place of Birth ===
+        // These MUST be filled BEFORE the main loop to prevent partial data from blocking complete data
+        console.log("[CRITICAL-FILL] Filling parent names and birth place EARLY to prevent overwrite blocking...");
+
+        // Parent Full Names
+        const motherFullName = extractedData.madre_completo || extractedData["Mother's Surnames and Full Names"];
+        const fatherFullName = extractedData.padre_completo || extractedData["Father's Surnames and Full Names"];
+
+        if (motherFullName) {
+            console.log(`[CRITICAL-FILL] Mother: ${motherFullName}`);
+            for (const pdfField of fieldNames) {
+                const fieldLower = pdfField.toLowerCase();
+                if (fieldLower.includes('mother') && (fieldLower.includes('surname') || fieldLower.includes('name') || fieldLower.includes('full'))) {
+                    if (fieldLower.includes('identification') || fieldLower.includes('document') || fieldLower.includes('nationality')) continue;
+                    if (setField(pdfField, motherFullName)) {
+                        console.log(`[CRITICAL-FILL] SUCCESS: Mother -> "${pdfField}"`);
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (fatherFullName) {
+            console.log(`[CRITICAL-FILL] Father: ${fatherFullName}`);
+            for (const pdfField of fieldNames) {
+                const fieldLower = pdfField.toLowerCase();
+                if (fieldLower.includes('father') && (fieldLower.includes('surname') || fieldLower.includes('name') || fieldLower.includes('full'))) {
+                    if (fieldLower.includes('identification') || fieldLower.includes('document') || fieldLower.includes('nationality')) continue;
+                    if (setField(pdfField, fatherFullName)) {
+                        console.log(`[CRITICAL-FILL] SUCCESS: Father -> "${pdfField}"`);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Place of Birth
+        const birthPlace = extractedData.lugar_nacimiento || extractedData.birth_location_combined;
+        if (birthPlace) {
+            console.log(`[CRITICAL-FILL] Birth Place: ${birthPlace}`);
+            for (const pdfField of fieldNames) {
+                const fieldLower = pdfField.toLowerCase();
+                const isPlaceField = (
+                    (fieldLower.includes('place') && fieldLower.includes('birth')) ||
+                    (fieldLower.includes('lugar') && fieldLower.includes('nacimiento')) ||
+                    (fieldLower.includes('birth') && fieldLower.includes('country')) ||
+                    (fieldLower.includes('birth') && fieldLower.includes('department'))
+                );
+                if (fieldLower.includes('registro') || fieldLower.includes('registry')) continue;
+                if (isPlaceField) {
+                    if (setField(pdfField, birthPlace)) {
+                        console.log(`[CRITICAL-FILL] SUCCESS: Birth Place -> "${pdfField}"`);
+                        // Don't break - fill all matching fields
+                    }
+                }
+            }
+        }
+        console.log("[CRITICAL-FILL] Early critical fills complete.");
+        // === END CRITICAL EARLY FILL ===
+
         // Prioritize specific atomic fields over composite or fuzzy fields
         // Prioritize specific atomic fields over composite or fuzzy fields
         const priorityFields = ['nuip', 'nuip_top', 'tipo_documento', 'Document Type', 'nombres', 'Apellidos', 'apellidos', 'names', 'surnames', 'pais_registro', 'Pais Registro', 'fecha_expedicion', 'issue_date', 'issue_day', 'issue_month', 'issue_year', 'fecha_registro', 'reg_day', 'reg_month', 'reg_year', 'oficina', 'reg_office'];
@@ -753,7 +813,8 @@ serve(async (req) => {
         // === END SPECIAL HANDLING ===
 
         // === SPECIAL HANDLING: Parent Full Names ===
-        // CRITICAL: Ensure parent full names (combined surnames + names) are filled
+        // MOVED TO CRITICAL-FILL SECTION (before main loop) to prevent overwrite blocking
+        /*
         const motherFullName = extractedData.madre_completo ||
             extractedData["Mother's Surnames and Full Names"] ||
             (extractedData.madre_apellidos && extractedData.madre_nombres
@@ -799,6 +860,7 @@ serve(async (req) => {
                 }
             }
         }
+        */
         // === END SPECIAL HANDLING ===
 
         // ============================================================================
