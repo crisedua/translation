@@ -98,7 +98,8 @@ export function processExtractedData(extractedData: Record<string, any>): Proces
     }
 
     processed.nuip_resolved = finalNuip;
-    processed.nuip = finalNuip; // Also set nuip for direct mapping
+    // NOTE: Do NOT overwrite processed.nuip - preserve the original extracted value
+    // The direct mapper will use nuip_resolved as a fallback
 
     // =========================================================================
     // 2. BIRTH LOCATION COMBINING
