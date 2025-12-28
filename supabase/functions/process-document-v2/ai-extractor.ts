@@ -106,10 +106,19 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     const docName = template?.name || 'Colombian Document';
     const docType = template?.content_profile?.documentType?.replace(/_/g, ' ').toUpperCase() || 'CIVIL REGISTRY DOCUMENT';
 
+    // Log template instruction availability
+    console.log(`[AI-EXTRACTOR] Template: ${docName}`);
+    console.log(`[AI-EXTRACTOR] Template instructions available: ${Object.keys(templateInstructions).length}`);
+    if (Object.keys(templateInstructions).length > 0) {
+        console.log(`[AI-EXTRACTOR] Template instruction keys: ${Object.keys(templateInstructions).slice(0, 10).join(', ')}...`);
+    }
+
     // === BUILD FIELD LIST WITH INSTRUCTIONS ===
     // Merge template instructions with defaults (template takes priority)
     let templateInstructionCount = 0;
     let defaultInstructionCount = 0;
+    const fieldsUsingTemplate: string[] = [];
+    const fieldsUsingDefault: string[] = [];
 
     const fieldListWithInstructions = targetFields.map(field => {
         const templateInstruction = templateInstructions[field];
@@ -117,15 +126,32 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
 
         if (templateInstruction) {
             templateInstructionCount++;
+            fieldsUsingTemplate.push(field);
             return `- "${field}": ${templateInstruction}`;
         } else if (defaultInstruction) {
             defaultInstructionCount++;
+            fieldsUsingDefault.push(field);
             return `- "${field}": ${defaultInstruction}`;
         }
         return `- "${field}"`;
     }).join('\n');
 
     console.log(`[AI-EXTRACTOR] Instruction sources: ${templateInstructionCount} template-specific, ${defaultInstructionCount} defaults`);
+    if (fieldsUsingTemplate.length > 0) {
+        console.log(`[AI-EXTRACTOR] Fields with TEMPLATE instructions: ${fieldsUsingTemplate.join(', ')}`);
+    }
+
+    // Log key field instructions for debugging
+    const keyFields = ['nuip', 'segundo_apellido', 'lugar_nacimiento', 'authorizing_official'];
+    console.log(`[AI-EXTRACTOR] === KEY FIELD INSTRUCTIONS ===`);
+    for (const field of keyFields) {
+        const source = templateInstructions[field] ? 'TEMPLATE' : (DEFAULT_EXTRACTION_INSTRUCTIONS[field] ? 'DEFAULT' : 'NONE');
+        const instruction = templateInstructions[field] || DEFAULT_EXTRACTION_INSTRUCTIONS[field] || 'No instruction';
+        console.log(`[AI-EXTRACTOR] ${field} (${source}): ${instruction.substring(0, 80)}...`);
+    }
+    console.log(`[AI-EXTRACTOR] ==============================`);
+
+
 
 
     // === BUILD FOCUSED PROMPT ===

@@ -438,6 +438,15 @@ Example format:
                 const instructionData = await instructionResponse.json();
                 extractionInstructions = JSON.parse(instructionData.choices?.[0]?.message?.content || "{}");
                 console.log(`   ✓ Generated ${Object.keys(extractionInstructions).length} extraction instructions`);
+
+                // Log each instruction for verification
+                console.log("\n   === GENERATED EXTRACTION INSTRUCTIONS ===");
+                for (const [field, instruction] of Object.entries(extractionInstructions)) {
+                    console.log(`   [${field}]: ${(instruction as string).substring(0, 100)}...`);
+                }
+                console.log("   ==========================================\n");
+            } else {
+                console.error(`   ✗ Instruction generation failed: ${instructionResponse.status}`);
             }
         } catch (e) {
             console.warn(`   ⚠ Extraction instruction generation failed: ${e}`);

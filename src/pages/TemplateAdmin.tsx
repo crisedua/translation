@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { FileText, Trash2, Eye, Edit2, Check, X, RefreshCw } from 'lucide-react';
+import { FileText, Trash2, Eye, Edit2, Check, X, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface Template {
     id: string;
@@ -9,7 +9,16 @@ interface Template {
     template_file_url: string;
     field_definitions: any[];
     created_at: string;
+    content_profile?: {
+        documentType?: string;
+        formatIndicators?: { version?: string };
+        extraction_instructions?: Record<string, string>;
+        pdf_mappings?: Record<string, string[]>;
+        extractionInstructionCount?: number;
+        mappingCount?: number;
+    };
 }
+
 
 const TemplateAdmin = () => {
     const [templates, setTemplates] = useState<Template[]>([]);
@@ -25,6 +34,8 @@ const TemplateAdmin = () => {
     const [editName, setEditName] = useState('');
     const [editCategoryId, setEditCategoryId] = useState('');
     const [reanalyzing, setReanalyzing] = useState<string | null>(null);
+    const [expandedTemplateId, setExpandedTemplateId] = useState<string | null>(null);
+
 
     useEffect(() => {
         fetchTemplates();
@@ -301,58 +312,109 @@ const TemplateAdmin = () => {
                                     </>
                                 ) : (
                                     // View Mode
-                                    <>
-                                        <div className="flex items-center space-x-4">
-                                            <FileText className="w-8 h-8 text-blue-600" />
-                                            <div>
-                                                <h3 className="font-medium">{template.name}</h3>
-                                                <div className="flex items-center space-x-2 text-sm text-gray-500">
-                                                    <span>{categories.find(c => c.id === template.category_id)?.name || 'Unknown Category'}</span>
-                                                    <span>•</span>
-                                                    <span>{template.field_definitions?.length || 0} fields</span>
+                                    <div className="w-full">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center space-x-4">
+                                                <FileText className="w-8 h-8 text-blue-600" />
+                                                <div>
+                                                    <h3 className="font-medium">{template.name}</h3>
+                                                    <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                                        <span>{categories.find(c => c.id === template.category_id)?.name || 'Unknown Category'}</span>
+                                                        <span>•</span>
+                                                        <span>{template.field_definitions?.length || 0} fields</span>
+                                                        <span>•</span>
+                                                        <span className={template.content_profile?.extraction_instructions ? 'text-green-600' : 'text-yellow-600'}>
+                                                            {Object.keys(template.content_profile?.extraction_instructions || {}).length} extraction instructions
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-xs text-gray-400">
+                                                        {template.content_profile?.documentType} • {template.content_profile?.formatIndicators?.version || 'unknown'} format • {new Date(template.created_at).toLocaleDateString()}
+                                                    </p>
                                                 </div>
-                                                <p className="text-xs text-gray-400">
-                                                    {new Date(template.created_at).toLocaleDateString()}
-                                                </p>
+                                            </div>
+                                            <div className="flex space-x-2">
+                                                <button
+                                                    onClick={() => setExpandedTemplateId(expandedTemplateId === template.id ? null : template.id)}
+                                                    className="p-2 text-purple-600 hover:bg-purple-50 rounded"
+                                                    title="View Extraction Instructions"
+                                                >
+                                                    {expandedTemplateId === template.id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                                                </button>
+                                                <button
+                                                    onClick={() => startEditing(template)}
+                                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                                                    title="Edit"
+                                                >
+                                                    <Edit2 className="w-5 h-5" />
+                                                </button>
+                                                <a
+                                                    href={template.template_file_url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                                                    title="View PDF"
+                                                >
+                                                    <Eye className="w-5 h-5" />
+                                                </a>
+                                                <button
+                                                    onClick={() => handleReanalyze(template.id)}
+                                                    disabled={reanalyzing === template.id}
+                                                    className="p-2 text-orange-600 hover:bg-orange-50 rounded disabled:opacity-50"
+                                                    title="Re-analyze Template"
+                                                >
+                                                    <RefreshCw className={`w-5 h-5 ${reanalyzing === template.id ? 'animate-spin' : ''}`} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(template.id)}
+                                                    className="p-2 text-red-600 hover:bg-red-50 rounded"
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 className="w-5 h-5" />
+                                                </button>
                                             </div>
                                         </div>
-                                        <div className="flex space-x-2">
-                                            <button
-                                                onClick={() => startEditing(template)}
-                                                className="p-2 text-blue-600 hover:bg-blue-50 rounded"
-                                                title="Edit"
-                                            >
-                                                <Edit2 className="w-5 h-5" />
-                                            </button>
-                                            <a
-                                                href={template.template_file_url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="p-2 text-blue-600 hover:bg-blue-50 rounded"
-                                                title="View PDF"
-                                            >
-                                                <Eye className="w-5 h-5" />
-                                            </a>
-                                            <button
-                                                onClick={() => handleReanalyze(template.id)}
-                                                disabled={reanalyzing === template.id}
-                                                className="p-2 text-orange-600 hover:bg-orange-50 rounded disabled:opacity-50"
-                                                title="Re-analyze Template"
-                                            >
-                                                <RefreshCw className={`w-5 h-5 ${reanalyzing === template.id ? 'animate-spin' : ''}`} />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(template.id)}
-                                                className="p-2 text-red-600 hover:bg-red-50 rounded"
-                                                title="Delete"
-                                            >
-                                                <Trash2 className="w-5 h-5" />
-                                            </button>
-                                        </div>
-                                    </>
+
+                                        {/* Expandable Extraction Instructions Panel */}
+                                        {expandedTemplateId === template.id && (
+                                            <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+                                                <h4 className="font-semibold text-sm mb-3 text-purple-700">Extraction Instructions</h4>
+                                                {template.content_profile?.extraction_instructions && Object.keys(template.content_profile.extraction_instructions).length > 0 ? (
+                                                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                                                        {Object.entries(template.content_profile.extraction_instructions).map(([field, instruction]) => (
+                                                            <div key={field} className="text-xs bg-white p-2 rounded border">
+                                                                <span className="font-mono font-semibold text-blue-600">{field}:</span>
+                                                                <span className="ml-2 text-gray-600">{instruction}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-sm text-yellow-600">
+                                                        No extraction instructions generated. Click "Re-analyze Template" to generate them.
+                                                    </p>
+                                                )}
+
+                                                {/* PDF Mappings */}
+                                                {template.content_profile?.pdf_mappings && (
+                                                    <div className="mt-4">
+                                                        <h4 className="font-semibold text-sm mb-2 text-green-700">PDF Field Mappings ({Object.keys(template.content_profile.pdf_mappings).length})</h4>
+                                                        <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                                                            {Object.entries(template.content_profile.pdf_mappings).slice(0, 20).map(([field, pdfFields]) => (
+                                                                <div key={field} className="text-xs bg-white p-1 rounded border">
+                                                                    <span className="font-mono text-green-600">{field}</span>
+                                                                    <span className="text-gray-400"> → </span>
+                                                                    <span className="text-gray-600">{Array.isArray(pdfFields) ? pdfFields.join(', ') : pdfFields}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         ))
+
                     )}
                 </div>
             </div>
