@@ -146,10 +146,10 @@ export const DIRECT_MAPPINGS: Record<string, string[]> = {
     "Document Type": ["Document Type", "doc_type", "document_type_header", "Document Type_1", "Document Type_2", "Document Type_3", "Type of Document", "TypeofDocument"],
 
     // === ISSUE DATE (Expedition) ===
-    "fecha_expedicion": ["issue_date", "date_issue", "Date of Issue"],
-    "issue_day": ["issue_day", "Day", "Issue_Day", "expedition_day"],
-    "issue_month": ["issue_month", "Month", "Issue_Month", "expedition_month"],
-    "issue_year": ["issue_year", "Year", "Issue_Year", "expedition_year"],
+    "fecha_expedicion": ["issue_date", "date_issue", "Date of Issue", "Fecha de expedición", "expedition_date", "Day", "Month", "Year"],
+    "issue_day": ["issue_day", "Day", "Issue_Day", "expedition_day", "Día"],
+    "issue_month": ["issue_month", "Month", "Issue_Month", "expedition_month", "Mes"],
+    "issue_year": ["issue_year", "Year", "Issue_Year", "expedition_year", "Año"],
     "Live Birth Certificate Number": ["live_birth_cert", "birth_cert_number"],
 
     // === OTHER ===

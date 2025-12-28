@@ -111,10 +111,10 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     )) {
         console.log("[AI-EXTRACTOR] Applying FORCED overrides for Registro Nacimiento Nuevo");
         const nuevoOverrides: Record<string, string> = {
-            "fecha_expedicion": "CRITICAL: This is the 'Fecha de expedición' (Date of Issue) located at the BOTTOM/FOOTER of the document in a DARK BLUE BOX. It has THREE separate fields: 'Día' (Day), 'Mes' (Month), 'Año' (Year). Extract ONLY from this footer section, NOT from birth date or registration date boxes! Example: Day=12, Month=04, Year=2024 -> '12-04-2024'. DO NOT use '2017' or any date from the middle of the document!",
-            "issue_day": "Extract from the 'Día' (Day) box in the BLUE footer 'Fecha de expedición' section at the BOTTOM of the page.",
-            "issue_month": "Extract from the 'Mes' (Month) box in the BLUE footer 'Fecha de expedición' section at the BOTTOM of the page.",
-            "issue_year": "Extract from the 'Año' (Year) box in the BLUE footer 'Fecha de expedición' section at the BOTTOM of the page."
+            "fecha_expedicion": "CRITICAL: Look ONLY at the footer section at the VERY BOTTOM of the page. Find the area with dark blue/navy header labeled 'Fecha de expedición'. Below it are THREE cyan/light blue input boxes labeled 'Día', 'Mes', and 'Año'. Extract the numbers from these three boxes ONLY. IGNORE all other dates in the document (birth date, registration date, etc.). Combine as DD-MM-YYYY.",
+            "issue_day": "Extract the number from the 'Día' box in the footer 'Fecha de expedición' section (BOTTOM of page only).",
+            "issue_month": "Extract the number from the 'Mes' box in the footer 'Fecha de expedición' section (BOTTOM of page only).",
+            "issue_year": "Extract the number from the 'Año' box in the footer 'Fecha de expedición' section (BOTTOM of page only)."
         };
         // Merge overrides into template instructions (overwriting DB values if present)
         templateInstructions = { ...templateInstructions, ...nuevoOverrides };
