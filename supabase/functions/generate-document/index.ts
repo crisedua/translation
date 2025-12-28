@@ -692,39 +692,45 @@ serve(async (req) => {
             }
         }
 
-        // === SPECIAL HANDLING: Ensure place of birth gets filled ===
-        // Moved AFTER main loop so it acts as a specific fallback, not an override
-        // This prevents it from clobbering generic fields like "Country" which should be filled by pais_registro
-        const placeOfBirthValue = extractedData.birth_location_combined ||
+        // === SPECIAL HANDLING: Place of Birth ===
+        // CRITICAL: Ensure the FULL place of birth string (with clinic name) gets filled
+        const placeOfBirthValue = extractedData.lugar_nacimiento ||
+            extractedData.birth_location_combined ||
             extractedData['Place of Birth'] ||
-            extractedData.lugar_nacimiento ||
             extractedData['Lugar Nacimiento'] ||
             extractedData.birth_place;
 
         if (placeOfBirthValue) {
-            console.log(`[SPECIAL] Trying to fill Place of Birth (Fallback) with: ${placeOfBirthValue}`);
+            console.log(`[SPECIAL] Trying to fill Place of Birth with: ${placeOfBirthValue}`);
 
-            // Try every PDF field name directly
+            // Try every PDF field that could be for birth place
+            let birthPlaceFilled = false;
             for (const pdfField of fieldNames) {
                 const fieldLower = pdfField.toLowerCase();
-                // Check if this field is related to birth place
-                if (fieldLower.includes('place') ||
-                    fieldLower.includes('birth') ||
-                    fieldLower.includes('country') ||
-                    fieldLower.includes('nacimiento') ||
-                    fieldLower.includes('lugar')) {
 
-                    // Exclude fields that are for registry location, not birth location
-                    if (fieldLower.includes('registro') || fieldLower.includes('registry')) continue;
+                // Match fields containing "place" AND "birth", OR "lugar" AND "nacimiento"
+                const isPlaceField = (
+                    (fieldLower.includes('place') && fieldLower.includes('birth')) ||
+                    (fieldLower.includes('lugar') && fieldLower.includes('nacimiento')) ||
+                    (fieldLower.includes('birth') && fieldLower.includes('country')) ||
+                    (fieldLower.includes('birth') && fieldLower.includes('department'))
+                );
 
-                    // Since this runs late, overwrite protection will save us if "Country" is already set by pais_registro
+                // Exclude registry location fields
+                if (fieldLower.includes('registro') || fieldLower.includes('registry')) continue;
+
+                if (isPlaceField) {
                     if (setField(pdfField, String(placeOfBirthValue))) {
                         console.log(`[SPECIAL] SUCCESS: Filled "${pdfField}" with place of birth`);
                         filledCount++;
-                        break; // Stop after first successful fill (wait, should we break? maybe filling multiple is okay if not set?)
-                        // Original logic had break, keeping it for safety
+                        birthPlaceFilled = true;
+                        // Don't break - try all matching fields to ensure it's set
                     }
                 }
+            }
+
+            if (!birthPlaceFilled) {
+                console.warn(`[SPECIAL] WARNING: Could not find suitable PDF field for place of birth`);
             }
         }
         // === END SPECIAL HANDLING ===
