@@ -746,6 +746,55 @@ serve(async (req) => {
         }
         // === END SPECIAL HANDLING ===
 
+        // === SPECIAL HANDLING: Parent Full Names ===
+        // CRITICAL: Ensure parent full names (combined surnames + names) are filled
+        const motherFullName = extractedData.madre_completo ||
+            extractedData["Mother's Surnames and Full Names"] ||
+            (extractedData.madre_apellidos && extractedData.madre_nombres
+                ? `${extractedData.madre_apellidos} ${extractedData.madre_nombres}`.trim()
+                : null);
+
+        const fatherFullName = extractedData.padre_completo ||
+            extractedData["Father's Surnames and Full Names"] ||
+            (extractedData.padre_apellidos && extractedData.padre_nombres
+                ? `${extractedData.padre_apellidos} ${extractedData.padre_nombres}`.trim()
+                : null);
+
+        if (motherFullName) {
+            console.log(`[SPECIAL] Trying to fill Mother's Full Name with: ${motherFullName}`);
+            for (const pdfField of fieldNames) {
+                const fieldLower = pdfField.toLowerCase();
+                if (fieldLower.includes('mother') &&
+                    (fieldLower.includes('surname') || fieldLower.includes('name') || fieldLower.includes('full'))) {
+                    if (fieldLower.includes('identification') || fieldLower.includes('document') || fieldLower.includes('nationality')) continue;
+
+                    if (setField(pdfField, motherFullName)) {
+                        console.log(`[SPECIAL] SUCCESS: Filled \"${pdfField}\" with mother's full name`);
+                        filledCount++;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (fatherFullName) {
+            console.log(`[SPECIAL] Trying to fill Father's Full Name with: ${fatherFullName}`);
+            for (const pdfField of fieldNames) {
+                const fieldLower = pdfField.toLowerCase();
+                if (fieldLower.includes('father') &&
+                    (fieldLower.includes('surname') || fieldLower.includes('name') || fieldLower.includes('full'))) {
+                    if (fieldLower.includes('identification') || fieldLower.includes('document') || fieldLower.includes('nationality')) continue;
+
+                    if (setField(pdfField, fatherFullName)) {
+                        console.log(`[SPECIAL] SUCCESS: Filled \"${pdfField}\" with father's full name`);
+                        filledCount++;
+                        break;
+                    }
+                }
+            }
+        }
+        // === END SPECIAL HANDLING ===
+
         // ============================================================================
         // VERIFICATION STEP: Validate that extracted data made it into the PDF
         // ============================================================================
