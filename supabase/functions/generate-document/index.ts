@@ -369,9 +369,52 @@ serve(async (req) => {
         // This ensures that if the PDF has a single "Surnames" field, it gets the full value.
         if (extractedData['primer_apellido'] && extractedData['segundo_apellido'] && !extractedData['Apellidos']) {
             const combinedSurnames = `${extractedData['primer_apellido']} ${extractedData['segundo_apellido']}`.trim();
-            console.log(`[PRE-PROCESS] Combining surnames: "${combinedSurnames}"`);
+            console.log(`[PRE-PROCESS] Combining registrant surnames: "${combinedSurnames}"`);
             extractedData['Apellidos'] = combinedSurnames;
         }
+
+        // === PRE-PROCESS: Combine Parent Names ===
+        // Many PDFs have a single field for "Apellidos y Nombres" of parents
+        // If we extracted them separately, we MUST combine them here.
+
+        // Father
+        const fatherNames = extractedData['padre_nombres'] || extractedData['Father Names'] || '';
+        const fatherSurnames = extractedData['padre_apellidos'] || extractedData['Father Surnames'] || '';
+
+        if (fatherNames || fatherSurnames) {
+            // Check if we have separate surnames for father
+            let fullFatherSurnames = fatherSurnames;
+            if (!fullFatherSurnames && extractedData['padre_primer_apellido']) {
+                fullFatherSurnames = [extractedData['padre_primer_apellido'], extractedData['padre_segundo_apellido']].filter(Boolean).join(' ');
+            }
+
+            const fatherFull = `${fullFatherSurnames} ${fatherNames}`.trim();
+            if (fatherFull) {
+                console.log(`[PRE-PROCESS] Combining Father Full Name: "${fatherFull}"`);
+                extractedData['padre_completo'] = fatherFull;
+                extractedData["Father's Surnames and Full Names"] = fatherFull;
+            }
+        }
+
+        // Mother
+        const motherNames = extractedData['madre_nombres'] || extractedData['Mother Names'] || '';
+        const motherSurnames = extractedData['madre_apellidos'] || extractedData['Mother Surnames'] || '';
+
+        if (motherNames || motherSurnames) {
+            // Check if we have separate surnames for mother
+            let fullMotherSurnames = motherSurnames;
+            if (!fullMotherSurnames && extractedData['madre_primer_apellido']) {
+                fullMotherSurnames = [extractedData['madre_primer_apellido'], extractedData['madre_segundo_apellido']].filter(Boolean).join(' ');
+            }
+
+            const motherFull = `${fullMotherSurnames} ${motherNames}`.trim();
+            if (motherFull) {
+                console.log(`[PRE-PROCESS] Combining Mother Full Name: "${motherFull}"`);
+                extractedData['madre_completo'] = motherFull;
+                extractedData["Mother's Surnames and Full Names"] = motherFull;
+            }
+        }
+
 
         // Prioritize specific atomic fields over composite or fuzzy fields
         // Prioritize specific atomic fields over composite or fuzzy fields
@@ -495,19 +538,22 @@ serve(async (req) => {
                     "factor_rh": ["rh_factor"], "Rh Factor": ["rh_factor"],
 
                     // Birth place
-                    "Place of Birth": ["birth_country_dept_munic"],
-                    "Country - Department - Municipality - Township and/or Police Station": ["country_dept_munic"],
-                    "lugar_nacimiento": ["birth_country_dept_munic"],
+                    "Place of Birth": ["birth_country_dept_munic", "Place of Birth (Country - Department - Municipality - Township and/or Police Station)", "Lugar de nacimiento"],
+                    "Country - Department - Municipality - Township and/or Police Station": ["country_dept_munic", "Place of Birth (Country - Department - Municipality - Township and/or Police Station)"],
+                    "lugar_nacimiento": ["birth_country_dept_munic", "Place of Birth (Country - Department - Municipality - Township and/or Police Station)", "Lugar de nacimiento(Pais - Departamento - Municipio)", "Lugar de nacimiento"],
 
                     // Parents - using exact AI field names  
-                    "Father's Surnames and Full Names": ["father_surnames_names"],
-                    "Mother's Surnames and Full Names": ["mother_surnames_names"],
+                    "Father's Surnames and Full Names": ["father_surnames_names", "Father Surnames and Full Names", "Apellidos y nombres completos padre"],
+                    "Mother's Surnames and Full Names": ["mother_surnames_names", "Mother Surnames and Full Names", "Apellidos y nombres completos madre"],
+                    "padre_completo": ["father_surnames_names", "Father Surnames and Full Names", "Apellidos y nombres completos padre"],
+                    "madre_completo": ["mother_surnames_names", "Mother Surnames and Full Names", "Apellidos y nombres completos madre"],
+
                     "Father's Identification Document": ["father_id_doc"],
                     "Mother's Identification Document": ["mother_id_doc"],
                     "Father's Nationality": ["father_nationality"],
                     "Mother's Nationality": ["mother_nationality"],
-                    "madre_nombres": ["mother_surnames_names"],
-                    "padre_nombres": ["father_surnames_names"],
+                    "madre_nombres": ["mother_surnames_names"], // Fallback if complete not available
+                    "padre_nombres": ["father_surnames_names"], // Fallback if complete not available
                     "padre_tipo_documento": ["father_id_type", "father_doc_type", "father_document_type", "Type of Document (Father)", "Father Document Type"],
                     "madre_tipo_documento": ["mother_id_type", "mother_doc_type", "mother_document_type", "Type of Document (Mother)", "Mother Document Type"],
 

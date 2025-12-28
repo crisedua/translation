@@ -373,35 +373,40 @@ ${JSON.stringify(pdfFieldNames, null, 2)}
 TEMPLATE TEXT (layout reference):
 ${templateText.substring(0, 6000)}
 
-Generate SPECIFIC extraction instructions for each field below. Each instruction should describe:
-1. WHERE to find this field in THIS specific template (section name, position, nearby labels)
-2. WHAT format to expect (letters+numbers, separate boxes, combined fields, etc.)
-3. Common MISTAKES to avoid for this field
+
+Generate SPECIFIC extraction instructions for each field.
+
+EXPERT EXTRACTION TIPS - APPLY THESE TO YOUR INSTRUCTIONS:
+1. NUIP/Serial: "Medio" format often has 'V2A' prefix (e.g., V2A000123). Instructions MUST say "Extract FULL alphanumeric code including V2A".
+2. Surnames: "Medio" format often separates 'Primer' and 'Segundo' apellido. Instructions MUST say "Look for SEPARATE box for this specific surname".
+3. Birth Place: "Medio" format has a long field with "Clinica/Hospital (Country.Dept.City)". Instructions MUST say "Extract COMPLETE string including clinic name and parentheses".
+4. Authorizing Official: Signatures often have 3-4 names (2 names + 2 surnames). Instructions MUST say "Extract ALL names found near signature".
+5. Registry Location: Often formatted as "Country - Dept - City". Instructions MUST say "Extract full location line".
 
 FIELDS TO DOCUMENT:
-- nuip: The unique identification number (may have leading letters like V2A)
-- nuip_top: NUIP from top of document
-- primer_apellido: First surname of the registrant
-- segundo_apellido: Second surname of the registrant (often in adjacent box)
-- nombres: Given names of the registrant
-- lugar_nacimiento: Full place of birth (may include clinic/hospital name)
-- birth_location_combined: Complete birth location with country, department, municipality
-- pais_nacimiento: Country of birth
-- departamento_nacimiento: Department of birth
-- municipio_nacimiento: Municipality of birth
-- registry_location_combined: Complete registry location
-- authorizing_official: Official who authorized the document (full name near signature)
-- acknowledgment_official: Official for paternal recognition (if applicable)
+- nuip: Unique ID (e.g., V2A...) - extract exact alphanumeric
+- nuip_top: NUIP from header
+- primer_apellido: First surname ONLY
+- segundo_apellido: Second surname ONLY (adjacent box)
+- nombres: Given names
+- lugar_nacimiento: FULL birth place line (Clinic + City)
+- birth_location_combined: (Same as lugar_nacimiento)
+- pais_nacimiento: Country
+- departamento_nacimiento: Department
+- municipio_nacimiento: Municipality
+- registry_location_combined: Full registry location line
+- authorizing_official: Full name of official near signature
+- acknowledgment_official: Official near recognition signature
 - funcionario_nombre: Official name
 - padre_nombres: Father's given names
-- padre_apellidos: Father's surnames
-- padre_identificacion: Father's ID document
+- padre_apellidos: Father's surnames (or full name if single field)
+- padre_identificacion: Father's ID
 - madre_nombres: Mother's given names
-- madre_apellidos: Mother's surnames
-- madre_identificacion: Mother's ID document
-- fecha_nacimiento: Date of birth
+- madre_apellidos: Mother's surnames (or full name if single field)
+- madre_identificacion: Mother's ID
+- fecha_nacimiento: Date of birth (Day Month Year)
 - fecha_registro: Registration date
-- serial_indicator: Serial indicator number
+- serial_indicator: Serial number
 - codigo: Document code
 
 Return a JSON object where each key is a field name and each value is the extraction instruction for THIS template.
