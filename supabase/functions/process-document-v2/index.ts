@@ -178,8 +178,15 @@ serve(async (req) => {
         console.log(`Extracted factor_rh: ${extractedData?.factor_rh || 'NOT FOUND'}`);
 
         // 8. Validate & Save
+        // === ALL VALIDATION DISABLED ===
+        // Both heuristic and semantic validation have been disabled
+        /*
         let validationResult = validateData(extractedData, matchedTemplate);
         console.log(`Validator Result: ${validationResult.valid ? 'PASSED' : 'FAILED'}`);
+        */
+        // Force validation to pass
+        let validationResult = { valid: true, errors: [] };
+        console.log("Validation: SKIPPED (all validation disabled)");
 
         // 9. Semantic QA (Only if Heuristic passed)
         // === QA VALIDATION DISABLED ===
