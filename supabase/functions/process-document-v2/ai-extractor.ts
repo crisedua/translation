@@ -111,10 +111,10 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     )) {
         console.log("[AI-EXTRACTOR] Applying FORCED overrides for Registro Nacimiento Nuevo");
         const nuevoOverrides: Record<string, string> = {
-            "fecha_expedicion": "CRITICAL: Scroll to the ABSOLUTE BOTTOM of the page. Find the footer section with 'Fecha de expedición'. This is BELOW all other content, AFTER all the form data. It has THREE cyan boxes with Día/Mes/Año. DO NOT EXTRACT FROM 'Date of Birth' OR 'Fecha de nacimiento' which are in the MIDDLE of the page! The issue date is ALWAYS at the very bottom footer. If the document shows birth date 2017, the issue date is likely 2024 or later. ONLY extract from footer.",
-            "issue_day": "FOOTER BOTTOM ONLY: The 'Día' box in the 'Fecha de expedición' footer. NOT from birth date.",
-            "issue_month": "FOOTER BOTTOM ONLY: The 'Mes' box in the 'Fecha de expedición' footer. NOT from birth date.",
-            "issue_year": "FOOTER BOTTOM ONLY: The 'Año' box in the 'Fecha de expedición' footer. This is usually 2017 or LATER, NOT the same as birth year."
+            "fecha_expedicion": "VISION INSTRUCTION: Look at the document image. Scroll/look to the LAST page, BOTTOM section. You will see a dark blue bar labeled 'Fecha de expedición'. BELOW this bar are THREE cyan input boxes. Extract ONLY from these bottom boxes. IGNORE everything above the middle of the page. The 'Date of Birth' is in the middle/top - DO NOT use it. Return format: DD-MM-YYYY from the FOOTER ONLY.",
+            "issue_day": "Extract ONLY from BOTTOM footer 'Día' box under 'Fecha de expedición' label (NOT birth day which is higher up on page).",
+            "issue_month": "Extract ONLY from BOTTOM footer 'Mes' box under 'Fecha de expedición' label (NOT birth month which is higher up on page).",
+            "issue_year": "Extract ONLY from BOTTOM footer 'Año' box under 'Fecha de expedición' label (NOT birth year which is higher up on page). Footer year is typically 2020+."
         };
         // Merge overrides into template instructions (overwriting DB values if present)
         templateInstructions = { ...templateInstructions, ...nuevoOverrides };
