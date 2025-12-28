@@ -7,46 +7,57 @@
  * Used when template doesn't have specific instructions for a field
  */
 const DEFAULT_EXTRACTION_INSTRUCTIONS: Record<string, string> = {
-    // NUIP - Critical to get complete value
-    "nuip": "Extract COMPLETE value including ANY leading letters (e.g., 'V2A0001156' NOT '0001156')",
-    "nuip_top": "Extract COMPLETE NUIP from top-left box including leading letters",
+    // NUIP - CRITICAL: Must include leading letters
+    "nuip": "CRITICAL: Extract the COMPLETE NUIP from the box labeled 'NUIP'. It MUST include any leading LETTERS like 'V2A' (e.g., 'V2A0001156' NOT '0001156'). The format is typically LETTERS+NUMBERS.",
+    "nuip_top": "Extract COMPLETE NUIP from top-left box. MUST include leading letters (e.g., 'V2A0001156')",
 
-    // Names - Must be separate
-    "primer_apellido": "Extract FIRST surname ONLY (e.g., 'QUEVEDO'). This is SEPARATE from segundo_apellido",
-    "segundo_apellido": "Extract SECOND surname ONLY (e.g., 'HERRERA'). This is SEPARATE from primer_apellido",
-    "nombres": "Extract given names of the registrant (the person being registered)",
+    // Names - CRITICAL: Read from separate labeled boxes
+    "primer_apellido": "Extract FIRST surname from box labeled 'Primer Apellido'. Example: 'QUEVEDO'. This is in a SEPARATE box from segundo_apellido.",
+    "segundo_apellido": "CRITICAL: Extract SECOND surname from box labeled 'Segundo Apellido'. Example: 'HERRERA'. This is in a SEPARATE box NEXT TO primer_apellido. DO NOT leave empty if there is text in this box!",
+    "nombres": "Extract given names from box labeled 'Nombre(s)' or 'Given Names'. Example: 'KATERINE'",
 
-    // Location - Must include full details
-    "lugar_nacimiento": "Extract FULL place of birth INCLUDING clinic/hospital name AND city (e.g., 'CLINICA MATERNO INFANTIL FARALLONES (COLOMBIA.VALLE.CALI)')",
-    "birth_location_combined": "Extract COMPLETE birth location with clinic name, country, department, and municipality",
+    // Location - CRITICAL: Must include ALL parts including clinic/hospital
+    "lugar_nacimiento": "CRITICAL: Extract the FULL place of birth INCLUDING the clinic/hospital name AND full location. Example: 'CLINICA MATERNO INFANTIL FARALLONES (COLOMBIA.VALLE.CALI)'. Do NOT truncate - include ALL text.",
+    "birth_location_combined": "CRITICAL: Extract COMPLETE birth location with clinic/hospital name, country, department, and municipality. Example: 'CLINICA MATERNO INFANTIL FARALLONES (COLOMBIA.VALLE.CALI)'. Must include ALL parts.",
+    "pais_nacimiento": "Country of birth only (e.g., 'COLOMBIA')",
+    "departamento_nacimiento": "Department of birth only (e.g., 'VALLE')",
+    "municipio_nacimiento": "Municipality of birth only (e.g., 'CALI')",
 
-    // Officials - Must be complete names
-    "authorizing_official": "Extract COMPLETE full name of the official (ALL surnames and first names). Look near 'Nombre y firma del funcionario'",
-    "acknowledgment_official": "ONLY extract if 'Reconocimiento Paterno' section is filled. Otherwise return empty string",
-    "funcionario_nombre": "Extract COMPLETE official name with all parts",
+    // Registry location - Extract full location
+    "registry_location_combined": "Extract COMPLETE registry location: country, department, municipality (e.g., 'COLOMBIA.VALLE.CALI')",
+    "pais_registro": "Country where registered (usually 'COLOMBIA')",
+    "departamento_registro": "Department where registered (e.g., 'VALLE')",
+    "municipio_registro": "Municipality where registered (e.g., 'CALI')",
+
+    // Officials - CRITICAL: Must be COMPLETE names with ALL parts
+    "authorizing_official": "CRITICAL: Extract the COMPLETE FULL NAME of the authorizing official near 'Nombre y firma del funcionario que autoriza'. Include ALL name parts - do NOT truncate! Example: 'HOLMES RACEL CAROLINA MONTOYA'",
+    "acknowledgment_official": "ONLY extract if 'Reconocimiento Paterno' section has a signature and name. If section is empty, return empty string.",
+    "funcionario_nombre": "CRITICAL: Extract COMPLETE official name with ALL parts. Do NOT truncate - officials have 3-4+ name parts.",
 
     // Parents - Separate fields
-    "padre_nombres": "Father's given names only",
-    "padre_apellidos": "Father's surnames (both first and second)",
-    "padre_tipo_documento": "Father's ID document type (e.g., 'CEDULA DE CIUDADANIA', 'C.C.')",
-    "padre_identificacion": "Father's ID number",
-    "madre_nombres": "Mother's given names only",
-    "madre_apellidos": "Mother's surnames (both first and second)",
-    "madre_tipo_documento": "Mother's ID document type (e.g., 'CEDULA DE CIUDADANIA', 'C.C.')",
-    "madre_identificacion": "Mother's ID number",
+    "padre_nombres": "Father's given names only (e.g., 'HARVEY ABAD')",
+    "padre_apellidos": "Father's surnames - both first and second (e.g., 'QUEVEDO MEDINA')",
+    "padre_tipo_documento": "Father's ID document type (e.g., 'C.C.', 'CEDULA DE CIUDADANIA')",
+    "padre_identificacion": "Father's ID number with location (e.g., '10481.354 DE SANTANDER DE QUILICHAO')",
+    "madre_nombres": "Mother's given names only (e.g., 'ALBA YOLANDA')",
+    "madre_apellidos": "Mother's surnames - both first and second (e.g., 'HERRERA HERRERA')",
+    "madre_tipo_documento": "Mother's ID document type (e.g., 'C.C.', 'CEDULA DE CIUDADANIA')",
+    "madre_identificacion": "Mother's ID number with location (e.g., '31928.038 DE CALI (VALLE)')",
 
     // Dates - Keep as-is
     "fecha_nacimiento": "Extract date EXACTLY as written (e.g., '19-08-2000'). Do NOT split into parts",
     "fecha_registro": "Extract registration date EXACTLY as written",
 
-    // Notes - Full text
-    "margin_notes": "Extract ALL text from 'ESPACIO PARA NOTAS' section including NUIP info, dates, handwritten notes",
+    // Notes - Full text from ESPACIO PARA NOTAS
+    "margin_notes": "Extract ALL text from 'ESPACIO PARA NOTAS' section at bottom. Include NUIP info, dates, handwritten notes.",
     "notas": "Extract all notes and annotations",
+    "notes_combined": "Extract ALL notes from 'ESPACIO PARA NOTAS' section",
 
-    // Other
-    "serial_indicator": "Extract complete serial indicator number",
-    "codigo": "Extract complete code (may have multiple parts like '97 0 2' - combine them)",
-    "tipo_documento": "Document type (e.g., 'REGISTRO CIVIL DE NACIMIENTO', 'CERTIFICADO DE NACIDO VIVO')"
+    // Other identifiers
+    "serial_indicator": "Extract complete 'Indicativo Serial' number (e.g., '29734419')",
+    "codigo": "Extract complete code - may have parts like '97 0 2' (combine to '9702')",
+    "tipo_documento": "Document type from 'Tipo de documento antecedente' (e.g., 'CERTIFICADO DE NACIDO VIVO')",
+    "tipo_documento_anterior": "Prior document type (e.g., 'CERTIFICADO DE NACIDO VIVO')"
 };
 
 /**
@@ -97,12 +108,25 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
 
     // === BUILD FIELD LIST WITH INSTRUCTIONS ===
     // Merge template instructions with defaults (template takes priority)
+    let templateInstructionCount = 0;
+    let defaultInstructionCount = 0;
+
     const fieldListWithInstructions = targetFields.map(field => {
-        const instruction = templateInstructions[field] || DEFAULT_EXTRACTION_INSTRUCTIONS[field];
-        return instruction
-            ? `- "${field}": ${instruction}`
-            : `- "${field}"`;
+        const templateInstruction = templateInstructions[field];
+        const defaultInstruction = DEFAULT_EXTRACTION_INSTRUCTIONS[field];
+
+        if (templateInstruction) {
+            templateInstructionCount++;
+            return `- "${field}": ${templateInstruction}`;
+        } else if (defaultInstruction) {
+            defaultInstructionCount++;
+            return `- "${field}": ${defaultInstruction}`;
+        }
+        return `- "${field}"`;
     }).join('\n');
+
+    console.log(`[AI-EXTRACTOR] Instruction sources: ${templateInstructionCount} template-specific, ${defaultInstructionCount} defaults`);
+
 
     // === BUILD FOCUSED PROMPT ===
     const systemPrompt = `You are extracting data from a scanned ${docName} (${docType}).
@@ -112,51 +136,67 @@ Extract the following fields from the document. Each field has specific instruct
 
 ${fieldListWithInstructions}
 
-## CRITICAL RULES
+## CRITICAL EXTRACTION RULES - MUST FOLLOW
 
-1. **EXTRACT VALUES EXACTLY AS SEEN**
-   - Do NOT modify, combine, split, or reformat any values
-   - Keep dates exactly as written
-   - Keep names exactly as written with ALL parts
+### 1. NUIP EXTRACTION (MOST CRITICAL)
+- The NUIP field MUST include leading LETTERS if present
+- Example: "V2A0001156" NOT "0001156" or "20001156"
+- Look in the box labeled "NUIP" near the top
+- The format is: LETTERS + NUMBERS
 
-2. **DO NOT TRUNCATE**
-   - Extract COMPLETE values - full names, full text
-   - Official names can be long - extract ALL parts
-   - Include leading letters in IDs (e.g., V2A0001156)
+### 2. SURNAME EXTRACTION (TWO SEPARATE FIELDS)
+- primer_apellido: FIRST surname in LEFT box (e.g., "QUEVEDO")
+- segundo_apellido: SECOND surname in RIGHT box (e.g., "HERRERA")
+- These are in SEPARATE boxes side by side
+- DO NOT leave segundo_apellido empty if text is visible!
 
-3. **EMPTY FIELDS**
-   - If a field has no visible value (blank, dots, lines) → return ""
-   - Do NOT invent or guess values
+### 3. PLACE OF BIRTH (FULL TEXT REQUIRED)
+- lugar_nacimiento / birth_location_combined: Extract COMPLETE value
+- MUST include clinic/hospital name AND location
+- Example: "CLINICA MATERNO INFANTIL FARALLONES (COLOMBIA.VALLE.CALI)"
+- Do NOT truncate to just the country!
 
-4. **SECTION IDENTIFICATION**
-   - Registrant info (nombres, apellidos): TOP section "Datos del inscrito"
-   - Parents info: "Datos del Padre" and "Datos de la Madre" sections
-   - Official info: BOTTOM section near signatures
-   - Notes: "ESPACIO PARA NOTAS" section at bottom
+### 4. OFFICIAL NAMES (COMPLETE - NO TRUNCATION)
+- authorizing_official / funcionario_nombre: Extract ALL name parts
+- Officials have 3-4+ name parts - extract ALL of them
+- Example: "HOLMES RACEL CAROLINA MONTOYA" NOT just "HOLMES"
+- Look near "Nombre y firma del funcionario"
+
+### 5. LOCATION FIELDS
+- Registry location (Pais-Departamento-Municipio): Include ALL parts
+- Example: "COLOMBIA.VALLE.CALI" not just "COLOMBIA"
+
+### 6. EMPTY FIELDS
+- Return "" only if the field has NO visible text
+- If there IS text, extract it completely
 
 Return a JSON object with the exact field names listed above.`;
+
 
     const userPrompt = fileUrl
         ? `Extract data from this document image following the field instructions exactly.
 
-REMEMBER:
-- Extract COMPLETE values including leading letters
-- primer_apellido and segundo_apellido are SEPARATE fields
-- Include clinic/hospital names in lugar_nacimiento
-- Extract COMPLETE official names
+CRITICAL REMINDERS - COMMON ERRORS TO AVOID:
+1. NUIP: Must include leading letters (e.g., 'V2A0001156' not '0001156')
+2. segundo_apellido: NEVER empty - it's in the box NEXT TO primer_apellido (e.g., 'HERRERA')
+3. lugar_nacimiento: Include FULL clinic name + location (e.g., 'CLINICA MATERNO INFANTIL FARALLONES (COLOMBIA.VALLE.CALI)')
+4. authorizing_official: Include ALL name parts (e.g., 'HOLMES RACEL CAROLINA MONTOYA' not just 'HOLMES')
+5. Registry location: Include country.department.municipality (e.g., 'COLOMBIA.VALLE.CALI')
 
 Return JSON.`
         : `Extract data from this OCR text following the field instructions exactly:
 
 ${text.substring(0, 20000)}
 
-REMEMBER:
-- Extract COMPLETE values including leading letters
-- primer_apellido and segundo_apellido are SEPARATE fields
-- Include clinic/hospital names in lugar_nacimiento
-- Extract COMPLETE official names
+CRITICAL REMINDERS - COMMON ERRORS TO AVOID:
+1. NUIP: Must include leading letters (e.g., 'V2A0001156' not '0001156')
+2. segundo_apellido: NEVER empty - found in 'Segundo Apellido' column (e.g., 'HERRERA')
+3. lugar_nacimiento: Include FULL clinic name + location (e.g., 'CLINICA MATERNO INFANTIL FARALLONES (COLOMBIA.VALLE.CALI)')
+4. authorizing_official: Include ALL name parts (e.g., 'HOLMES RACEL CAROLINA MONTOYA' not just 'HOLMES')
+5. Registry location: Include all parts (e.g., 'COLOMBIA.VALLE.CALI')
 
 Return JSON.`;
+
 
     const messages: any[] = [
         { role: "system", content: systemPrompt },

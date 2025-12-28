@@ -301,7 +301,7 @@ Return ONLY the JSON object with ALL applicable mappings.`;
         // ====================================================================
         // STEP 5: Analyze document type and generate metadata with AI
         // ====================================================================
-        console.log("\n[5/5] Analyzing document type and metadata...");
+        console.log("\n[5/6] Analyzing document type and metadata...");
 
         const analysisPrompt = `Analyze this Colombian civil document template.
 
@@ -357,6 +357,94 @@ Return a JSON object with:
         console.log(`   ✓ Format: ${formatIndicators.version}`);
 
         // ====================================================================
+        // STEP 6: Generate Template-Specific Extraction Instructions
+        // ====================================================================
+        console.log("\n[6/6] Generating extraction instructions...");
+
+        const extractionPrompt = `You are an expert at extracting data from Colombian civil registry documents.
+
+TEMPLATE NAME: ${templateName}
+DOCUMENT TYPE: ${documentType}
+FORMAT VERSION: ${formatIndicators.version}
+
+PDF FORM FIELDS IN THIS TEMPLATE:
+${JSON.stringify(pdfFieldNames, null, 2)}
+
+TEMPLATE TEXT (layout reference):
+${templateText.substring(0, 6000)}
+
+Generate SPECIFIC extraction instructions for each field below. Each instruction should describe:
+1. WHERE to find this field in THIS specific template (section name, position, nearby labels)
+2. WHAT format to expect (letters+numbers, separate boxes, combined fields, etc.)
+3. Common MISTAKES to avoid for this field
+
+FIELDS TO DOCUMENT:
+- nuip: The unique identification number (may have leading letters like V2A)
+- nuip_top: NUIP from top of document
+- primer_apellido: First surname of the registrant
+- segundo_apellido: Second surname of the registrant (often in adjacent box)
+- nombres: Given names of the registrant
+- lugar_nacimiento: Full place of birth (may include clinic/hospital name)
+- birth_location_combined: Complete birth location with country, department, municipality
+- pais_nacimiento: Country of birth
+- departamento_nacimiento: Department of birth
+- municipio_nacimiento: Municipality of birth
+- registry_location_combined: Complete registry location
+- authorizing_official: Official who authorized the document (full name near signature)
+- acknowledgment_official: Official for paternal recognition (if applicable)
+- funcionario_nombre: Official name
+- padre_nombres: Father's given names
+- padre_apellidos: Father's surnames
+- padre_identificacion: Father's ID document
+- madre_nombres: Mother's given names
+- madre_apellidos: Mother's surnames
+- madre_identificacion: Mother's ID document
+- fecha_nacimiento: Date of birth
+- fecha_registro: Registration date
+- serial_indicator: Serial indicator number
+- codigo: Document code
+
+Return a JSON object where each key is a field name and each value is the extraction instruction for THIS template.
+Example format:
+{
+  "nuip": "Look in box labeled 'NUIP' near top-left. Format is LETTERS+NUMBERS (e.g., V2A0001156). Include ALL characters.",
+  "segundo_apellido": "Adjacent box to the right of 'Primer Apellido', labeled 'Segundo Apellido'. Never leave empty if text visible."
+}`;
+
+        let extractionInstructions: Record<string, string> = {};
+
+        try {
+            const instructionResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${openaiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "gpt-4o",
+                    messages: [
+                        {
+                            role: "system",
+                            content: "You are an expert at document data extraction. Generate precise, template-specific extraction instructions. Return only valid JSON."
+                        },
+                        { role: "user", content: extractionPrompt }
+                    ],
+                    temperature: 0.2,
+                    response_format: { type: "json_object" }
+                }),
+            });
+
+            if (instructionResponse.ok) {
+                const instructionData = await instructionResponse.json();
+                extractionInstructions = JSON.parse(instructionData.choices?.[0]?.message?.content || "{}");
+                console.log(`   ✓ Generated ${Object.keys(extractionInstructions).length} extraction instructions`);
+            }
+        } catch (e) {
+            console.warn(`   ⚠ Extraction instruction generation failed: ${e}`);
+        }
+
+
+        // ====================================================================
         // Generate field_definitions from mappings
         // ====================================================================
         const fieldDefinitions = Object.keys(pdfMappings).map(fieldName => ({
@@ -383,10 +471,12 @@ Return a JSON object with:
                     keywords,
                     formatIndicators,
                     semanticDescription,
+                    extraction_instructions: extractionInstructions,  // Template-specific prompts
                     pdf_mappings: pdfMappings,
-                    pdfFields: pdfFieldNames,  // Store complete PDF field list for reference
+                    pdfFields: pdfFieldNames,
                     pdfFieldCount: pdfFieldNames.length,
-                    mappingCount: Object.keys(pdfMappings).length
+                    mappingCount: Object.keys(pdfMappings).length,
+                    extractionInstructionCount: Object.keys(extractionInstructions).length
                 }
             })
             .select()
@@ -406,8 +496,10 @@ Return a JSON object with:
         console.log(`   Name: ${templateName}`);
         console.log(`   PDF Fields: ${pdfFieldNames.length}`);
         console.log(`   Field Mappings: ${Object.keys(pdfMappings).length}`);
+        console.log(`   Extraction Instructions: ${Object.keys(extractionInstructions).length}`);
         console.log(`   Document Type: ${documentType}`);
         console.log('='.repeat(60) + '\n');
+
 
         return new Response(JSON.stringify({
             success: true,
