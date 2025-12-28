@@ -101,25 +101,33 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
 
 
     // Combine all field sources (unique)
-    const allTargetFields = [...new Set([
+    const allTemplateFields = [...new Set([
         ...pdfFields,
         ...mappingKeys,
         ...definedFieldNames
     ])];
 
-    // Fallback field list if template has none defined
-    const targetFields = allTargetFields.length > 0 ? allTargetFields : [
-        "nuip", "nuip_top", "serial_indicator", "codigo",
+    // === CRITICAL FIELDS THAT MUST ALWAYS BE EXTRACTED ===
+    // These are ALWAYS added to ensure proper extraction even if template is incomplete
+    const CRITICAL_FIELDS = [
+        "nuip", "nuip_top", "serial_indicator",
         "nombres", "primer_apellido", "segundo_apellido",
+        "padre_nombres", "padre_apellidos",
+        "madre_nombres", "madre_apellidos",
+        "lugar_nacimiento", "birth_location_combined",
+        "authorizing_official", "fecha_nacimiento", "fecha_registro",
         "sexo", "grupo_sanguineo", "factor_rh",
-        "fecha_nacimiento", "hora_nacimiento", "lugar_nacimiento",
-        "pais_nacimiento", "departamento_nacimiento", "municipio_nacimiento",
-        "padre_nombres", "padre_apellidos", "padre_identificacion", "padre_tipo_documento", "padre_nacionalidad",
-        "madre_nombres", "madre_apellidos", "madre_identificacion", "madre_tipo_documento", "madre_nacionalidad",
-        "authorizing_official", "acknowledgment_official",
-        "fecha_registro", "pais_registro", "departamento_registro", "municipio_registro",
-        "oficina", "numero_oficina", "margin_notes", "notas", "tipo_documento"
+        "pais_nacimiento", "departamento_nacimiento", "municipio_nacimiento"
     ];
+
+    // Merge template fields with critical fields (critical fields always included)
+    const targetFields = [...new Set([
+        ...CRITICAL_FIELDS,
+        ...allTemplateFields
+    ])];
+
+    console.log(`[AI-EXTRACTOR] Target fields: ${targetFields.length} (${CRITICAL_FIELDS.length} critical + ${allTemplateFields.length} from template)`);
+
 
     const docName = template?.name || 'Colombian Document';
     const docType = template?.content_profile?.documentType?.replace(/_/g, ' ').toUpperCase() || 'CIVIL REGISTRY DOCUMENT';
