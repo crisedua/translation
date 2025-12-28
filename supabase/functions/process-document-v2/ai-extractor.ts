@@ -138,6 +138,7 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
         "madre_nombres", "madre_apellidos",
         "lugar_nacimiento", "birth_location_combined",
         "authorizing_official", "fecha_nacimiento", "fecha_registro",
+        "fecha_expedicion", "issue_day", "issue_month", "issue_year",  // Date of Issue fields
         "sexo", "grupo_sanguineo", "factor_rh",
         "pais_nacimiento", "departamento_nacimiento", "municipio_nacimiento"
     ];
