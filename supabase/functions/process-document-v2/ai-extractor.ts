@@ -99,6 +99,21 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     }
     // === END OVERRIDE ===
 
+    // === FORCE OVERRIDE FOR REGISTRO NACIMIENTO NUEVO ===
+    // If we detect "Nuevo", apply specific overrides for this template
+    if (template.name && template.name.toLowerCase().includes('nuevo')) {
+        console.log("[AI-EXTRACTOR] Applying FORCED overrides for Registro Nacimiento Nuevo");
+        const nuevoOverrides: Record<string, string> = {
+            "fecha_expedicion": "CRITICAL: This is the 'Fecha de expedición' (Date of Issue) located at the BOTTOM/FOOTER of the document in a DARK BLUE BOX. It has THREE separate fields: 'Día' (Day), 'Mes' (Month), 'Año' (Year). Extract ONLY from this footer section, NOT from birth date or registration date boxes! Example: Day=12, Month=04, Year=2024 -> '12-04-2024'. DO NOT use '2017' or any date from the middle of the document!",
+            "issue_day": "Extract from the 'Día' (Day) box in the BLUE footer 'Fecha de expedición' section at the BOTTOM of the page.",
+            "issue_month": "Extract from the 'Mes' (Month) box in the BLUE footer 'Fecha de expedición' section at the BOTTOM of the page.",
+            "issue_year": "Extract from the 'Año' (Year) box in the BLUE footer 'Fecha de expedición' section at the BOTTOM of the page."
+        };
+        // Merge overrides into template instructions (overwriting DB values if present)
+        templateInstructions = { ...templateInstructions, ...nuevoOverrides };
+    }
+    // === END OVERRIDE ===
+
 
     // Combine all field sources (unique)
     const allTemplateFields = [...new Set([
