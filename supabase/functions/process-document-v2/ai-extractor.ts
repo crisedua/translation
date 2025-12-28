@@ -80,7 +80,25 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     const definedFieldNames = fieldDefinitions.map((f: any) => f.name);
 
     // Get template-specific extraction instructions (if any)
-    const templateInstructions = template?.content_profile?.extraction_instructions || {};
+    let templateInstructions = template?.content_profile?.extraction_instructions || {};
+
+    // === FORCE OVERRIDE FOR REGISTRO NACIMIENTO MEDIO ===
+    // If we detect "Medio", we forcefully inject these PROVEN instructions 
+    // to ensure surnames and birth place are extracted correctly.
+    if (template.name && template.name.toLowerCase().includes('medio')) {
+        console.log("[AI-EXTRACTOR] Applying FORCED overrides for Registro Nacimiento Medio");
+        const medioOverrides: Record<string, string> = {
+            "madre_apellidos": "LOCATED in the row ABOVE 'Nombres'. Look for TWO separate boxes labeled 'Primer Apellido' and 'Segundo Apellido'. Extract the text from BOTH boxes (e.g., 'HERRERA HERRERA'). Do NOT extract the names.",
+            "padre_apellidos": "LOCATED in the row ABOVE 'Nombres' for the father. Look for TWO separate boxes. Extract text from BOTH (e.g., 'QUEVEDO MEDINA').",
+            "lugar_nacimiento": "LOCATED in the row starting with 'Fecha de nacimiento'. Look for the wide box labeled 'Lugar de nacimiento'. Extract the ENTIRE text including clinic name and parentheses (e.g., 'CLINICA ... (COLOMBIA...)').",
+            "nuip": "Located in the top right or within the header. EXTRACT THE FULL ALPHANUMERIC STRING including any letters like 'V2A'. Example: 'V2A2692167'.",
+            "serial_indicator": "Often found near the NUIP or barcode. Extract just the number."
+        };
+        // Merge overrides into template instructions (overwriting DB values if present)
+        templateInstructions = { ...templateInstructions, ...medioOverrides };
+    }
+    // === END OVERRIDE ===
+
 
     // Combine all field sources (unique)
     const allTargetFields = [...new Set([
