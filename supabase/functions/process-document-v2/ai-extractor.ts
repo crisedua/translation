@@ -111,10 +111,10 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     )) {
         console.log("[AI-EXTRACTOR] Applying FORCED overrides for Registro Nacimiento Nuevo");
         const nuevoOverrides: Record<string, string> = {
-            "fecha_expedicion": "CRITICAL: Look ONLY at the footer section at the VERY BOTTOM of the page. Find the area with dark blue/navy header labeled 'Fecha de expedición'. Below it are THREE cyan/light blue input boxes labeled 'Día', 'Mes', and 'Año'. Extract the numbers from these three boxes ONLY. IGNORE all other dates in the document (birth date, registration date, etc.). Combine as DD-MM-YYYY.",
-            "issue_day": "Extract the number from the 'Día' box in the footer 'Fecha de expedición' section (BOTTOM of page only).",
-            "issue_month": "Extract the number from the 'Mes' box in the footer 'Fecha de expedición' section (BOTTOM of page only).",
-            "issue_year": "Extract the number from the 'Año' box in the footer 'Fecha de expedición' section (BOTTOM of page only)."
+            "fecha_expedicion": "CRITICAL: Scroll to the ABSOLUTE BOTTOM of the page. Find the footer section with 'Fecha de expedición'. This is BELOW all other content, AFTER all the form data. It has THREE cyan boxes with Día/Mes/Año. DO NOT EXTRACT FROM 'Date of Birth' OR 'Fecha de nacimiento' which are in the MIDDLE of the page! The issue date is ALWAYS at the very bottom footer. If the document shows birth date 2017, the issue date is likely 2024 or later. ONLY extract from footer.",
+            "issue_day": "FOOTER BOTTOM ONLY: The 'Día' box in the 'Fecha de expedición' footer. NOT from birth date.",
+            "issue_month": "FOOTER BOTTOM ONLY: The 'Mes' box in the 'Fecha de expedición' footer. NOT from birth date.",
+            "issue_year": "FOOTER BOTTOM ONLY: The 'Año' box in the 'Fecha de expedición' footer. This is usually 2017 or LATER, NOT the same as birth year."
         };
         // Merge overrides into template instructions (overwriting DB values if present)
         templateInstructions = { ...templateInstructions, ...nuevoOverrides };
