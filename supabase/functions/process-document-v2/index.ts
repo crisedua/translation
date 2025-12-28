@@ -182,6 +182,9 @@ serve(async (req) => {
         console.log(`Validator Result: ${validationResult.valid ? 'PASSED' : 'FAILED'}`);
 
         // 9. Semantic QA (Only if Heuristic passed)
+        // === QA VALIDATION DISABLED ===
+        // Semantic QA validation has been disabled for faster processing
+        /*
         if (validationResult.valid) {
             console.log("Running Semantic QA Validation...");
             // Use visionDataUri if available (best context), otherwise ocrText
@@ -195,6 +198,8 @@ serve(async (req) => {
                 console.log("Semantic QA PASSED.");
             }
         }
+        */
+        console.log("QA Validation: SKIPPED (disabled)");
 
         let request: any;
         const dbData = {
