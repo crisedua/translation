@@ -83,9 +83,12 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     let templateInstructions = template?.content_profile?.extraction_instructions || {};
 
     // === FORCE OVERRIDE FOR REGISTRO NACIMIENTO MEDIO ===
-    // If we detect "Medio", we forcefully inject these PROVEN instructions 
-    // to ensure surnames and birth place are extracted correctly.
-    if (template.name && template.name.toLowerCase().includes('medio')) {
+    // If we detect the SPECIFIC "Registro Nacimiento Medio" template, apply these overrides
+    if (template.name && (
+        template.name.toLowerCase().includes('registro') &&
+        template.name.toLowerCase().includes('nacimiento') &&
+        template.name.toLowerCase().includes('medio')
+    )) {
         console.log("[AI-EXTRACTOR] Applying FORCED overrides for Registro Nacimiento Medio");
         const medioOverrides: Record<string, string> = {
             "madre_apellidos": "LOCATED in the row ABOVE 'Nombres'. Look for TWO separate boxes labeled 'Primer Apellido' and 'Segundo Apellido'. Extract the text from BOTH boxes (e.g., 'HERRERA HERRERA'). Do NOT extract the names.",
@@ -100,8 +103,12 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     // === END OVERRIDE ===
 
     // === FORCE OVERRIDE FOR REGISTRO NACIMIENTO NUEVO ===
-    // If we detect "Nuevo", apply specific overrides for this template
-    if (template.name && template.name.toLowerCase().includes('nuevo')) {
+    // If we detect the SPECIFIC "Registro Nacimiento Nuevo" template, apply these overrides
+    if (template.name && (
+        template.name.toLowerCase().includes('registro') &&
+        template.name.toLowerCase().includes('nacimiento') &&
+        template.name.toLowerCase().includes('nuevo')
+    )) {
         console.log("[AI-EXTRACTOR] Applying FORCED overrides for Registro Nacimiento Nuevo");
         const nuevoOverrides: Record<string, string> = {
             "fecha_expedicion": "CRITICAL: This is the 'Fecha de expedición' (Date of Issue) located at the BOTTOM/FOOTER of the document in a DARK BLUE BOX. It has THREE separate fields: 'Día' (Day), 'Mes' (Month), 'Año' (Year). Extract ONLY from this footer section, NOT from birth date or registration date boxes! Example: Day=12, Month=04, Year=2024 -> '12-04-2024'. DO NOT use '2017' or any date from the middle of the document!",
