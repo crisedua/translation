@@ -365,13 +365,17 @@ serve(async (req) => {
         }
 
         // === PRE-PROCESSING: Combine Surnames ===
+        // === DISABLED: Keep surnames separate as they are in the form ===
         // If we have separate surname fields but no combined one, create it.
         // This ensures that if the PDF has a single "Surnames" field, it gets the full value.
+        /*
         if (extractedData['primer_apellido'] && extractedData['segundo_apellido'] && !extractedData['Apellidos']) {
             const combinedSurnames = `${extractedData['primer_apellido']} ${extractedData['segundo_apellido']}`.trim();
             console.log(`[PRE-PROCESS] Combining registrant surnames: "${combinedSurnames}"`);
             extractedData['Apellidos'] = combinedSurnames;
         }
+        */
+        console.log("[PRE-PROCESS] Registrant surnames: keeping separate (no combination)");
 
         // === PRE-PROCESS: Combine Parent Names ===
         // Many PDFs have a single field for "Apellidos y Nombres" of parents
