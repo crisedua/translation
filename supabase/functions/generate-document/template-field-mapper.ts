@@ -71,11 +71,10 @@ const STANDARD_FIELD_MAPPINGS: Record<string, string[]> = {
     "birth_month": ["birth_month", "month"],
     "birth_year": ["birth_year", "year"],
     "hora_nacimiento": ["time", "birth_time", "hora"],
-    "pais_nacimiento": ["country_birth", "country", "birth_country_dept_munic"],
-    "departamento_nacimiento": ["dept_birth", "department", "birth_country_dept_munic"],
-    "municipio_nacimiento": ["muni_birth", "municipality", "birth_country_dept_munic"],
-    "lugar_nacimiento": ["township_birth", "birth_place", "place", "birth_country_dept_munic"],
-    "birth_location_combined": ["birth_country_dept_munic", "place_of_birth", "birth_place"],
+    "pais_nacimiento": ["country_birth", "country"],
+    "departamento_nacimiento": ["dept_birth", "department"],
+    "municipio_nacimiento": ["muni_birth", "municipality"],
+    "lugar_nacimiento": ["birth_country_dept_munic", "township_birth", "birth_place", "place"],
 
     // Father Information
     "padre_nombres": ["father_names", "father_surnames_names"],
@@ -106,12 +105,13 @@ const STANDARD_FIELD_MAPPINGS: Record<string, string[]> = {
     // Registry Information
     "oficina": ["office_type", "notary_number", "office"],
     "numero_oficina": ["notary_number", "office_number"],
-    "departamento_registro": ["dept_office", "country_dept_munic"],
-    "municipio_registro": ["muni_office", "country_dept_munic"],
+    "departamento_registro": ["dept_office"],
+    "municipio_registro": ["muni_office"],
     "fecha_registro": ["date_registration", "date_registered"],
     "reg_day": ["reg_day"],
     "reg_month": ["reg_month"],
     "reg_year": ["reg_year"],
+    "country_dept_munic": ["country_dept_munic"],
     "registry_location_combined": ["country_dept_munic"],
 
     // Notes (special handling - distributes across multiple fields)
