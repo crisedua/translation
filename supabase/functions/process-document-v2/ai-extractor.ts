@@ -66,6 +66,7 @@ const DEFAULT_EXTRACTION_INSTRUCTIONS: Record<string, string> = {
     "serial_indicator": "Extract complete 'Indicativo Serial' number (e.g., '29734419')",
     "codigo": "Extract complete code - may have parts like '97 0 2' (combine to '9702')",
     "numero_oficina": "Extract ONLY the numeric Notary/Office Number. Example: '21' (just the number). Look near 'NOTARIA' or 'OFICINA' and extract ONLY the digits, NOT the word 'NOTARIA'. If it says 'NOTARIA 21', extract just '21'.",
+    "notary_number": "Extract the Notary or Office NUMBER from the 'Número' field. Should be just digits like '21'. Look in 'Datos de la oficina de registro' section.",
     "oficina": "Extract the type and name of the office (e.g., 'NOTARIA 21 CALI').",
     "tipo_documento": "Document type from 'Tipo de documento antecedente' (e.g., 'CERTIFICADO DE NACIDO VIVO')",
     "tipo_documento_anterior": "Prior document type (e.g., 'CERTIFICADO DE NACIDO VIVO')"
@@ -127,6 +128,7 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
             "notes_line4": "ESPACIO PARA NOTAS - LINE 4: CRITICAL - This often has 'NUIP NUEVO. [10-digit number]' AND a HANDWRITTEN number below it (like '1006205637'). YOU MUST extract BOTH the typed and handwritten text. Example: 'NUIP NUEVO. 1006205637 1006205637'",
             "nuip_notes": "CRITICAL: In the 'ESPACIO PARA NOTAS' section, look for a 10-digit HANDWRITTEN number. It may appear as large handwritten digits like '1006205637'. Extract ONLY the number itself.",
             "numero_oficina": "Look for 'Datos de la oficina de registro' section. Find the field labeled 'Número' (next to the Registraduría/Notaría checkboxes). Extract ONLY the number from this field (e.g., '21').",
+            "notary_number": "CRITICAL: In 'Datos de la oficina de registro' section, find the small box labeled 'Número'. Extract the number inside it (e.g., '21'). This is next to the Notaría/Registraduría checkboxes.",
             "tipo_oficina": "Look for 'Datos de la oficina de registro' section. Check which box has an X mark: 'Registraduría' or 'Notaría'. Return the name of the checked option (e.g., 'Notaría' if that box has X)."
         };
         // Merge overrides into template instructions (overwriting DB values if present)
@@ -174,7 +176,7 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
         "reg_day", "reg_month", "reg_year", // Registration Date fields
         "sexo", "grupo_sanguineo", "factor_rh",
         "pais_nacimiento", "departamento_nacimiento", "municipio_nacimiento",
-        "oficina", "numero_oficina",
+        "oficina", "numero_oficina", "notary_number",
         "margin_notes", "notas", "notes_combined", "nuip_notes",
         "notes_line1", "notes_line2", "notes_line3", "notes_line4", "notes_line5", "notes_line6", "notes_line7"  // Individual notes lines
     ];
