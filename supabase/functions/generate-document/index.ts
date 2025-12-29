@@ -383,40 +383,58 @@ serve(async (req) => {
 
         // Father
         const fatherNames = extractedData['padre_nombres'] || extractedData['Father Names'] || '';
-        const fatherSurnames = extractedData['padre_apellidos'] || extractedData['Father Surnames'] || '';
+        let fatherSurnames = extractedData['padre_apellidos'] || extractedData['Father Surnames'] || '';
 
-        if (fatherNames || fatherSurnames) {
-            // Check if we have separate surnames for father
+        // STRATEGY: 1. Raw Field (single line) -> 2. Atomic Field Reconstruction -> 3. Standard Combine
+        let fatherFull = extractedData['padre_nombre_completo_raw'] || '';
+
+        if (fatherFull) {
+            console.log(`[PRE-PROCESS] Using RAW Father Full Name: "${fatherFull}"`);
+        } else if (fatherNames || fatherSurnames) {
+            // Check if we have separate surnames for father - PREFER ATOMIC FIELDS
             let fullFatherSurnames = fatherSurnames;
-            if (!fullFatherSurnames && extractedData['padre_primer_apellido']) {
-                fullFatherSurnames = [extractedData['padre_primer_apellido'], extractedData['padre_segundo_apellido']].filter(Boolean).join(' ');
+            if (extractedData['padre_primer_apellido']) {
+                const s1 = extractedData['padre_primer_apellido'];
+                const s2 = extractedData['padre_segundo_apellido'] || '';
+                fullFatherSurnames = [s1, s2].filter(Boolean).join(' ');
+                console.log(`[PRE-PROCESS] Reconstructed Father Surnames: "${fullFatherSurnames}"`);
             }
+            fatherFull = `${fullFatherSurnames} ${fatherNames}`.trim();
+        }
 
-            const fatherFull = `${fullFatherSurnames} ${fatherNames}`.trim();
-            if (fatherFull) {
-                console.log(`[PRE-PROCESS] Combining Father Full Name: "${fatherFull}"`);
-                extractedData['padre_completo'] = fatherFull;
-                extractedData["Father's Surnames and Full Names"] = fatherFull;
-            }
+        if (fatherFull) {
+            console.log(`[PRE-PROCESS] Final Father Full Name: "${fatherFull}"`);
+            extractedData['padre_completo'] = fatherFull;
+            extractedData["Father's Surnames and Full Names"] = fatherFull;
+            extractedData['father_full_name'] = fatherFull; // Alias for Direct Mapper
         }
 
         // Mother
         const motherNames = extractedData['madre_nombres'] || extractedData['Mother Names'] || '';
-        const motherSurnames = extractedData['madre_apellidos'] || extractedData['Mother Surnames'] || '';
+        let motherSurnames = extractedData['madre_apellidos'] || extractedData['Mother Surnames'] || '';
 
-        if (motherNames || motherSurnames) {
-            // Check if we have separate surnames for mother
+        // STRATEGY: 1. Raw Field (single line) -> 2. Atomic Field Reconstruction -> 3. Standard Combine
+        let motherFull = extractedData['madre_nombre_completo_raw'] || '';
+
+        if (motherFull) {
+            console.log(`[PRE-PROCESS] Using RAW Mother Full Name: "${motherFull}"`);
+        } else if (motherNames || motherSurnames) {
+            // Check if we have separate surnames for mother - PREFER ATOMIC FIELDS
             let fullMotherSurnames = motherSurnames;
-            if (!fullMotherSurnames && extractedData['madre_primer_apellido']) {
-                fullMotherSurnames = [extractedData['madre_primer_apellido'], extractedData['madre_segundo_apellido']].filter(Boolean).join(' ');
+            if (extractedData['madre_primer_apellido']) {
+                const s1 = extractedData['madre_primer_apellido'];
+                const s2 = extractedData['madre_segundo_apellido'] || '';
+                fullMotherSurnames = [s1, s2].filter(Boolean).join(' ');
+                console.log(`[PRE-PROCESS] Reconstructed Mother Surnames: "${fullMotherSurnames}"`);
             }
+            motherFull = `${fullMotherSurnames} ${motherNames}`.trim();
+        }
 
-            const motherFull = `${fullMotherSurnames} ${motherNames}`.trim();
-            if (motherFull) {
-                console.log(`[PRE-PROCESS] Combining Mother Full Name: "${motherFull}"`);
-                extractedData['madre_completo'] = motherFull;
-                extractedData["Mother's Surnames and Full Names"] = motherFull;
-            }
+        if (motherFull) {
+            console.log(`[PRE-PROCESS] Final Mother Full Name: "${motherFull}"`);
+            extractedData['madre_completo'] = motherFull;
+            extractedData["Mother's Surnames and Full Names"] = motherFull;
+            extractedData['mother_full_name'] = motherFull; // Alias for Direct Mapper
         }
 
 
@@ -424,7 +442,6 @@ serve(async (req) => {
         // These MUST be filled BEFORE the main loop to prevent partial data from blocking complete data
         console.log("[CRITICAL-FILL] Filling parent names and birth place EARLY to prevent overwrite blocking...");
 
-        // Parent Full Names
         // Parent Full Names
         const motherFullName = extractedData.madre_completo || extractedData["Mother's Surnames and Full Names"];
         const fatherFullName = extractedData.padre_completo || extractedData["Father's Surnames and Full Names"];

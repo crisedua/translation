@@ -94,9 +94,11 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
             "madre_primer_apellido": "In the mother section, find the FIRST box labeled 'Primer Apellido'. Extract ONLY from this box. Example: 'HERRERA'.",
             "madre_segundo_apellido": "In the mother section, find the SECOND box labeled 'Segundo Apellido'. Extract ONLY from this box. Example: 'HERRERA'.",
             "madre_apellidos": "Extract the combined text of Primer AND Segundo Apellido. If they are the same, include BOTH (e.g. 'HERRERA HERRERA'). Do NOT deduplicate.",
+            "madre_nombre_completo_raw": "CRITICAL: Extract the EXACT FULL TEXT from the line 'Apellidos y nombres completos' in the Mother's section. Copy it as-is (e.g., 'HERRERA HERRERA ALBA YOLANDA').",
             "padre_primer_apellido": "In the father section, find the FIRST box labeled 'Primer Apellido'. Extract ONLY from this box. Example: 'QUEVEDO'.",
             "padre_segundo_apellido": "In the father section, find the SECOND box labeled 'Segundo Apellido'. Extract ONLY from this box. Example: 'MEDINA'.",
             "padre_apellidos": "Extract the combined text of Primer AND Segundo Apellido. If they are the same, include BOTH. Do NOT deduplicate.",
+            "padre_nombre_completo_raw": "CRITICAL: Extract the EXACT FULL TEXT from the line 'Apellidos y nombres completos' in the Father's section. Copy it as-is.",
             "lugar_nacimiento": "LOCATED in the row starting with 'Fecha de nacimiento'. Look for the wide box labeled 'Lugar de nacimiento'. Extract the ENTIRE text including clinic name and parentheses (e.g., 'CLINICA ... (COLOMBIA...)').",
             "nuip": "Located in the top right or within the header. EXTRACT THE FULL ALPHANUMERIC STRING including any letters like 'V2A'. Example: 'V2A2692167'.",
             "serial_indicator": "Often found near the NUIP or barcode. Extract just the number."
