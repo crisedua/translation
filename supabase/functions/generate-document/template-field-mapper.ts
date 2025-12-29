@@ -103,8 +103,11 @@ const STANDARD_FIELD_MAPPINGS: Record<string, string[]> = {
     "testigo2_identificacion": ["witness2_id_doc", "witness2_id"],
 
     // Registry Information
-    "oficina": ["office_type", "notary_number", "office"],
-    "numero_oficina": ["notary_number", "office_number"],
+    "oficina": ["office_type", "office"],
+    "numero_oficina": ["notary_number", "office_number", "Number"],
+    "notary_number": ["notary_number", "Number", "office_number"],
+    "numero": ["notary_number", "Number", "office_number"],
+    "Número": ["notary_number", "Number", "office_number"],
     "departamento_registro": ["dept_office"],
     "municipio_registro": ["muni_office"],
     "fecha_registro": ["date_registration", "date_registered"],
