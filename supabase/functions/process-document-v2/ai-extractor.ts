@@ -23,11 +23,8 @@ const DEFAULT_EXTRACTION_INSTRUCTIONS: Record<string, string> = {
     "departamento_nacimiento": "Department of birth only (e.g., 'VALLE')",
     "municipio_nacimiento": "Municipality of birth only (e.g., 'CALI')",
 
-    // Registry location - Extract full location
-    "registry_location_combined": "Extract COMPLETE registry location: country, department, municipality (e.g., 'COLOMBIA.VALLE.CALI')",
-    "pais_registro": "Country where registered (usually 'COLOMBIA')",
-    "departamento_registro": "Department where registered (e.g., 'VALLE')",
-    "municipio_registro": "Municipality where registered (e.g., 'CALI')",
+    // Registry location - Copy form field value as-is
+    "registry_location_combined": "CRITICAL: Extract EXACTLY what appears in the 'Pais-Departamento-Municipio' or 'Country - Department - Municipality' form field. This is a SINGLE field - copy its complete value as-is (e.g., 'COLOMBIA.VALLE.CALI' or just 'COLOMBIA'). Do NOT parse, split, or combine.",
 
     // Officials - CRITICAL: Must be COMPLETE names with ALL parts
     "authorizing_official": "CRITICAL: Extract the COMPLETE FULL NAME of the authorizing official near 'Nombre y firma del funcionario que autoriza'. Include ALL name parts - do NOT truncate! Example: 'HOLMES RACEL CAROLINA MONTOYA'",
@@ -141,6 +138,7 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
         "padre_nombres", "padre_apellidos", "padre_primer_apellido", "padre_segundo_apellido",
         "madre_nombres", "madre_apellidos", "madre_primer_apellido", "madre_segundo_apellido",
         "lugar_nacimiento", "birth_location_combined",
+        "registry_location_combined",
         "authorizing_official", "fecha_nacimiento", "fecha_registro",
         "fecha_expedicion", "issue_day", "issue_month", "issue_year",  // Date of Issue fields
         "sexo", "grupo_sanguineo", "factor_rh",
@@ -241,9 +239,10 @@ ${fieldListWithInstructions}
 - Example: "HOLMES RACEL CAROLINA MONTOYA" NOT just "HOLMES"
 - Look near "Nombre y firma del funcionario"
 
-### 5. LOCATION FIELDS
-- Registry location (Pais-Departamento-Municipio): Include ALL parts
-- Example: "COLOMBIA.VALLE.CALI" not just "COLOMBIA"
+### 5. REGISTRY LOCATION - COPY FORM FIELD AS-IS
+- registry_location_combined: Extract EXACTLY what you see in the form field
+- This is a SINGLE field - copy its value exactly (may be "COLOMBIA.VALLE.CALI" or just "COLOMBIA")
+- Do NOT parse, split, or modify the value
 
 ### 6. EMPTY FIELDS
 - Return "" only if the field has NO visible text
@@ -260,7 +259,7 @@ CRITICAL REMINDERS - COMMON ERRORS TO AVOID:
 2. segundo_apellido: NEVER empty - it's in the box NEXT TO primer_apellido (e.g., 'HERRERA')
 3. lugar_nacimiento: Include FULL clinic name + location (e.g., 'CLINICA MATERNO INFANTIL FARALLONES (COLOMBIA.VALLE.CALI)')
 4. authorizing_official: Include ALL name parts (e.g., 'HOLMES RACEL CAROLINA MONTOYA' not just 'HOLMES')
-5. Registry location: Include country.department.municipality (e.g., 'COLOMBIA.VALLE.CALI')
+5. registry_location_combined: Copy the form field value exactly as written (e.g., 'COLOMBIA.VALLE.CALI' or 'COLOMBIA')
 
 Return JSON.`
         : `Extract data from this OCR text following the field instructions exactly:
@@ -272,7 +271,7 @@ CRITICAL REMINDERS - COMMON ERRORS TO AVOID:
 2. segundo_apellido: NEVER empty - found in 'Segundo Apellido' column (e.g., 'HERRERA')
 3. lugar_nacimiento: Include FULL clinic name + location (e.g., 'CLINICA MATERNO INFANTIL FARALLONES (COLOMBIA.VALLE.CALI)')
 4. authorizing_official: Include ALL name parts (e.g., 'HOLMES RACEL CAROLINA MONTOYA' not just 'HOLMES')
-5. Registry location: Include all parts (e.g., 'COLOMBIA.VALLE.CALI')
+5. registry_location_combined: Copy the form field value exactly as written (e.g., 'COLOMBIA.VALLE.CALI' or 'COLOMBIA')
 
 Return JSON.`;
 
