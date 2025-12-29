@@ -105,7 +105,7 @@ export function processExtractedData(extractedData: Record<string, any>): Proces
     // 2. BIRTH LOCATION COMBINING
     // =========================================================================
     const birthLocationParts = [
-        extractedData.pais_nacimiento || 'COLOMBIA',
+        extractedData.pais_nacimiento,
         extractedData.departamento_nacimiento,
         extractedData.municipio_nacimiento
     ].filter(Boolean);
@@ -130,18 +130,23 @@ export function processExtractedData(extractedData: Record<string, any>): Proces
     }
 
     // =========================================================================
-    // 3. REGISTRY LOCATION COMBINING
+    // 3. REGISTRY LOCATION - DO NOT COMBINE
     // =========================================================================
-    const regLocationParts = [
-        extractedData.pais_registro || 'COLOMBIA',
-        extractedData.departamento_registro,
-        extractedData.municipio_registro
-    ].filter(Boolean);
+    // CRITICAL: country_dept_munic is extracted directly from the form field as-is.
+    // Do NOT combine pais_registro, departamento_registro, municipio_registro
+    // as this will overwrite the correctly extracted value!
+    // The form field already contains the complete string (e.g., "COLOMBIA.VALLE.CALI")
 
-    if (regLocationParts.length > 0) {
-        processed.registry_location_combined = regLocationParts.join(' - ');
-        console.log(`[FieldProcessor] Combined registry location: ${processed.registry_location_combined}`);
+    // Simply preserve the extracted value if it exists
+    if (extractedData.country_dept_munic) {
+        processed.country_dept_munic = String(extractedData.country_dept_munic);
+        console.log(`[FieldProcessor] Registry location (as-is from form): ${processed.country_dept_munic}`);
+    } else if (extractedData.registry_location_combined) {
+        // Fallback to alias
+        processed.country_dept_munic = String(extractedData.registry_location_combined);
+        console.log(`[FieldProcessor] Registry location (from alias): ${processed.country_dept_munic}`);
     }
+
 
     // =========================================================================
     // 4. PARENT NAME COMBINING (for templates that have combined fields)
