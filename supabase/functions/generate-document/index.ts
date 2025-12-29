@@ -272,7 +272,8 @@ serve(async (req) => {
         };
 
         // Helper to set text field safely with consistent font size
-        const setField = (fieldName: string, value: string) => {
+        const setField = (fieldName: string, value: string, sourceKey?: string) => {
+            const displaySource = sourceKey ? ` [from "${sourceKey}"]` : "";
             try {
                 // WARN: Check if field is already filled
                 if (filledPdfFields.has(fieldName)) {
@@ -280,12 +281,14 @@ serve(async (req) => {
                     const existingField = form.getTextField(fieldName);
                     const existingText = existingField ? existingField.getText() : '';
                     if (existingText && existingText.trim().length > 0) {
-                        console.warn(`[OVERWRITE BLOCKED] Field "${fieldName}" already set to "${existingText}". Skipping new value: "${String(value).substring(0, 30)}..."`);
+                        console.warn(`[OVERWRITE BLOCKED] Field "${fieldName}" already set to "${existingText}". Skipping new value: "${String(value).substring(0, 30)}..."${displaySource}`);
                         return true; // Return true so flow continues as if handled
                     } else {
-                        console.log(`[OVERWRITE ALLOWED] Field "${fieldName}" was previously empty/whitespace. Overwriting with: "${String(value).substring(0, 30)}..."`);
+                        console.log(`[OVERWRITE ALLOWED] Field "${fieldName}" was previously empty/whitespace. Overwriting with: "${String(value).substring(0, 30)}..."${displaySource}`);
                     }
                 }
+
+                console.log(`[FILL] Setting field "${fieldName}" to "${String(value).substring(0, 50)}${String(value).length > 50 ? '...' : ''}"${displaySource}`);
 
                 // PDF-lib is case sensitive normally, but let's try direct first
                 let fieldExists = fieldNames.includes(fieldName);
@@ -406,7 +409,9 @@ serve(async (req) => {
             console.log(`[PRE-PROCESS] Final Father Full Name: "${fatherFull}"`);
             extractedData['padre_completo'] = fatherFull;
             extractedData["Father's Surnames and Full Names"] = fatherFull;
-            extractedData['father_full_name'] = fatherFull; // Alias for Direct Mapper
+            extractedData['father_full_name'] = fatherFull;
+            extractedData['father_surnames_names'] = fatherFull;
+            extractedData['dad_surnames_names'] = fatherFull;
         }
 
         // Mother
@@ -434,12 +439,14 @@ serve(async (req) => {
             console.log(`[PRE-PROCESS] Final Mother Full Name: "${motherFull}"`);
             extractedData['madre_completo'] = motherFull;
             extractedData["Mother's Surnames and Full Names"] = motherFull;
-            extractedData['mother_full_name'] = motherFull; // Alias for Direct Mapper
+            extractedData['mother_full_name'] = motherFull;
+            extractedData['mother_surnames_names'] = motherFull;
+            extractedData['mom_surnames_names'] = motherFull;
         }
 
         // Declarant
-        const declarantNames = extractedData['declarante_nombres'] || extractedData['Declarant Names'] || '';
-        const declarantSurnames = extractedData['declarante_apellidos'] || extractedData['Declarant Surnames'] || '';
+        const declarantNames = extractedData['declante_nombres'] || extractedData['declarante_nombres'] || extractedData['Declarant Names'] || '';
+        const declarantSurnames = extractedData['declante_apellidos'] || extractedData['declarante_apellidos'] || extractedData['Declarant Surnames'] || '';
 
         // STRATEGY: 1. Raw Field (single line) -> 2. Standard Combine
         let declarantFull = extractedData['declarante_nombre_completo_raw'] || '';
@@ -454,7 +461,8 @@ serve(async (req) => {
         if (declarantFull) {
             extractedData['declarante_completo'] = declarantFull;
             extractedData["Declarant's Surnames and Full Names"] = declarantFull;
-            extractedData['declarant_full_name'] = declarantFull; // Alias for Direct Mapper
+            extractedData['declarant_full_name'] = declarantFull;
+            extractedData['declarant_surnames_names'] = declarantFull;
         }
 
 
@@ -462,72 +470,45 @@ serve(async (req) => {
         // These MUST be filled BEFORE the main loop to prevent partial data from blocking complete data
         console.log("[CRITICAL-FILL] Filling parent names and birth place EARLY to prevent overwrite blocking...");
 
-        // Parent Full Names
-        const motherFullName = extractedData.madre_completo || extractedData["Mother's Surnames and Full Names"];
-        const fatherFullName = extractedData.padre_completo || extractedData["Father's Surnames and Full Names"];
+        // === CRITICAL EARLY FILL ===
+        // Force critical fields into all possible candidate fields before individualized processing
+        const criticalFields = [
+            { value: extractedData.lugar_nacimiento || extractedData.birth_location_combined, patterns: ['birth', 'nacimiento', 'place', 'lugar'], exclude: ['registro', 'registry'], type: 'BirthPlace' },
+            { value: extractedData.father_full_name, patterns: ['father', 'padre', 'dad'], type: 'FatherFull' },
+            { value: extractedData.mother_full_name, patterns: ['mother', 'madre', 'mom'], type: 'MotherFull' },
+            { value: extractedData.declarant_full_name, patterns: ['declarant', 'declarante'], type: 'DeclarantFull' }
+        ];
 
-        if (motherFullName) {
-            console.log(`[CRITICAL-FILL] Mother: ${motherFullName}`);
+        for (const cf of criticalFields) {
+            if (!cf.value) continue;
+            console.log(`[CRITICAL-FILL] Processing ${cf.type}: ${cf.value}`);
             for (const pdfField of fieldNames) {
                 const fieldLower = pdfField.toLowerCase();
-                // STRICTER MATCHING: Only fill if it says "full" or "completo" or "names and surnames"
-                // Do NOT fill "Mother Name" or "Mother Surname" with multiple names
-                if (fieldLower.includes('mother') || fieldLower.includes('madre')) {
-                    if (fieldLower.includes('full') || fieldLower.includes('completo') || (fieldLower.includes('surname') && fieldLower.includes('name'))) {
-                        if (fieldLower.includes('identification') || fieldLower.includes('document') || fieldLower.includes('nationality')) continue;
-                        if (setField(pdfField, motherFullName)) {
-                            console.log(`[CRITICAL-FILL] SUCCESS: Mother Full -> "${pdfField}"`);
-                            break;
-                        }
-                    }
+
+                // Exclusions
+                if (cf.exclude && cf.exclude.some(p => fieldLower.includes(p))) continue;
+                if (fieldLower.includes('official') || fieldLower.includes('signature') || fieldLower.includes('firma')) continue;
+                if (fieldLower.includes('identification') || fieldLower.includes('document') || fieldLower.includes('nationality')) continue;
+
+                // Match logic
+                const isMatch = cf.patterns.every(p => fieldLower.includes(p)) || (cf.patterns.some(p => fieldLower.includes(p)) && (fieldLower.includes('name') || fieldLower.includes('nombre') || fieldLower.includes('full') || fieldLower.includes('completo')));
+
+                if (isMatch) {
+                    setField(pdfField, String(cf.value), `CRITICAL_${cf.type}`);
                 }
             }
         }
 
-        if (fatherFullName) {
-            console.log(`[CRITICAL-FILL] Father: ${fatherFullName}`);
-            for (const pdfField of fieldNames) {
-                const fieldLower = pdfField.toLowerCase();
-                if (fieldLower.includes('father') || fieldLower.includes('padre')) {
-                    if (fieldLower.includes('full') || fieldLower.includes('completo') || (fieldLower.includes('surname') && fieldLower.includes('name'))) {
-                        if (fieldLower.includes('identification') || fieldLower.includes('document') || fieldLower.includes('nationality')) continue;
-                        if (setField(pdfField, fatherFullName)) {
-                            console.log(`[CRITICAL-FILL] SUCCESS: Father Full -> "${pdfField}"`);
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        // Place of Birth
-        const birthPlace = extractedData.lugar_nacimiento || extractedData.birth_location_combined;
-        if (birthPlace) {
-            console.log(`[CRITICAL-FILL] Birth Place: ${birthPlace}`);
-            for (const pdfField of fieldNames) {
-                const fieldLower = pdfField.toLowerCase();
-                const isPlaceField = (
-                    (fieldLower.includes('place') && fieldLower.includes('birth')) ||
-                    (fieldLower.includes('lugar') && fieldLower.includes('nacimiento')) ||
-                    (fieldLower.includes('birth') && fieldLower.includes('country')) ||
-                    (fieldLower.includes('birth') && fieldLower.includes('department'))
-                );
-                if (fieldLower.includes('registro') || fieldLower.includes('registry')) continue;
-                if (isPlaceField) {
-                    if (setField(pdfField, birthPlace)) {
-                        console.log(`[CRITICAL-FILL] SUCCESS: Birth Place -> "${pdfField}"`);
-                        // Don't break - fill all matching fields
-                    }
-                }
-            }
-        }
         console.log("[CRITICAL-FILL] Early critical fills complete.");
         // === END CRITICAL EARLY FILL ===
 
         // Prioritize specific atomic fields over composite or fuzzy fields
         const priorityFields = [
             'madre_nombre_completo_raw', 'padre_nombre_completo_raw', 'declarante_nombre_completo_raw',
-            'father_full_name', 'mother_full_name', 'declarant_full_name', 'declarante_completo',
+            'father_full_name', 'mother_full_name', 'declarant_full_name',
+            'declarante_completo', 'madre_completo', 'padre_completo',
+            'father_surnames_names', 'mother_surnames_names', 'declarant_surnames_names',
+            'mom_surnames_names', 'dad_surnames_names',
             'country_dept_munic', 'birth_country_dept_munic', 'registry_location_combined', 'birth_location_combined',
             'nuip', 'nuip_top', 'tipo_documento', 'Document Type', 'nombres', 'Apellidos', 'apellidos', 'names', 'surnames',
             'pais_registro', 'Pais Registro', 'fecha_expedicion', 'issue_date', 'issue_day', 'issue_month', 'issue_year',
@@ -568,11 +549,11 @@ serve(async (req) => {
                 } else {
                     // Standard: try each target until one works
                     for (const target of directTargets) {
-                        if (setField(target, strValue)) {
+                        if (setField(target, strValue, key)) {
                             filled = true;
                             filledCount++;
                             logMappingAttempt(key, directTargets, true, target);
-                            break; // Stop after first success
+                            // REMOVED break: Fill ALL candidate fields with priority data
                         }
                     }
                 }
@@ -580,7 +561,7 @@ serve(async (req) => {
 
             // 1. Try exact match (Canonical Key -> PDF Field Name)
             // Sometimes the extracted key IS the pdf field name
-            if (!filled && setField(key, strValue)) {
+            if (!filled && setField(key, strValue, key)) {
                 filled = true;
                 filledCount++;
             }
@@ -874,13 +855,13 @@ serve(async (req) => {
             (extractedData.madre_apellidos && extractedData.madre_nombres
                 ? `${extractedData.madre_apellidos} ${extractedData.madre_nombres}`.trim()
                 : null);
-
+    
         const fatherFullName = extractedData.padre_completo ||
             extractedData["Father's Surnames and Full Names"] ||
             (extractedData.padre_apellidos && extractedData.padre_nombres
                 ? `${extractedData.padre_apellidos} ${extractedData.padre_nombres}`.trim()
                 : null);
-
+    
         if (motherFullName) {
             console.log(`[SPECIAL] Trying to fill Mother's Full Name with: ${motherFullName}`);
             for (const pdfField of fieldNames) {
@@ -888,7 +869,7 @@ serve(async (req) => {
                 if (fieldLower.includes('mother') &&
                     (fieldLower.includes('surname') || fieldLower.includes('name') || fieldLower.includes('full'))) {
                     if (fieldLower.includes('identification') || fieldLower.includes('document') || fieldLower.includes('nationality')) continue;
-
+    
                     if (setField(pdfField, motherFullName)) {
                         console.log(`[SPECIAL] SUCCESS: Filled \"${pdfField}\" with mother's full name`);
                         filledCount++;
@@ -897,7 +878,7 @@ serve(async (req) => {
                 }
             }
         }
-
+    
         if (fatherFullName) {
             console.log(`[SPECIAL] Trying to fill Father's Full Name with: ${fatherFullName}`);
             for (const pdfField of fieldNames) {
@@ -905,7 +886,7 @@ serve(async (req) => {
                 if (fieldLower.includes('father') &&
                     (fieldLower.includes('surname') || fieldLower.includes('name') || fieldLower.includes('full'))) {
                     if (fieldLower.includes('identification') || fieldLower.includes('document') || fieldLower.includes('nationality')) continue;
-
+    
                     if (setField(pdfField, fatherFullName)) {
                         console.log(`[SPECIAL] SUCCESS: Filled \"${pdfField}\" with father's full name`);
                         filledCount++;
