@@ -226,6 +226,69 @@ export function processExtractedData(extractedData: Record<string, any>): Proces
         }
     }
 
+    // =========================================================================
+    // PATTERN MATCHING: If notes contain "NUIP NUEVO" but no 10-digit number,
+    // try to find a 10-digit number from other extracted data
+    // =========================================================================
+    const allNotesText = finalNotes.join(' ').toUpperCase();
+    const hasNuipNuevo = allNotesText.includes('NUIP NUEVO');
+    const has10DigitNumber = /\d{10}/.test(allNotesText);
+
+    if (hasNuipNuevo && !has10DigitNumber) {
+        console.log(`[FieldProcessor] Notes contain 'NUIP NUEVO' but no 10-digit number. Searching for number...`);
+
+        // Look for 10-digit numbers in other extracted fields
+        let foundNumber: string | null = null;
+
+        // First, check nuip_notes explicitly
+        if (extractedData.nuip_notes) {
+            const match = String(extractedData.nuip_notes).match(/\d{10}/);
+            if (match) foundNumber = match[0];
+        }
+
+        // Check notes_line4 (common location for handwritten NUIP)
+        if (!foundNumber && extractedData.notes_line4) {
+            const match = String(extractedData.notes_line4).match(/\d{10}/);
+            if (match) foundNumber = match[0];
+        }
+
+        // Check all notes_line fields
+        if (!foundNumber) {
+            for (let i = 1; i <= 7; i++) {
+                const lineVal = extractedData[`notes_line${i}`];
+                if (lineVal) {
+                    const match = String(lineVal).match(/\d{10}/);
+                    if (match) {
+                        foundNumber = match[0];
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Check serial_indicator (sometimes confused with notes NUIP)
+        if (!foundNumber && extractedData.serial_indicator) {
+            const serialStr = String(extractedData.serial_indicator);
+            if (/^\d{10}$/.test(serialStr)) {
+                // Only use if it looks like a pure 10-digit number
+                foundNumber = serialStr;
+            }
+        }
+
+        // If we found a number, append it to notes
+        if (foundNumber) {
+            console.log(`[FieldProcessor] Found 10-digit number to append: ${foundNumber}`);
+            // Find the line with NUIP NUEVO and append the number
+            for (let i = 0; i < finalNotes.length; i++) {
+                if (finalNotes[i].toUpperCase().includes('NUIP NUEVO') && !/\d{10}/.test(finalNotes[i])) {
+                    finalNotes[i] = finalNotes[i] + ' ' + foundNumber;
+                    console.log(`[FieldProcessor] Updated line ${i}: ${finalNotes[i]}`);
+                    break;
+                }
+            }
+        }
+    }
+
     if (finalNotes.length > 0) {
         processed.notes_combined = finalNotes.join('\n');
     }
