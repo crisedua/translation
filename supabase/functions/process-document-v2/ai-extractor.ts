@@ -120,7 +120,12 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
             "serial_indicator": "Often found near the NUIP or barcode. Extract just the number.",
             "margin_notes": "CRITICAL: Look at the BOTTOM of the document in the 'ESPACIO PARA NOTAS' section. Extract EVERY SINGLE CHARACTER you see, including: 1) The full stamped text like 'NUIP OTORGADO POR LA REGISTRADURIA NACIONAL DEL ESTADO CIVIL 26 FEBRERO 2003' 2) The NUIP number line like 'NUIP NUEVO. 1006205637' - YOU MUST INCLUDE THE NUMBER. Example output: 'NUIP OTORGADO POR LA REGISTRADURIA NACIONAL DEL ESTADO CIVIL 26 FEBRERO 2003. NUIP NUEVO. 1006205637'. Do NOT truncate or skip the number.",
             "notas": "Extract ALL text from notes including the complete NUIP number (e.g., '1006205637'). Do NOT skip numbers.",
-            "notes_combined": "Extract COMPLETE text from 'ESPACIO PARA NOTAS'. MUST include full NUIP stamp with number like 'NUIP NUEVO. 1006205637'."
+            "notes_combined": "Extract COMPLETE text from 'ESPACIO PARA NOTAS'. MUST include full NUIP stamp with number like 'NUIP NUEVO. 1006205637'.",
+            "notes_line1": "ESPACIO PARA NOTAS - LINE 1: Usually empty or contains a header. Extract what you see.",
+            "notes_line2": "ESPACIO PARA NOTAS - LINE 2: Often contains text like 'NUIP OTORGADO POR LA REGISTRADURIA NACIONAL DEL ESTADO CIVIL [date]'. Extract the full line.",
+            "notes_line3": "ESPACIO PARA NOTAS - LINE 3: May be empty or continue from line 2. Extract what you see.",
+            "notes_line4": "ESPACIO PARA NOTAS - LINE 4: CRITICAL - This often has 'NUIP NUEVO. [10-digit number]' AND a HANDWRITTEN number below it (like '1006205637'). YOU MUST extract BOTH the typed and handwritten text. Example: 'NUIP NUEVO. 1006205637 1006205637'",
+            "nuip_notes": "CRITICAL: In the 'ESPACIO PARA NOTAS' section, look for a 10-digit HANDWRITTEN number. It may appear as large handwritten digits like '1006205637'. Extract ONLY the number itself."
         };
         // Merge overrides into template instructions (overwriting DB values if present)
         templateInstructions = { ...templateInstructions, ...medioOverrides };
