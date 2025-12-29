@@ -19,10 +19,10 @@ const STANDARD_MAPPINGS: Record<string, string[]> = {
     "factor_rh": ["rh_factor", "rh", "factor"],
     "fecha_nacimiento": ["date_of_birth", "birth_date", "birth_year", "birth_month", "birth_day", "day", "month", "year"],
     "hora_nacimiento": ["time", "birth_time", "hora", "hour"],
-    "pais_nacimiento": ["country_birth", "country", "pais", "birth_country_dept_munic"],
-    "departamento_nacimiento": ["dept_birth", "department", "dept", "departamento", "birth_country_dept_munic"],
-    "municipio_nacimiento": ["muni_birth", "municipality", "muni", "municipio", "birth_country_dept_munic"],
-    "lugar_nacimiento": ["township_birth", "birth_place", "place", "lugar"],
+    "pais_nacimiento": ["country_birth", "country", "pais"],
+    "departamento_nacimiento": ["dept_birth", "department", "dept", "departamento"],
+    "municipio_nacimiento": ["muni_birth", "municipality", "muni", "municipio"],
+    "lugar_nacimiento": ["birth_country_dept_munic", "Place of Birth", "birth_place", "place", "lugar", "township_birth"],
     "padre_nombres": ["father_names", "father_surnames_names"],
     "padre_apellidos": ["father_surnames", "father_surnames_names"],
     "padre_identificacion": ["father_doc_number", "father_id_doc", "father_id"],
@@ -39,8 +39,10 @@ const STANDARD_MAPPINGS: Record<string, string[]> = {
     "testigo2_identificacion": ["witness2_id_doc", "witness2_id"],
     "oficina": ["office_type", "notary_number", "office"],
     "numero_oficina": ["notary_number", "office_number"],
-    "departamento_registro": ["dept_office", "country_dept_munic"],
-    "municipio_registro": ["muni_office", "country_dept_munic"],
+    "departamento_registro": ["dept_office"],
+    "municipio_registro": ["muni_office"],
+    "country_dept_munic": ["country_dept_munic"],
+    "registry_location_combined": ["country_dept_munic"],
     "fecha_registro": ["date_registration", "date_registered", "reg_year", "reg_month", "reg_day"],
     "codigo": ["reg_code", "code", "qr_code"],
     "acta": ["birth_cert_number", "cert_number"],
@@ -126,11 +128,44 @@ serve(async (req) => {
 
         // 2. Download the template PDF
         console.log("\n[1/4] Downloading template PDF...");
-        const pdfResponse = await fetch(templateUrl);
-        if (!pdfResponse.ok) {
-            throw new Error("Failed to download template PDF");
+        let pdfBuffer: ArrayBuffer | null = null;
+
+        if (templateUrl.startsWith('http')) {
+            // Check if it's a Supabase Storage URL
+            const match = templateUrl.match(/\/storage\/v1\/object\/(?:sign|public)\/([^\/]+)\/(.+?)(?:\?|$)/);
+            if (match) {
+                const bucket = match[1];
+                const path = decodeURIComponent(match[2]);
+                const { data, error } = await supabase.storage.from(bucket).download(path);
+
+                if (!error && data) {
+                    pdfBuffer = await data.arrayBuffer();
+                } else {
+                    console.warn("Retrying fetch via URL...");
+                    const res = await fetch(templateUrl);
+                    if (!res.ok) throw new Error(`Failed to fetch template PDF: ${res.statusText}`);
+                    pdfBuffer = await res.arrayBuffer();
+                }
+            } else {
+                const res = await fetch(templateUrl);
+                if (!res.ok) throw new Error(`Failed to fetch template PDF: ${res.statusText}`);
+                pdfBuffer = await res.arrayBuffer();
+            }
+        } else {
+            // Try different buckets
+            let { data, error } = await supabase.storage.from('document_templates').download(templateUrl);
+
+            if (error) {
+                ({ data, error } = await supabase.storage.from('documents').download(templateUrl));
+                if (error) {
+                    ({ data, error } = await supabase.storage.from('templates').download(templateUrl));
+                    if (error) throw new Error(`Failed to download template from storage: ${error.message}`);
+                }
+            }
+            if (data) pdfBuffer = await data.arrayBuffer();
         }
-        const pdfBuffer = await pdfResponse.arrayBuffer();
+
+        if (!pdfBuffer) throw new Error("Downloaded PDF is empty");
         console.log(`   ✓ Downloaded: ${pdfBuffer.byteLength} bytes`);
 
         // 3. Extract PDF Form Fields
