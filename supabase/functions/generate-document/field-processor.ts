@@ -137,7 +137,7 @@ export function processExtractedData(extractedData: Record<string, any>): Proces
 
     // CRITICAL FIX: If we have a specific place name (clinic/hospital) extracted in lugar_nacimiento,
     // use THAT as the combined string. Do NOT overwrite it with just the location parts.
-    if (extractedData.lugar_nacimiento) {
+    if (extractedData.lugar_nacimiento && String(extractedData.lugar_nacimiento).length > 10) {
         processed.birth_location_combined = String(extractedData.lugar_nacimiento);
         console.log(`[FieldProcessor] Using specific place (clinic) for combined location: ${processed.birth_location_combined}`);
     } else if (birthLocationParts.length > 0) {
@@ -225,11 +225,35 @@ export function processExtractedData(extractedData: Record<string, any>): Proces
     // =========================================================================
     // 7. NOTES HANDLING - combine margin_notes with notas
     // =========================================================================
-    const allNotes: string[] = [];
-    if (extractedData.margin_notes) allNotes.push(String(extractedData.margin_notes));
-    if (extractedData.notas) allNotes.push(String(extractedData.notas));
-    if (allNotes.length > 0) {
-        processed.notes_combined = allNotes.join('\n');
+    const uniqueLines = new Set<string>();
+    const finalNotes: string[] = [];
+
+    const addToNotes = (val: any) => {
+        if (!val) return;
+        const noteStr = String(val).trim();
+        if (!noteStr) return;
+
+        // Split by newline and deduplicate each line
+        const lines = noteStr.split('\n').map(l => l.trim()).filter(l => l);
+        lines.forEach(line => {
+            if (!uniqueLines.has(line)) {
+                uniqueLines.add(line);
+                finalNotes.push(line);
+            }
+        });
+    };
+
+    // Processing order matters for priority if needed, but since we are deduplicating, 
+    // we just want to ensure all unique information is captured.
+    addToNotes(extractedData.margin_notes);
+    addToNotes(extractedData.notas);
+    addToNotes(extractedData.notes_combined);
+    addToNotes(extractedData['SPACE FOR NOTES']);
+    addToNotes(extractedData['Space For Notes']);
+
+    if (finalNotes.length > 0) {
+        processed.notes_combined = finalNotes.join('\n');
+        console.log(`[FieldProcessor] Combined and deduplicated ${finalNotes.length} unique note lines.`);
     }
 
     return processed;

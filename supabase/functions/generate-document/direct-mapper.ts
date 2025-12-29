@@ -58,6 +58,7 @@ export const DIRECT_MAPPINGS: Record<string, string[]> = {
     "pais_nacimiento": ["country_birth", "birth_country", "Country"],
     "departamento_nacimiento": ["dept_birth", "birth_department", "Department"],
     "municipio_nacimiento": ["muni_birth", "birth_municipality", "Municipality"],
+    "birth_location_combined": ["birth_country_dept_munic", "place_of_birth", "birth_place", "Place of Birth", "Lugar de nacimiento", "birth_country", "Birth Country"],
     "lugar_nacimiento": ["birth_country_dept_munic", "Place of Birth", "birth_place", "place", "township_birth", "Lugar de nacimiento"],
     "Place of Birth": ["birth_country_dept_munic", "place_of_birth", "birth_place", "Place of Birth"],
     "Place of Birth (Country - Department - Municipality - Township and/or Police Station)": ["birth_country_dept_munic", "place_of_birth", "Place of Birth"],

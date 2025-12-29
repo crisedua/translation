@@ -519,6 +519,24 @@ serve(async (req) => {
         for (const cf of criticalFields) {
             if (!cf.value) continue;
             console.log(`[CRITICAL-FILL] Processing ${cf.type}: ${cf.value}`);
+
+            // 1. First, check TEMPLATE MAPPINGS for this type (highest priority source)
+            const templateMappings = mappingResult.mappings;
+            const sources = cf.type === 'BirthPlace' ? ['lugar_nacimiento', 'birth_location_combined'] :
+                cf.type === 'FatherFull' ? ['padre_completo', 'father_full_name'] :
+                    cf.type === 'MotherFull' ? ['madre_completo', 'mother_full_name'] :
+                        ['declarante_completo', 'declarant_full_name'];
+
+            for (const source of sources) {
+                if (templateMappings[source]) {
+                    for (const targetField of templateMappings[source]) {
+                        console.log(`[CRITICAL-FILL] Found TEMPLATE MATCH for ${cf.type}: "${targetField}" from source "${source}"`);
+                        setField(targetField, String(cf.value), `CRITICAL_TEMPLATE_${cf.type}`);
+                    }
+                }
+            }
+
+            // 2. Then, check PATTERN MATCHES (heuristic fallback)
             for (const pdfField of fieldNames) {
                 const fieldLower = pdfField.toLowerCase();
 
@@ -528,10 +546,20 @@ serve(async (req) => {
                 if (fieldLower.includes('identification') || fieldLower.includes('document') || fieldLower.includes('nationality')) continue;
 
                 // Match logic
-                const isMatch = cf.patterns.every(p => fieldLower.includes(p)) || (cf.patterns.some(p => fieldLower.includes(p)) && (fieldLower.includes('name') || fieldLower.includes('nombre') || fieldLower.includes('full') || fieldLower.includes('completo')));
+                let isMatch = false;
+                if (cf.type === 'BirthPlace') {
+                    // Birth place matches if it has (birth OR nacimiento) AND any location-like keyword
+                    const birthTerm = fieldLower.includes('birth') || fieldLower.includes('nacimiento');
+                    const placeTerm = fieldLower.includes('place') || fieldLower.includes('lugar') || fieldLower.includes('countr') || fieldLower.includes('dept') || fieldLower.includes('muni') || fieldLower.includes('town');
+                    isMatch = birthTerm && placeTerm;
+                } else {
+                    const parentTerm = cf.patterns.some(p => fieldLower.includes(p));
+                    const nameTerm = fieldLower.includes('name') || fieldLower.includes('nombre') || fieldLower.includes('full') || fieldLower.includes('completo') || fieldLower.includes('surname') || fieldLower.includes('apellido');
+                    isMatch = parentTerm && nameTerm;
+                }
 
                 if (isMatch) {
-                    setField(pdfField, String(cf.value), `CRITICAL_${cf.type}`);
+                    setField(pdfField, String(cf.value), `CRITICAL_PATTERN_${cf.type}`);
                 }
             }
         }
@@ -541,15 +569,16 @@ serve(async (req) => {
 
         // Prioritize specific atomic fields over composite or fuzzy fields
         const priorityFields = [
+            'lugar_nacimiento', 'birth_location_combined', 'birth_country_dept_munic',
             'madre_nombre_completo_raw', 'padre_nombre_completo_raw', 'declarante_nombre_completo_raw',
             'father_full_name', 'mother_full_name', 'declarant_full_name',
-            'declarante_completo', 'madre_completo', 'padre_completo',
+            'declante_nombres', 'declarante_nombres', 'madre_nombres', 'padre_nombres',
             'father_surnames_names', 'mother_surnames_names', 'declarant_surnames_names',
-            'mom_surnames_names', 'dad_surnames_names',
-            'country_dept_munic', 'birth_country_dept_munic', 'registry_location_combined', 'birth_location_combined',
             'nuip', 'nuip_top', 'tipo_documento', 'Document Type', 'nombres', 'Apellidos', 'apellidos', 'names', 'surnames',
+            'pais_nacimiento', 'departamento_nacimiento', 'municipio_nacimiento',
             'pais_registro', 'Pais Registro', 'fecha_expedicion', 'issue_date', 'issue_day', 'issue_month', 'issue_year',
-            'fecha_registro', 'reg_day', 'reg_month', 'reg_year', 'oficina', 'reg_office'
+            'fecha_registro', 'reg_day', 'reg_month', 'reg_year', 'oficina', 'reg_office',
+            'country_dept_munic', 'registry_location_combined'
         ];
 
         const sortedEntries = Object.entries(extractedData).sort(([keyA], [keyB]) => {
@@ -671,7 +700,9 @@ serve(async (req) => {
                     "factor_rh": ["rh_factor"], "Rh Factor": ["rh_factor"],
 
                     // Birth place
-                    "Place of Birth": ["birth_country_dept_munic", "Place of Birth (Country - Department - Municipality - Township and/or Police Station)", "Lugar de nacimiento"],
+                    "Place of Birth": ["birth_country_dept_munic", "place_of_birth", "birth_place", "Place of Birth"],
+                    "Place of Birth (Country - Department - Municipality - Township and/or Police Station)": ["birth_country_dept_munic", "place_of_birth", "Place of Birth"],
+                    "birth_location_combined": ["birth_country_dept_munic", "place_of_birth", "birth_place", "place", "township_birth", "Lugar de nacimiento", "birth_country", "Birth Country"],
                     "Country - Department - Municipality - Township and/or Police Station": ["country_dept_munic", "Place of Birth (Country - Department - Municipality - Township and/or Police Station)"],
                     "lugar_nacimiento": ["birth_country_dept_munic", "Place of Birth (Country - Department - Municipality - Township and/or Police Station)", "Lugar de nacimiento(Pais - Departamento - Municipio)", "Lugar de nacimiento"],
 
@@ -846,8 +877,8 @@ serve(async (req) => {
                 const isPlaceField = (
                     (fieldLower.includes('place') && fieldLower.includes('birth')) ||
                     (fieldLower.includes('lugar') && fieldLower.includes('nacimiento')) ||
-                    (fieldLower.includes('birth') && fieldLower.includes('country')) ||
-                    (fieldLower.includes('birth') && fieldLower.includes('department'))
+                    (fieldLower.includes('birth') && (fieldLower.includes('country') || fieldLower.includes('department') || fieldLower.includes('muni') || fieldLower.includes('place'))) ||
+                    (fieldLower === 'birth_place') || (fieldLower === 'lugar_nacimiento')
                 );
 
                 // Exclude registry location fields
