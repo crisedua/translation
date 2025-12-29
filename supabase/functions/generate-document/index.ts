@@ -562,7 +562,7 @@ serve(async (req) => {
                             filled = true;
                             filledCount++;
                             logMappingAttempt(key, directTargets, true, target);
-                            // REMOVED break: Fill ALL candidate fields with priority data
+                            break; // Stop after first success
                         }
                     }
                 }
@@ -610,6 +610,7 @@ serve(async (req) => {
                         if (setField(mappedName, strValue)) {
                             filled = true;
                             filledCount++;
+                            break; // Stop after first success
                         }
                     }
                 }
@@ -716,6 +717,7 @@ serve(async (req) => {
                             if (setField(mappedName, strValue)) {
                                 filled = true;
                                 filledCount++;
+                                break; // Stop after first success
                             }
                         }
                     }

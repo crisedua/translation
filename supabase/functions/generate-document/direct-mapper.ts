@@ -197,7 +197,13 @@ export function getDirectMapping(extractedFieldName: string): string[] {
  */
 export function isNotesFieldDirect(fieldName: string): boolean {
     const lower = fieldName.toLowerCase();
-    return lower.includes('note') || lower.includes('nota') || lower.includes('margin');
+    return lower.includes('note') ||
+        lower.includes('nota') ||
+        lower.includes('margin') ||
+        lower.includes('observation') ||
+        lower.includes('observacion') ||
+        lower.includes('space') ||
+        lower.includes('espacio');
 }
 
 /**
