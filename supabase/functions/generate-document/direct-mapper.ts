@@ -110,9 +110,11 @@ export const DIRECT_MAPPINGS: Record<string, string[]> = {
 
     // === REGISTRY INFORMATION ===
     "tipo_oficina": ["office_type", "Type of Office", "type_office", "tipo_oficina"],
-    "oficina": ["office_type", "notary_number", "office", "registry_office"],
+    "oficina": ["office_type", "office", "registry_office"],
     "numero_oficina": ["notary_number", "office_number", "Number", "office_num"],
     "notary_number": ["notary_number", "Number", "office_number", "office_num"],
+    "numero": ["notary_number", "Number", "office_number"],
+    "Número": ["notary_number", "Number", "office_number"],
     "Notary Number": ["notary_number", "office_number", "Number"],
     "Type of Office": ["office_type", "tipo_oficina"],
     "Registry Office": ["reg_office", "office"],
