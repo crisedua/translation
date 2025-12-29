@@ -235,11 +235,13 @@ export function getTemplateMappings(
     // -------------------------------------------------------------------------
     // PHASE 1: Apply template-specific mappings (highest priority)
     // -------------------------------------------------------------------------
-    const templateMappings = template.content_profile?.pdf_mappings || {};
+    // DEACTIVATED: User requested to ONLY use dynamic code mappings (Phase 2).
+    // Ignoring database mappings prevents conflicts from incorrect SQL configs.
+    const templateMappings = {}; // template.content_profile?.pdf_mappings || {};
 
     console.log(`[TemplateMapper] Template: ${template.name}`);
     console.log(`[TemplateMapper] PDF fields: ${pdfFieldNames.length}`);
-    console.log(`[TemplateMapper] Template mappings: ${Object.keys(templateMappings).length}`);
+    console.log(`[TemplateMapper] Template mappings: ${Object.keys(templateMappings).length} (DB Mappings IGNORED)`);
 
     for (const [extractedField, pdfTargets] of Object.entries(templateMappings)) {
         if (!Array.isArray(pdfTargets) || pdfTargets.length === 0) continue;
