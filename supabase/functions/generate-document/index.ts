@@ -592,6 +592,12 @@ serve(async (req) => {
         for (const [key, value] of sortedEntries) {
             if (value === null || value === undefined || value === '') continue;
 
+            // Skip notes_line fields - they are handled in SPECIAL HANDLING section
+            if (key.startsWith('notes_line')) {
+                console.log(`[SKIP] ${key} - handled in special notes section`);
+                continue;
+            }
+
             const strValueRaw = String(value);
             const normalizedKey = normalizeKey(key);
 

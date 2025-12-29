@@ -65,7 +65,7 @@ const DEFAULT_EXTRACTION_INSTRUCTIONS: Record<string, string> = {
     // Other identifiers
     "serial_indicator": "Extract complete 'Indicativo Serial' number (e.g., '29734419')",
     "codigo": "Extract complete code - may have parts like '97 0 2' (combine to '9702')",
-    "numero_oficina": "Extract the Notary Number or Office Number. Example: '21'. Look for 'NOTARIA 21' or similar in the header/footer.",
+    "numero_oficina": "Extract ONLY the numeric Notary/Office Number. Example: '21' (just the number). Look near 'NOTARIA' or 'OFICINA' and extract ONLY the digits, NOT the word 'NOTARIA'. If it says 'NOTARIA 21', extract just '21'.",
     "oficina": "Extract the type and name of the office (e.g., 'NOTARIA 21 CALI').",
     "tipo_documento": "Document type from 'Tipo de documento antecedente' (e.g., 'CERTIFICADO DE NACIDO VIVO')",
     "tipo_documento_anterior": "Prior document type (e.g., 'CERTIFICADO DE NACIDO VIVO')"
@@ -125,7 +125,8 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
             "notes_line2": "ESPACIO PARA NOTAS - LINE 2: Often contains text like 'NUIP OTORGADO POR LA REGISTRADURIA NACIONAL DEL ESTADO CIVIL [date]'. Extract the full line.",
             "notes_line3": "ESPACIO PARA NOTAS - LINE 3: May be empty or continue from line 2. Extract what you see.",
             "notes_line4": "ESPACIO PARA NOTAS - LINE 4: CRITICAL - This often has 'NUIP NUEVO. [10-digit number]' AND a HANDWRITTEN number below it (like '1006205637'). YOU MUST extract BOTH the typed and handwritten text. Example: 'NUIP NUEVO. 1006205637 1006205637'",
-            "nuip_notes": "CRITICAL: In the 'ESPACIO PARA NOTAS' section, look for a 10-digit HANDWRITTEN number. It may appear as large handwritten digits like '1006205637'. Extract ONLY the number itself."
+            "nuip_notes": "CRITICAL: In the 'ESPACIO PARA NOTAS' section, look for a 10-digit HANDWRITTEN number. It may appear as large handwritten digits like '1006205637'. Extract ONLY the number itself.",
+            "numero_oficina": "Look for the box labeled 'Número' or 'Number' in the registry/office section near top of document. Extract ONLY the number shown (e.g., '21'). Do NOT extract text like 'NOTARIA' or 'NOTAS'."
         };
         // Merge overrides into template instructions (overwriting DB values if present)
         templateInstructions = { ...templateInstructions, ...medioOverrides };
