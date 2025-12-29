@@ -425,6 +425,7 @@ serve(async (req) => {
         console.log("[CRITICAL-FILL] Filling parent names and birth place EARLY to prevent overwrite blocking...");
 
         // Parent Full Names
+        // Parent Full Names
         const motherFullName = extractedData.madre_completo || extractedData["Mother's Surnames and Full Names"];
         const fatherFullName = extractedData.padre_completo || extractedData["Father's Surnames and Full Names"];
 
@@ -432,11 +433,15 @@ serve(async (req) => {
             console.log(`[CRITICAL-FILL] Mother: ${motherFullName}`);
             for (const pdfField of fieldNames) {
                 const fieldLower = pdfField.toLowerCase();
-                if (fieldLower.includes('mother') && (fieldLower.includes('surname') || fieldLower.includes('name') || fieldLower.includes('full'))) {
-                    if (fieldLower.includes('identification') || fieldLower.includes('document') || fieldLower.includes('nationality')) continue;
-                    if (setField(pdfField, motherFullName)) {
-                        console.log(`[CRITICAL-FILL] SUCCESS: Mother -> "${pdfField}"`);
-                        break;
+                // STRICTER MATCHING: Only fill if it says "full" or "completo" or "names and surnames"
+                // Do NOT fill "Mother Name" or "Mother Surname" with multiple names
+                if (fieldLower.includes('mother') || fieldLower.includes('madre')) {
+                    if (fieldLower.includes('full') || fieldLower.includes('completo') || (fieldLower.includes('surname') && fieldLower.includes('name'))) {
+                        if (fieldLower.includes('identification') || fieldLower.includes('document') || fieldLower.includes('nationality')) continue;
+                        if (setField(pdfField, motherFullName)) {
+                            console.log(`[CRITICAL-FILL] SUCCESS: Mother Full -> "${pdfField}"`);
+                            break;
+                        }
                     }
                 }
             }
@@ -446,11 +451,13 @@ serve(async (req) => {
             console.log(`[CRITICAL-FILL] Father: ${fatherFullName}`);
             for (const pdfField of fieldNames) {
                 const fieldLower = pdfField.toLowerCase();
-                if (fieldLower.includes('father') && (fieldLower.includes('surname') || fieldLower.includes('name') || fieldLower.includes('full'))) {
-                    if (fieldLower.includes('identification') || fieldLower.includes('document') || fieldLower.includes('nationality')) continue;
-                    if (setField(pdfField, fatherFullName)) {
-                        console.log(`[CRITICAL-FILL] SUCCESS: Father -> "${pdfField}"`);
-                        break;
+                if (fieldLower.includes('father') || fieldLower.includes('padre')) {
+                    if (fieldLower.includes('full') || fieldLower.includes('completo') || (fieldLower.includes('surname') && fieldLower.includes('name'))) {
+                        if (fieldLower.includes('identification') || fieldLower.includes('document') || fieldLower.includes('nationality')) continue;
+                        if (setField(pdfField, fatherFullName)) {
+                            console.log(`[CRITICAL-FILL] SUCCESS: Father Full -> "${pdfField}"`);
+                            break;
+                        }
                     }
                 }
             }
