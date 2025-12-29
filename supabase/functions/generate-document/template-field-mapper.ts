@@ -242,6 +242,43 @@ export function getTemplateMappings(
     // Ignoring database mappings prevents conflicts from incorrect SQL configs.
     const templateMappings = {}; // template.content_profile?.pdf_mappings || {};
 
+    // =========================================================================
+    // TEMPLATE-SPECIFIC OVERRIDES (Dynamic Code Configuration)
+    // =========================================================================
+
+    // 1. REGISTRO NACIMIENTO NUEVO - Strict Birth Location Mapping
+    if (template.name && template.name.toLowerCase().includes('nuevo') && template.name.toLowerCase().includes('nacimiento')) {
+        console.log('[TemplateMapper] Applying REGISTRO NACIMIENTO NUEVO specific strict mappings');
+
+        // Ensure standard mappings are cloned so we don't mutate the global object
+        const specificMappings = {
+            // Strict 1:1 mappings for birth location to prevent "overwriting"
+            "pais_nacimiento": ["Country"],
+            "departamento_nacimiento": ["Department"],
+            "municipio_nacimiento": ["Municipality"],
+            "lugar_nacimiento": ["Township/Police Station", "township_birth"],
+            "corregimiento": ["Township/Police Station", "township_birth"],
+
+            // Prevent combined field from overwriting individual fields
+            "birth_location_combined": ["Place of Birth"],
+
+            // Fix notary mapping for Nuevo as well (just in case)
+            "oficina": ["office_type", "office"],
+            "numero_oficina": ["notary_number", "office_number", "Number"],
+            "notary_number": ["notary_number", "Number", "office_number"]
+        };
+
+        // Merge these specific mappings into a temporary overrides object
+        // We handle this by checking if a field has a specific mapping below
+        return {
+            mappings: { ...STANDARD_FIELD_MAPPINGS, ...specificMappings },
+            reverseMappings: {},
+            unmappedExtracted: [],
+            unmappedPdf: [...pdfFieldNames],
+            mappingSources: {}
+        };
+    }
+
     console.log(`[TemplateMapper] Template: ${template.name}`);
     console.log(`[TemplateMapper] PDF fields: ${pdfFieldNames.length}`);
     console.log(`[TemplateMapper] Template mappings: ${Object.keys(templateMappings).length} (DB Mappings IGNORED)`);
