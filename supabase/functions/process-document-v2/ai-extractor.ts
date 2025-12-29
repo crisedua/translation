@@ -109,7 +109,10 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
             "fecha_nacimiento": "Extract EXACTLY what is written. If the month is '08', extract '08'. DO NOT convert to 'Agosto' or 'August'.",
             "fecha_registro": "Extract EXACTLY what is written. DO NOT convert numbers to month names.",
             "nuip": "Located in the top right or within the header. EXTRACT THE FULL ALPHANUMERIC STRING including any letters like 'V2A'. Example: 'V2A2692167'.",
-            "serial_indicator": "Often found near the NUIP or barcode. Extract just the number."
+            "serial_indicator": "Often found near the NUIP or barcode. Extract just the number.",
+            "margin_notes": "CRITICAL: Look at the BOTTOM of the document. Find the section labeled 'ESPACIO PARA NOTAS' or 'SPACE FOR NOTES'. This is a large box with multiple lines. Extract EVERY line of text you see there, including: stamped text (like 'NUIP NUEVO. 1006205637'), typed text, dates, and any handwritten annotations. Do NOT leave this empty if there is ANY text visible in this section.",
+            "notas": "Extract ALL text from the notes section at the bottom of the document. Include stamps, typed lines, and handwritten text.",
+            "notes_combined": "Extract COMPLETE text from 'ESPACIO PARA NOTAS' section. Include all stamps like 'NUIP NUEVO. [number]' and any other visible text."
         };
         // Merge overrides into template instructions (overwriting DB values if present)
         templateInstructions = { ...templateInstructions, ...medioOverrides };
