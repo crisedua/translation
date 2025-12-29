@@ -25,6 +25,7 @@ const DEFAULT_EXTRACTION_INSTRUCTIONS: Record<string, string> = {
 
     // Registry location - Copy form field value as-is
     "registry_location_combined": "CRITICAL: Extract EXACTLY what appears in the 'Pais-Departamento-Municipio' or 'Country - Department - Municipality' form field. This is a SINGLE field - copy its complete value as-is (e.g., 'COLOMBIA.VALLE.CALI' or just 'COLOMBIA'). Do NOT parse, split, or combine.",
+    "country_dept_munic": "CRITICAL: Extract EXACTLY what appears in the 'Pais-Departamento-Municipio' or 'Country - Department - Municipality' form field. This is a SINGLE field - copy its complete value as-is (e.g., 'COLOMBIA.VALLE.CALI' or just 'COLOMBIA'). Do NOT parse, split, or combine.",
 
     // Officials - CRITICAL: Must be COMPLETE names with ALL parts
     "authorizing_official": "CRITICAL: Extract the COMPLETE FULL NAME of the authorizing official near 'Nombre y firma del funcionario que autoriza'. Include ALL name parts - do NOT truncate! Example: 'HOLMES RACEL CAROLINA MONTOYA'",
@@ -130,15 +131,13 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
         ...definedFieldNames
     ])];
 
-    // === CRITICAL FIELDS THAT MUST ALWAYS BE EXTRACTED ===
-    // These are ALWAYS added to ensure proper extraction even if template is incomplete
     const CRITICAL_FIELDS = [
         "nuip", "nuip_top", "serial_indicator",
         "nombres", "primer_apellido", "segundo_apellido",
         "padre_nombres", "padre_apellidos", "padre_primer_apellido", "padre_segundo_apellido",
         "madre_nombres", "madre_apellidos", "madre_primer_apellido", "madre_segundo_apellido",
         "lugar_nacimiento", "birth_location_combined",
-        "registry_location_combined",
+        "registry_location_combined", "country_dept_munic",
         "authorizing_official", "fecha_nacimiento", "fecha_registro",
         "fecha_expedicion", "issue_day", "issue_month", "issue_year",  // Date of Issue fields
         "sexo", "grupo_sanguineo", "factor_rh",

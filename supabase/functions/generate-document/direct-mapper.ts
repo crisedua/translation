@@ -58,8 +58,7 @@ export const DIRECT_MAPPINGS: Record<string, string[]> = {
     "pais_nacimiento": ["country_birth", "birth_country", "Country"],
     "departamento_nacimiento": ["dept_birth", "birth_department", "Department"],
     "municipio_nacimiento": ["muni_birth", "birth_municipality", "Municipality"],
-    "lugar_nacimiento": ["Place of Birth", "birth_place", "place", "township_birth", "Country - Department - Municipality - Township and/or Police Station", "Lugar de nacimiento"],
-    "birth_location_combined": ["birth_country_dept_munic", "place_of_birth", "birth_place", "Place of Birth"],
+    "lugar_nacimiento": ["birth_country_dept_munic", "Place of Birth", "birth_place", "place", "township_birth", "Lugar de nacimiento"],
     "Place of Birth": ["birth_country_dept_munic", "place_of_birth", "birth_place", "Place of Birth"],
     "Place of Birth (Country - Department - Municipality - Township and/or Police Station)": ["birth_country_dept_munic", "place_of_birth", "Place of Birth"],
 
@@ -123,6 +122,7 @@ export const DIRECT_MAPPINGS: Record<string, string[]> = {
     "reg_month": ["reg_month", "date_registration", "reg_date"],
     "reg_year": ["reg_year", "date_registration", "reg_date"],
     "registry_location_combined": ["country_dept_munic"],
+    "country_dept_munic": ["country_dept_munic"],
     "Country - Department - Municipality - Township and/or Police Station": ["country_dept_munic"],
 
     // === NOTES ===

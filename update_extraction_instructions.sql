@@ -18,6 +18,7 @@ SET content_profile = jsonb_set(
         "lugar_nacimiento": "CRITICAL: Extract the COMPLETE text from ''Lugar de nacimiento'' row EXACTLY as it appears. MUST include clinic/hospital name AND location in parentheses. Example: CLINICA MATERNO INFANTIL FARALLONES (COLOMBIA.VALLE.CALI)",
         "birth_location_combined": "Same as lugar_nacimiento - extract the COMPLETE text exactly as written",
         "registry_location_combined": "CRITICAL: Read the SINGLE form field 'Pais-Departamento-Municipio'. Copy its value EXACTLY as written - do NOT split, parse, or combine with other fields. If it says 'COLOMBIA', copy 'COLOMBIA'. If it says 'COLOMBIA.VALLE.CALI', copy 'COLOMBIA.VALLE.CALI'.",
+        "country_dept_munic": "CRITICAL: Read the SINGLE form field 'Pais-Departamento-Municipio'. Copy its value EXACTLY as written - do NOT split, parse, or combine with other fields. If it says 'COLOMBIA', copy 'COLOMBIA'. If it says 'COLOMBIA.VALLE.CALI', copy 'COLOMBIA.VALLE.CALI'.",
         "authorizing_official": "CRITICAL: Extract COMPLETE name from bottom section near ''Nombre y firma del funcionario que autoriza''. Officials have 3-4 name parts - extract ALL of them. Example: HOLMES RACEL CAROLINA MONTOYA",
         "acknowledgment_official": "Only extract if ''Reconocimiento paterno'' section has a name filled in. If section is empty or not applicable, return empty string.",
         "funcionario_nombre": "Same as authorizing_official - extract complete official name with all parts",
