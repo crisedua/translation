@@ -930,38 +930,62 @@ serve(async (req) => {
         // === END SPECIAL HANDLING ===
 
         // === SPECIAL HANDLING: Multi-line Notes ===
-        // Split notes across notes1, notes2, notes3, etc. PDF fields
-        const notesValue = extractedData.notes_combined ||
-            extractedData.margin_notes ||
-            extractedData.notas ||
-            extractedData['SPACE FOR NOTES'];
+        // Priority 1: Use individual line extractions (notes_line1, notes_line2, etc.)
+        // Priority 2: Fall back to splitting combined notes
 
-        if (notesValue) {
-            const notesStr = String(notesValue).trim();
-            const notesLines = notesStr.split('\n').map(l => l.trim()).filter(l => l);
-
-            console.log(`[SPECIAL] Splitting ${notesLines.length} notes lines across PDF fields`);
-
-            for (let i = 0; i < notesLines.length && i < 7; i++) {
-                const fieldName = `notes${i + 1}`;
-                if (setField(fieldName, notesLines[i])) {
-                    console.log(`[SPECIAL] Filled ${fieldName} with: ${notesLines[i].substring(0, 50)}...`);
+        // First, try direct line-by-line mappings (PREFERRED)
+        let notesFilledViaLines = false;
+        for (let i = 1; i <= 7; i++) {
+            const lineKey = `notes_line${i}`;
+            const lineValue = extractedData[lineKey];
+            if (lineValue && String(lineValue).trim()) {
+                const pdfField = `notes${i}`;
+                if (setField(pdfField, String(lineValue).trim())) {
+                    console.log(`[SPECIAL] Filled ${pdfField} with notes_line${i}: ${String(lineValue).substring(0, 50)}...`);
                     filledCount++;
+                    notesFilledViaLines = true;
                 }
-            }
-
-            // Also try "Space For Notes" for the first line
-            if (notesLines.length > 0) {
-                setField('Space For Notes', notesLines[0]);
             }
         }
 
-        // Also fill nuip_notes to notes2 if it exists and wasn't already in notes
+        // If no individual lines were extracted, fall back to splitting combined notes
+        if (!notesFilledViaLines) {
+            const notesValue = extractedData.notes_combined ||
+                extractedData.margin_notes ||
+                extractedData.notas ||
+                extractedData['SPACE FOR NOTES'];
+
+            if (notesValue) {
+                const notesStr = String(notesValue).trim();
+                const notesLines = notesStr.split('\n').map(l => l.trim()).filter(l => l);
+
+                console.log(`[SPECIAL] Splitting ${notesLines.length} notes lines across PDF fields`);
+
+                for (let i = 0; i < notesLines.length && i < 7; i++) {
+                    const fieldName = `notes${i + 1}`;
+                    if (setField(fieldName, notesLines[i])) {
+                        console.log(`[SPECIAL] Filled ${fieldName} with: ${notesLines[i].substring(0, 50)}...`);
+                        filledCount++;
+                    }
+                }
+
+                // Also try "Space For Notes" for the first line
+                if (notesLines.length > 0) {
+                    setField('Space For Notes', notesLines[0]);
+                }
+            }
+        }
+
+        // Also fill nuip_notes if it exists
         if (extractedData.nuip_notes) {
             const nuipNum = String(extractedData.nuip_notes).trim();
             if (nuipNum) {
-                console.log(`[SPECIAL] Filling notes2 with nuip_notes: ${nuipNum}`);
-                setField('notes2', nuipNum);
+                // Try to put it on the line where NUIP NUEVO appears (often line 4)
+                console.log(`[SPECIAL] nuip_notes extracted: ${nuipNum}`);
+                // If notes_line4 wasn't filled, put it there
+                if (!extractedData.notes_line4) {
+                    setField('notes4', nuipNum);
+                }
             }
         }
         // === END SPECIAL HANDLING ===

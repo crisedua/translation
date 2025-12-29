@@ -49,11 +49,18 @@ const DEFAULT_EXTRACTION_INSTRUCTIONS: Record<string, string> = {
     "reg_month": "Extract numeric month ONLY (e.g., '08'). DO NOT convert to name.",
     "issue_month": "Extract numeric month ONLY (e.g., '08'). DO NOT convert to name.",
 
-    // Notes - Full text from ESPACIO PARA NOTAS
-    "margin_notes": "Extract ALL text from 'ESPACIO PARA NOTAS' section. CRITICAL: Include stamped or typed lines like 'NUIP NUEVO. 1006205637' WITH THE COMPLETE NUMBER. Do NOT skip any identifier lines, stamps, or numbers in the notes area.",
-    "notas": "Extract all notes, annotations, and stamped identifiers. MUST include any NUIP numbers.",
-    "notes_combined": "Extract ALL text from 'ESPACIO PARA NOTAS', including NUIP stamps WITH NUMBERS and dates.",
-    "nuip_notes": "CRITICAL: Look in the 'ESPACIO PARA NOTAS' section for a NUIP NUMBER. This is usually a 10-digit number like '1006205637'. It may be handwritten, stamped, or typed. Extract ONLY the number itself.",
+    // Notes - Extract EACH LINE of ESPACIO PARA NOTAS separately
+    "margin_notes": "Extract ALL text from 'ESPACIO PARA NOTAS' section.",
+    "notas": "Extract all notes, annotations, and stamped identifiers.",
+    "notes_combined": "Extract ALL text from 'ESPACIO PARA NOTAS'.",
+    "nuip_notes": "CRITICAL: Look in the 'ESPACIO PARA NOTAS' section for a NUIP NUMBER. This is usually a 10-digit number like '1006205637'. Extract ONLY the number itself.",
+    "notes_line1": "Extract ONLY the text on the FIRST LINE of 'ESPACIO PARA NOTAS'. If empty, return empty string.",
+    "notes_line2": "Extract ONLY the text on the SECOND LINE of 'ESPACIO PARA NOTAS'. This is where the main NUIP statement usually appears.",
+    "notes_line3": "Extract ONLY the text on the THIRD LINE of 'ESPACIO PARA NOTAS'. If empty, return empty string.",
+    "notes_line4": "Extract ONLY the text on the FOURTH LINE of 'ESPACIO PARA NOTAS'. This often has 'NUIP NUEVO. [number]' and handwritten numbers.",
+    "notes_line5": "Extract ONLY the text on the FIFTH LINE of 'ESPACIO PARA NOTAS'. If empty, return empty string.",
+    "notes_line6": "Extract ONLY the text on the SIXTH LINE of 'ESPACIO PARA NOTAS'. If empty, return empty string.",
+    "notes_line7": "Extract ONLY the text on the SEVENTH LINE of 'ESPACIO PARA NOTAS'. If empty, return empty string.",
 
     // Other identifiers
     "serial_indicator": "Extract complete 'Indicativo Serial' number (e.g., '29734419')",
@@ -161,7 +168,8 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
         "sexo", "grupo_sanguineo", "factor_rh",
         "pais_nacimiento", "departamento_nacimiento", "municipio_nacimiento",
         "oficina", "numero_oficina",
-        "margin_notes", "notas", "notes_combined", "nuip_notes"  // Notes fields - CRITICAL for stamps and annotations
+        "margin_notes", "notas", "notes_combined", "nuip_notes",
+        "notes_line1", "notes_line2", "notes_line3", "notes_line4", "notes_line5", "notes_line6", "notes_line7"  // Individual notes lines
     ];
 
     // Merge template fields with critical fields (critical fields always included)
