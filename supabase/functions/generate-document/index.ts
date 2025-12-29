@@ -576,7 +576,7 @@ serve(async (req) => {
             'nuip', 'nuip_top', 'tipo_documento', 'Document Type', 'nombres', 'Apellidos', 'apellidos', 'names', 'surnames',
             'pais_nacimiento', 'departamento_nacimiento', 'municipio_nacimiento',
             'pais_registro', 'Pais Registro', 'fecha_expedicion', 'issue_date', 'issue_day', 'issue_month', 'issue_year',
-            'fecha_registro', 'reg_day', 'reg_month', 'reg_year', 'oficina', 'reg_office',
+            'fecha_registro', 'reg_day', 'reg_month', 'reg_year', 'oficina', 'numero_oficina', 'notary_number', 'reg_office',
             'country_dept_munic', 'registry_location_combined'
         ];
 

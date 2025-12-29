@@ -57,6 +57,8 @@ const DEFAULT_EXTRACTION_INSTRUCTIONS: Record<string, string> = {
     // Other identifiers
     "serial_indicator": "Extract complete 'Indicativo Serial' number (e.g., '29734419')",
     "codigo": "Extract complete code - may have parts like '97 0 2' (combine to '9702')",
+    "numero_oficina": "Extract the Notary Number or Office Number. Example: '21'. Look for 'NOTARIA 21' or similar in the header/footer.",
+    "oficina": "Extract the type and name of the office (e.g., 'NOTARIA 21 CALI').",
     "tipo_documento": "Document type from 'Tipo de documento antecedente' (e.g., 'CERTIFICADO DE NACIDO VIVO')",
     "tipo_documento_anterior": "Prior document type (e.g., 'CERTIFICADO DE NACIDO VIVO')"
 };
@@ -153,7 +155,8 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
         "birth_day", "birth_month", "birth_year", // Date of Birth fields
         "reg_day", "reg_month", "reg_year", // Registration Date fields
         "sexo", "grupo_sanguineo", "factor_rh",
-        "pais_nacimiento", "departamento_nacimiento", "municipio_nacimiento"
+        "pais_nacimiento", "departamento_nacimiento", "municipio_nacimiento",
+        "oficina", "numero_oficina"
     ];
 
     // Merge template fields with critical fields (critical fields always included)
