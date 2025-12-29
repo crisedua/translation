@@ -31,6 +31,22 @@ function parseDate(dateStr: string): { day: string; month: string; year: string 
 
     let day = '', month = '', year = '';
 
+    const monthMap: Record<string, string> = {
+        'enero': '01', 'febrero': '02', 'marzo': '03', 'abril': '04', 'mayo': '05', 'junio': '06',
+        'julio': '07', 'agosto': '08', 'septiembre': '09', 'octubre': '10', 'noviembre': '11', 'diciembre': '12',
+        'january': '01', 'february': '02', 'march': '03', 'april': '04', 'may': '05', 'june': '06',
+        'july': '07', 'august': '08', 'september': '09', 'october': '10', 'november': '11', 'december': '12'
+    };
+
+    const processMonth = (m: string) => {
+        const low = m.toLowerCase().trim();
+        if (/^\d+$/.test(low)) return low.padStart(2, '0');
+        for (const [name, num] of Object.entries(monthMap)) {
+            if (low.startsWith(name.substring(0, 3))) return num;
+        }
+        return m;
+    };
+
     // Handle DD/MM/YYYY or DD-MM-YYYY
     if (dateStr.includes('/') || dateStr.includes('-')) {
         const separator = dateStr.includes('/') ? '/' : '-';
@@ -45,7 +61,16 @@ function parseDate(dateStr: string): { day: string; month: string; year: string 
                 [day, month, year] = parts;
             }
         }
+    } else {
+        // Try splitting by space
+        const parts = dateStr.split(/\s+/).filter(p => !['de', 'del'].includes(p.toLowerCase()));
+        if (parts.length === 3) {
+            [day, month, year] = parts;
+        }
     }
+
+    if (month) month = processMonth(month);
+    if (day) day = day.padStart(2, '0');
 
     if (day && month && year) {
         return { day, month, year };

@@ -339,6 +339,24 @@ serve(async (req) => {
             let day, month, year;
             if (!dateStr) return { day: '', month: '', year: '' };
 
+            const monthMap: Record<string, string> = {
+                'enero': '01', 'febrero': '02', 'marzo': '03', 'abril': '04', 'mayo': '05', 'junio': '06',
+                'julio': '07', 'agosto': '08', 'septiembre': '09', 'octubre': '10', 'noviembre': '11', 'diciembre': '12',
+                'january': '01', 'february': '02', 'march': '03', 'april': '04', 'may': '05', 'june': '06',
+                'july': '07', 'august': '08', 'september': '09', 'october': '10', 'november': '11', 'december': '12'
+            };
+
+            const processMonth = (m: string) => {
+                const low = m.toLowerCase().trim();
+                // If it's already a number, just return it
+                if (/^\d+$/.test(low)) return low.padStart(2, '0');
+                // Check map
+                for (const [name, num] of Object.entries(monthMap)) {
+                    if (low.startsWith(name.substring(0, 3))) return num;
+                }
+                return m;
+            };
+
             if (dateStr.includes('-')) {
                 const parts = dateStr.split('-');
                 if (parts[0].length === 4) { // YYYY-MM-DD
@@ -353,7 +371,17 @@ serve(async (req) => {
                 } else { // DD/MM/YYYY
                     [day, month, year] = parts;
                 }
+            } else {
+                // Try splitting by space (e.g. "26 de Agosto de 2003")
+                const parts = dateStr.split(/\s+/).filter(p => !['de', 'del'].includes(p.toLowerCase()));
+                if (parts.length === 3) {
+                    [day, month, year] = parts;
+                }
             }
+
+            if (month) month = processMonth(month);
+            if (day) day = day.padStart(2, '0');
+
             return { day, month, year };
         };
 

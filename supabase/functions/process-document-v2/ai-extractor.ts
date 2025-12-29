@@ -43,8 +43,8 @@ const DEFAULT_EXTRACTION_INSTRUCTIONS: Record<string, string> = {
     "madre_identificacion": "Mother's ID number with location (e.g., '31928.038 DE CALI (VALLE)')",
 
     // Dates - Keep as-is
-    "fecha_nacimiento": "Extract date EXACTLY as written (e.g., '19-08-2000'). Do NOT split into parts",
-    "fecha_registro": "Extract registration date EXACTLY as written",
+    "fecha_nacimiento": "Extract date EXACTLY as written. If it uses numbers (e.g., '08'), extract '08'. DO NOT convert numbers to month names.",
+    "fecha_registro": "Extract registration date EXACTLY as written. DO NOT convert numbers to month names.",
 
     // Notes - Full text from ESPACIO PARA NOTAS
     "margin_notes": "Extract ALL text from 'ESPACIO PARA NOTAS' section at bottom. Include NUIP info, dates, handwritten notes.",
@@ -101,6 +101,8 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
             "padre_nombre_completo_raw": "CRITICAL: Extract the EXACT FULL TEXT from the line 'Apellidos y nombres completos' in the Father's section. Copy it as-is.",
             "declarante_nombre_completo_raw": "CRITICAL: Extract the EXACT FULL TEXT from the line 'Apellidos y nombres completos' in the Declarant's section. Copy it as-is.",
             "lugar_nacimiento": "LOCATED in the row starting with 'Fecha de nacimiento'. Look for the wide box labeled 'Lugar de nacimiento'. Extract the ENTIRE text including clinic name and parentheses (e.g., 'CLINICA ... (COLOMBIA...)').",
+            "fecha_nacimiento": "Extract EXACTLY what is written. If the month is '08', extract '08'. DO NOT convert to 'Agosto' or 'August'.",
+            "fecha_registro": "Extract EXACTLY what is written. DO NOT convert numbers to month names.",
             "nuip": "Located in the top right or within the header. EXTRACT THE FULL ALPHANUMERIC STRING including any letters like 'V2A'. Example: 'V2A2692167'.",
             "serial_indicator": "Often found near the NUIP or barcode. Extract just the number."
         };
@@ -145,6 +147,8 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
         "registry_location_combined", "country_dept_munic",
         "authorizing_official", "fecha_nacimiento", "fecha_registro",
         "fecha_expedicion", "issue_day", "issue_month", "issue_year",  // Date of Issue fields
+        "birth_day", "birth_month", "birth_year", // Date of Birth fields
+        "reg_day", "reg_month", "reg_year", // Registration Date fields
         "sexo", "grupo_sanguineo", "factor_rh",
         "pais_nacimiento", "departamento_nacimiento", "municipio_nacimiento"
     ];
