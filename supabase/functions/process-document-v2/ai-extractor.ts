@@ -99,6 +99,7 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
             "padre_segundo_apellido": "In the father section, find the SECOND box labeled 'Segundo Apellido'. Extract ONLY from this box. Example: 'MEDINA'.",
             "padre_apellidos": "Extract the combined text of Primer AND Segundo Apellido. If they are the same, include BOTH. Do NOT deduplicate.",
             "padre_nombre_completo_raw": "CRITICAL: Extract the EXACT FULL TEXT from the line 'Apellidos y nombres completos' in the Father's section. Copy it as-is.",
+            "declarante_nombre_completo_raw": "CRITICAL: Extract the EXACT FULL TEXT from the line 'Apellidos y nombres completos' in the Declarant's section. Copy it as-is.",
             "lugar_nacimiento": "LOCATED in the row starting with 'Fecha de nacimiento'. Look for the wide box labeled 'Lugar de nacimiento'. Extract the ENTIRE text including clinic name and parentheses (e.g., 'CLINICA ... (COLOMBIA...)').",
             "nuip": "Located in the top right or within the header. EXTRACT THE FULL ALPHANUMERIC STRING including any letters like 'V2A'. Example: 'V2A2692167'.",
             "serial_indicator": "Often found near the NUIP or barcode. Extract just the number."

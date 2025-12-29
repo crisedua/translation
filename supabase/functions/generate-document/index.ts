@@ -505,9 +505,14 @@ serve(async (req) => {
         // === END CRITICAL EARLY FILL ===
 
         // Prioritize specific atomic fields over composite or fuzzy fields
-        // Prioritize specific atomic fields over composite or fuzzy fields
-        // Prioritize specific atomic fields over composite or fuzzy fields
-        const priorityFields = ['country_dept_munic', 'birth_country_dept_munic', 'registry_location_combined', 'birth_location_combined', 'nuip', 'nuip_top', 'tipo_documento', 'Document Type', 'nombres', 'Apellidos', 'apellidos', 'names', 'surnames', 'pais_registro', 'Pais Registro', 'fecha_expedicion', 'issue_date', 'issue_day', 'issue_month', 'issue_year', 'fecha_registro', 'reg_day', 'reg_month', 'reg_year', 'oficina', 'reg_office'];
+        const priorityFields = [
+            'madre_nombre_completo_raw', 'padre_nombre_completo_raw', 'declarante_nombre_completo_raw',
+            'father_full_name', 'mother_full_name', // Include aliases we created
+            'country_dept_munic', 'birth_country_dept_munic', 'registry_location_combined', 'birth_location_combined',
+            'nuip', 'nuip_top', 'tipo_documento', 'Document Type', 'nombres', 'Apellidos', 'apellidos', 'names', 'surnames',
+            'pais_registro', 'Pais Registro', 'fecha_expedicion', 'issue_date', 'issue_day', 'issue_month', 'issue_year',
+            'fecha_registro', 'reg_day', 'reg_month', 'reg_year', 'oficina', 'reg_office'
+        ];
 
         const sortedEntries = Object.entries(extractedData).sort(([keyA], [keyB]) => {
             const idxA = priorityFields.indexOf(keyA);

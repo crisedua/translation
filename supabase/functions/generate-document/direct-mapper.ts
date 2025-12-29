@@ -89,6 +89,7 @@ export const DIRECT_MAPPINGS: Record<string, string[]> = {
     // === DECLARANT INFORMATION ===
     "declarante_nombres": ["declarant_surnames_names", "declarant_name"],
     "declarante_identificacion": ["declarant_id_doc", "declarant_id"],
+    "declarante_nombre_completo_raw": ["declarant_surnames_names", "declarant_name", "Declarant's Surnames and Full Names"],
     "Declarant's Surnames and Full Names": ["declarant_surnames_names", "declarant_name"],
     "Declarant's Identification Document": ["declarant_id_doc", "declarant_id"],
     "Declarant's Identification Document (Type and Number)": ["declarant_id_doc", "declarant_id"],
