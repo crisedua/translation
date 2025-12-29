@@ -388,11 +388,14 @@ serve(async (req) => {
         const fatherNames = extractedData['padre_nombres'] || extractedData['Father Names'] || '';
         let fatherSurnames = extractedData['padre_apellidos'] || extractedData['Father Surnames'] || '';
 
-        // STRATEGY: 1. Raw Field (single line) -> 2. Atomic Field Reconstruction -> 3. Standard Combine
-        let fatherFull = extractedData['padre_nombre_completo_raw'] || '';
+        // STRATEGY: 1. Raw Field -> 2. Existing Combined -> 3. Atomic Field Reconstruction -> 4. Standard Combine
+        let fatherFull = extractedData['padre_nombre_completo_raw'] ||
+            extractedData['father_full_name'] ||
+            extractedData['father_surnames_names'] ||
+            extractedData['padre_completo'] || '';
 
         if (fatherFull) {
-            console.log(`[PRE-PROCESS] Using RAW Father Full Name: "${fatherFull}"`);
+            console.log(`[PRE-PROCESS] Found EXISTING Father Full Name: "${fatherFull}"`);
         } else if (fatherNames || fatherSurnames) {
             // Check if we have separate surnames for father - PREFER ATOMIC FIELDS
             let fullFatherSurnames = fatherSurnames;
@@ -418,11 +421,14 @@ serve(async (req) => {
         const motherNames = extractedData['madre_nombres'] || extractedData['Mother Names'] || '';
         let motherSurnames = extractedData['madre_apellidos'] || extractedData['Mother Surnames'] || '';
 
-        // STRATEGY: 1. Raw Field (single line) -> 2. Atomic Field Reconstruction -> 3. Standard Combine
-        let motherFull = extractedData['madre_nombre_completo_raw'] || '';
+        // STRATEGY: 1. Raw Field -> 2. Existing Combined -> 3. Atomic Field Reconstruction -> 4. Standard Combine
+        let motherFull = extractedData['madre_nombre_completo_raw'] ||
+            extractedData['mother_full_name'] ||
+            extractedData['mother_surnames_names'] ||
+            extractedData['madre_completo'] || '';
 
         if (motherFull) {
-            console.log(`[PRE-PROCESS] Using RAW Mother Full Name: "${motherFull}"`);
+            console.log(`[PRE-PROCESS] Found EXISTING Mother Full Name: "${motherFull}"`);
         } else if (motherNames || motherSurnames) {
             // Check if we have separate surnames for mother - PREFER ATOMIC FIELDS
             let fullMotherSurnames = motherSurnames;
@@ -448,11 +454,14 @@ serve(async (req) => {
         const declarantNames = extractedData['declante_nombres'] || extractedData['declarante_nombres'] || extractedData['Declarant Names'] || '';
         const declarantSurnames = extractedData['declante_apellidos'] || extractedData['declarante_apellidos'] || extractedData['Declarant Surnames'] || '';
 
-        // STRATEGY: 1. Raw Field (single line) -> 2. Standard Combine
-        let declarantFull = extractedData['declarante_nombre_completo_raw'] || '';
+        // STRATEGY: 1. Raw Field -> 2. Existing Combined -> 3. Standard Combine
+        let declarantFull = extractedData['declarante_nombre_completo_raw'] ||
+            extractedData['declarant_full_name'] ||
+            extractedData['declarant_surnames_names'] ||
+            extractedData['declarante_completo'] || '';
 
         if (declarantFull) {
-            console.log(`[PRE-PROCESS] Using RAW Declarant Full Name: "${declarantFull}"`);
+            console.log(`[PRE-PROCESS] Found EXISTING Declarant Full Name: "${declarantFull}"`);
         } else if (declarantNames || declarantSurnames) {
             declarantFull = `${declarantSurnames} ${declarantNames}`.trim();
             console.log(`[PRE-PROCESS] Combined Declarant Full Name: "${declarantFull}"`);

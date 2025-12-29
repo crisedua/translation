@@ -63,8 +63,8 @@ export const DIRECT_MAPPINGS: Record<string, string[]> = {
     "Place of Birth (Country - Department - Municipality - Township and/or Police Station)": ["birth_country_dept_munic", "place_of_birth", "Place of Birth"],
 
     // === FATHER INFORMATION ===
-    "padre_nombres": ["father_names", "father_surnames_names"],
-    "padre_apellidos": ["father_surnames", "father_surnames_names"],
+    "padre_nombres": ["father_names"],
+    "padre_apellidos": ["father_surnames"],
     "padre_identificacion": ["father_doc_number", "father_id_doc", "father_id"],
     "padre_tipo_documento": ["father_id_type", "father_doc_type", "father_type_id"],
     "padre_nacionalidad": ["father_nationality"],
@@ -75,8 +75,8 @@ export const DIRECT_MAPPINGS: Record<string, string[]> = {
     "Father's Nationality": ["father_nationality"],
 
     // === MOTHER INFORMATION ===
-    "madre_nombres": ["mother_names", "mother_surnames_names"],
-    "madre_apellidos": ["mother_surnames", "mother_surnames_names"],
+    "madre_nombres": ["mother_names"],
+    "madre_apellidos": ["mother_surnames"],
     "madre_identificacion": ["mother_doc_number", "mother_id_doc", "mother_id_number"],
     "madre_tipo_documento": ["mother_id_type", "mother_doc_type", "mother_type_id"],
     "madre_nacionalidad": ["mother_nationality"],
