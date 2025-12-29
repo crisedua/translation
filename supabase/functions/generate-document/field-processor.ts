@@ -115,6 +115,20 @@ export function processExtractedData(extractedData: Record<string, any>): Proces
     processed.nuip_resolved = finalNuip;
 
     // =========================================================================
+    // 1b. NOTARY NUMBER HANDLING
+    // =========================================================================
+    // Ensure notary_number and numero_oficina are synced
+    const notaryNum = extractedData.notary_number || extractedData.numero_oficina || extractedData.oficina_numero;
+    if (notaryNum && String(notaryNum).trim()) {
+        // Extract just the number if it contains text like "NOTARIA 21"
+        const numMatch = String(notaryNum).match(/\d+/);
+        const cleanNumber = numMatch ? numMatch[0] : String(notaryNum).trim();
+        processed.notary_number = cleanNumber;
+        processed.numero_oficina = cleanNumber;
+        console.log(`[FieldProcessor] Set notary_number and numero_oficina to: ${cleanNumber}`);
+    }
+
+    // =========================================================================
     // 2. BIRTH LOCATION COMBINING
     // =========================================================================
     const birthLocationParts = [
