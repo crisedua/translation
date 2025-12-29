@@ -215,6 +215,15 @@ export function processExtractedData(extractedData: Record<string, any>): Proces
     addToNotes(extractedData['SPACE FOR NOTES']);
     addToNotes(extractedData['Space For Notes']);
 
+    // SAFETY CHECK: Ensure NUIP is in notes if available and not already mentioned
+    if (finalNuip) {
+        const alreadyHasNuip = Array.from(uniqueLines).some(line => line.includes(finalNuip));
+        if (!alreadyHasNuip) {
+            console.log(`[FieldProcessor] Adding missing NUIP to notes: ${finalNuip}`);
+            addToNotes(`NUIP NUEVO. ${finalNuip}`);
+        }
+    }
+
     if (finalNotes.length > 0) {
         processed.notes_combined = finalNotes.join('\n');
     }

@@ -50,9 +50,9 @@ const DEFAULT_EXTRACTION_INSTRUCTIONS: Record<string, string> = {
     "issue_month": "Extract numeric month ONLY (e.g., '08'). DO NOT convert to name.",
 
     // Notes - Full text from ESPACIO PARA NOTAS
-    "margin_notes": "Extract ALL text from 'ESPACIO PARA NOTAS' section at bottom. Include NUIP info, dates, handwritten notes.",
-    "notas": "Extract all notes and annotations",
-    "notes_combined": "Extract ALL notes from 'ESPACIO PARA NOTAS' section",
+    "margin_notes": "Extract ALL text from 'ESPACIO PARA NOTAS' section. CRITICAL: Include stamped or typed lines like 'NUIP NUEVO. 1006205637' or 'NUIP: ...'. Do NOT skip any identifier lines or stamps in the notes area.",
+    "notas": "Extract all notes, annotations, and stamped identifiers.",
+    "notes_combined": "Extract ALL text from 'ESPACIO PARA NOTAS', including NUIP stamps and dates.",
 
     // Other identifiers
     "serial_indicator": "Extract complete 'Indicativo Serial' number (e.g., '29734419')",
