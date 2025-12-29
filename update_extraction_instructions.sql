@@ -15,12 +15,9 @@ SET content_profile = jsonb_set(
         "primer_apellido": "Extract from box labeled ''Primer Apellido'' in ''Datos del inscrito'' section. Example: QUEVEDO",
         "segundo_apellido": "CRITICAL: Extract from box labeled ''Segundo Apellido'' - this is the box IMMEDIATELY TO THE RIGHT of primer_apellido. NEVER leave empty if there is text. Example: HERRERA",
         "nombres": "Extract from box labeled ''Nombre(s)'' below the surname boxes. Example: KATERINE",
-        "lugar_nacimiento": "CRITICAL: Extract the COMPLETE text from ''Lugar de nacimiento'' row. MUST include clinic/hospital name AND location in parentheses. Example: CLINICA MATERNO INFANTIL FARALLONES (COLOMBIA.VALLE.CALI)",
-        "birth_location_combined": "Same as lugar_nacimiento - include full clinic name and country.department.municipality",
-        "pais_nacimiento": "Country only from birth location (e.g., COLOMBIA)",
-        "departamento_nacimiento": "Department only from birth location (e.g., VALLE)",
-        "municipio_nacimiento": "Municipality only from birth location (e.g., CALI)",
-        "registry_location_combined": "Extract from ''Pais-Departamento-Municipio'' row near top. Format: COUNTRY.DEPARTMENT.MUNICIPALITY (e.g., COLOMBIA.VALLE.CALI)",
+        "lugar_nacimiento": "CRITICAL: Extract the COMPLETE text from ''Lugar de nacimiento'' row EXACTLY as it appears. MUST include clinic/hospital name AND location in parentheses. Example: CLINICA MATERNO INFANTIL FARALLONES (COLOMBIA.VALLE.CALI)",
+        "birth_location_combined": "Same as lugar_nacimiento - extract the COMPLETE text exactly as written",
+        "registry_location_combined": "CRITICAL: Extract EXACTLY what you see in the ''Pais-Departamento-Municipio'' form field. This is a SINGLE field that already contains the complete location string. Copy it as-is. Example: COLOMBIA.VALLE.CALI",
         "authorizing_official": "CRITICAL: Extract COMPLETE name from bottom section near ''Nombre y firma del funcionario que autoriza''. Officials have 3-4 name parts - extract ALL of them. Example: HOLMES RACEL CAROLINA MONTOYA",
         "acknowledgment_official": "Only extract if ''Reconocimiento paterno'' section has a name filled in. If section is empty or not applicable, return empty string.",
         "funcionario_nombre": "Same as authorizing_official - extract complete official name with all parts",
@@ -95,7 +92,12 @@ SET content_profile = jsonb_set(
         "madre_identificacion": "Mother''s document number from ''No. Documento'' field",
         "fecha_nacimiento": "Date of birth from ''Fecha de nacimiento'' - may be in day/month/year format",
         "fecha_registro": "Registration date from ''Fecha de expedición'' section",
-        "serial_indicator": "Extract serial indicator from top section"
+        "serial_indicator": "Extract serial indicator from top section",
+        "tipo_oficina": "CRITICAL: Extract the type of registry office from the checkboxes in ''Registry Office Information - Type of Office''. Look for which checkbox is marked (X): Notary, Consulate, etc. Return the office type name (e.g., ''Notary'', ''Consulate'')",
+        "numero_oficina": "CRITICAL: Extract the office number from ''Registry Office Information''. This appears as a number next to the office type checkbox (e.g., ''21''). Extract ONLY the number.",
+        "pais_registro": "Extract the country from ''Country - Department - Municipality - Township and/or Police Station'' field in Registry Office section (e.g., ''COLOMBIA'')",
+        "departamento_registro": "Extract the department from ''Country - Department - Municipality - Township and/or Police Station'' field in Registry Office section (e.g., ''VALLE'')",
+        "municipio_registro": "Extract the municipality from ''Country - Department - Municipality - Township and/or Police Station'' field in Registry Office section (e.g., ''CALI'')"
     }'::jsonb
 )
 WHERE id = '9ffa61ac-84d8-4f1f-afec-21961b60a23f';

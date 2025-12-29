@@ -107,9 +107,11 @@ export const DIRECT_MAPPINGS: Record<string, string[]> = {
     "Second Witness's Identification Document (Type and Number)": ["witness2_id_doc", "witness2_id"],
 
     // === REGISTRY INFORMATION ===
-    "oficina": ["office_type", "notary_number", "office"],
-    "numero_oficina": ["notary_number", "office_number"],
+    "tipo_oficina": ["office_type", "Type of Office", "type_office", "tipo_oficina"],
+    "oficina": ["office_type", "notary_number", "office", "registry_office"],
+    "numero_oficina": ["notary_number", "office_number", "Number", "office_num"],
     "Notary Number": ["notary_number", "office_number"],
+    "Type of Office": ["office_type", "tipo_oficina"],
     "Registry Office": ["reg_office", "office"],
     "pais_registro": ["country_office", "country", "pais", "Country"],
     "Pais Registro": ["country_office", "country", "pais", "Country"],
