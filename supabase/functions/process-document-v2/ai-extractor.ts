@@ -126,7 +126,8 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
             "notes_line3": "ESPACIO PARA NOTAS - LINE 3: May be empty or continue from line 2. Extract what you see.",
             "notes_line4": "ESPACIO PARA NOTAS - LINE 4: CRITICAL - This often has 'NUIP NUEVO. [10-digit number]' AND a HANDWRITTEN number below it (like '1006205637'). YOU MUST extract BOTH the typed and handwritten text. Example: 'NUIP NUEVO. 1006205637 1006205637'",
             "nuip_notes": "CRITICAL: In the 'ESPACIO PARA NOTAS' section, look for a 10-digit HANDWRITTEN number. It may appear as large handwritten digits like '1006205637'. Extract ONLY the number itself.",
-            "numero_oficina": "Look for the box labeled 'Número' or 'Number' in the registry/office section near top of document. Extract ONLY the number shown (e.g., '21'). Do NOT extract text like 'NOTARIA' or 'NOTAS'."
+            "numero_oficina": "Look for 'Datos de la oficina de registro' section. Find the field labeled 'Número' (next to the Registraduría/Notaría checkboxes). Extract ONLY the number from this field (e.g., '21').",
+            "tipo_oficina": "Look for 'Datos de la oficina de registro' section. Check which box has an X mark: 'Registraduría' or 'Notaría'. Return the name of the checked option (e.g., 'Notaría' if that box has X)."
         };
         // Merge overrides into template instructions (overwriting DB values if present)
         templateInstructions = { ...templateInstructions, ...medioOverrides };
