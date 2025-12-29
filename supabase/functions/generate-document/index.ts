@@ -437,6 +437,26 @@ serve(async (req) => {
             extractedData['mother_full_name'] = motherFull; // Alias for Direct Mapper
         }
 
+        // Declarant
+        const declarantNames = extractedData['declarante_nombres'] || extractedData['Declarant Names'] || '';
+        const declarantSurnames = extractedData['declarante_apellidos'] || extractedData['Declarant Surnames'] || '';
+
+        // STRATEGY: 1. Raw Field (single line) -> 2. Standard Combine
+        let declarantFull = extractedData['declarante_nombre_completo_raw'] || '';
+
+        if (declarantFull) {
+            console.log(`[PRE-PROCESS] Using RAW Declarant Full Name: "${declarantFull}"`);
+        } else if (declarantNames || declarantSurnames) {
+            declarantFull = `${declarantSurnames} ${declarantNames}`.trim();
+            console.log(`[PRE-PROCESS] Combined Declarant Full Name: "${declarantFull}"`);
+        }
+
+        if (declarantFull) {
+            extractedData['declarante_completo'] = declarantFull;
+            extractedData["Declarant's Surnames and Full Names"] = declarantFull;
+            extractedData['declarant_full_name'] = declarantFull; // Alias for Direct Mapper
+        }
+
 
         // === CRITICAL EARLY FILL: Parent Full Names and Place of Birth ===
         // These MUST be filled BEFORE the main loop to prevent partial data from blocking complete data
