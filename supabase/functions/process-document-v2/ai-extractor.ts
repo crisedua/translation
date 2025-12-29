@@ -50,9 +50,9 @@ const DEFAULT_EXTRACTION_INSTRUCTIONS: Record<string, string> = {
     "issue_month": "Extract numeric month ONLY (e.g., '08'). DO NOT convert to name.",
 
     // Notes - Full text from ESPACIO PARA NOTAS
-    "margin_notes": "Extract ALL text from 'ESPACIO PARA NOTAS' section. CRITICAL: Include stamped or typed lines like 'NUIP NUEVO. 1006205637' or 'NUIP: ...'. Do NOT skip any identifier lines or stamps in the notes area.",
-    "notas": "Extract all notes, annotations, and stamped identifiers.",
-    "notes_combined": "Extract ALL text from 'ESPACIO PARA NOTAS', including NUIP stamps and dates.",
+    "margin_notes": "Extract ALL text from 'ESPACIO PARA NOTAS' section. CRITICAL: Include stamped or typed lines like 'NUIP NUEVO. 1006205637' WITH THE COMPLETE NUMBER. Do NOT skip any identifier lines, stamps, or numbers in the notes area.",
+    "notas": "Extract all notes, annotations, and stamped identifiers. MUST include any NUIP numbers.",
+    "notes_combined": "Extract ALL text from 'ESPACIO PARA NOTAS', including NUIP stamps WITH NUMBERS and dates.",
 
     // Other identifiers
     "serial_indicator": "Extract complete 'Indicativo Serial' number (e.g., '29734419')",
@@ -110,9 +110,9 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
             "fecha_registro": "Extract EXACTLY what is written. DO NOT convert numbers to month names.",
             "nuip": "Located in the top right or within the header. EXTRACT THE FULL ALPHANUMERIC STRING including any letters like 'V2A'. Example: 'V2A2692167'.",
             "serial_indicator": "Often found near the NUIP or barcode. Extract just the number.",
-            "margin_notes": "CRITICAL: Look at the BOTTOM of the document. Find the section labeled 'ESPACIO PARA NOTAS' or 'SPACE FOR NOTES'. This is a large box with multiple lines. Extract EVERY line of text you see there, including: stamped text (like 'NUIP NUEVO. 1006205637'), typed text, dates, and any handwritten annotations. Do NOT leave this empty if there is ANY text visible in this section.",
-            "notas": "Extract ALL text from the notes section at the bottom of the document. Include stamps, typed lines, and handwritten text.",
-            "notes_combined": "Extract COMPLETE text from 'ESPACIO PARA NOTAS' section. Include all stamps like 'NUIP NUEVO. [number]' and any other visible text."
+            "margin_notes": "CRITICAL: Look at the BOTTOM of the document in the 'ESPACIO PARA NOTAS' section. Extract EVERY SINGLE CHARACTER you see, including: 1) The full stamped text like 'NUIP OTORGADO POR LA REGISTRADURIA NACIONAL DEL ESTADO CIVIL 26 FEBRERO 2003' 2) The NUIP number line like 'NUIP NUEVO. 1006205637' - YOU MUST INCLUDE THE NUMBER. Example output: 'NUIP OTORGADO POR LA REGISTRADURIA NACIONAL DEL ESTADO CIVIL 26 FEBRERO 2003. NUIP NUEVO. 1006205637'. Do NOT truncate or skip the number.",
+            "notas": "Extract ALL text from notes including the complete NUIP number (e.g., '1006205637'). Do NOT skip numbers.",
+            "notes_combined": "Extract COMPLETE text from 'ESPACIO PARA NOTAS'. MUST include full NUIP stamp with number like 'NUIP NUEVO. 1006205637'."
         };
         // Merge overrides into template instructions (overwriting DB values if present)
         templateInstructions = { ...templateInstructions, ...medioOverrides };
