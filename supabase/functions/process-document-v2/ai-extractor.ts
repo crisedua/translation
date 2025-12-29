@@ -53,6 +53,7 @@ const DEFAULT_EXTRACTION_INSTRUCTIONS: Record<string, string> = {
     "margin_notes": "Extract ALL text from 'ESPACIO PARA NOTAS' section. CRITICAL: Include stamped or typed lines like 'NUIP NUEVO. 1006205637' WITH THE COMPLETE NUMBER. Do NOT skip any identifier lines, stamps, or numbers in the notes area.",
     "notas": "Extract all notes, annotations, and stamped identifiers. MUST include any NUIP numbers.",
     "notes_combined": "Extract ALL text from 'ESPACIO PARA NOTAS', including NUIP stamps WITH NUMBERS and dates.",
+    "nuip_notes": "CRITICAL: Look in the 'ESPACIO PARA NOTAS' section for a NUIP NUMBER. This is usually a 10-digit number like '1006205637'. It may be handwritten, stamped, or typed. Extract ONLY the number itself.",
 
     // Other identifiers
     "serial_indicator": "Extract complete 'Indicativo Serial' number (e.g., '29734419')",
@@ -160,7 +161,7 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
         "sexo", "grupo_sanguineo", "factor_rh",
         "pais_nacimiento", "departamento_nacimiento", "municipio_nacimiento",
         "oficina", "numero_oficina",
-        "margin_notes", "notas", "notes_combined"  // Notes fields - CRITICAL for stamps and annotations
+        "margin_notes", "notas", "notes_combined", "nuip_notes"  // Notes fields - CRITICAL for stamps and annotations
     ];
 
     // Merge template fields with critical fields (critical fields always included)
