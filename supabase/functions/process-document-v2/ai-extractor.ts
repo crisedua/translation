@@ -45,6 +45,9 @@ const DEFAULT_EXTRACTION_INSTRUCTIONS: Record<string, string> = {
     // Dates - Keep as-is
     "fecha_nacimiento": "Extract date EXACTLY as written. If it uses numbers (e.g., '08'), extract '08'. DO NOT convert numbers to month names.",
     "fecha_registro": "Extract registration date EXACTLY as written. DO NOT convert numbers to month names.",
+    "birth_month": "Extract numeric month ONLY (e.g., '08'). DO NOT convert to name.",
+    "reg_month": "Extract numeric month ONLY (e.g., '08'). DO NOT convert to name.",
+    "issue_month": "Extract numeric month ONLY (e.g., '08'). DO NOT convert to name.",
 
     // Notes - Full text from ESPACIO PARA NOTAS
     "margin_notes": "Extract ALL text from 'ESPACIO PARA NOTAS' section at bottom. Include NUIP info, dates, handwritten notes.",

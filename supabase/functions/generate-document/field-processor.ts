@@ -3,16 +3,27 @@
  * 
  * Centralizes all field processing logic to ensure consistent and robust
  * handling of extracted data before PDF generation.
- * 
- * Key responsibilities:
- * 1. NUIP Priority - alphanumeric (nuip_top) over numeric (nuip_bottom)
- * 2. Location Combining - merge country/dept/municipality into single string
- * 3. Date Normalization - ensure consistent format
- * 4. Field Name Normalization - handle variations in field names
  */
 
 interface ProcessedData {
     [key: string]: string | undefined;
+}
+
+const MONTH_MAP: Record<string, string> = {
+    'enero': '01', 'febrero': '02', 'marzo': '03', 'abril': '04', 'mayo': '05', 'junio': '06',
+    'julio': '07', 'agosto': '08', 'septiembre': '09', 'octubre': '10', 'noviembre': '11', 'diciembre': '12',
+    'january': '01', 'february': '02', 'march': '03', 'april': '04', 'may': '05', 'june': '06',
+    'july': '07', 'august': '08', 'september': '09', 'october': '10', 'november': '11', 'december': '12'
+};
+
+function normalizeMonth(m: string): string {
+    if (!m) return m;
+    const low = m.toLowerCase().trim();
+    if (/^\d+$/.test(low)) return low.padStart(2, '0');
+    for (const [name, num] of Object.entries(MONTH_MAP)) {
+        if (low.startsWith(name.substring(0, 3))) return num;
+    }
+    return m;
 }
 
 /**
@@ -30,22 +41,6 @@ function parseDate(dateStr: string): { day: string; month: string; year: string 
     if (!dateStr) return null;
 
     let day = '', month = '', year = '';
-
-    const monthMap: Record<string, string> = {
-        'enero': '01', 'febrero': '02', 'marzo': '03', 'abril': '04', 'mayo': '05', 'junio': '06',
-        'julio': '07', 'agosto': '08', 'septiembre': '09', 'octubre': '10', 'noviembre': '11', 'diciembre': '12',
-        'january': '01', 'february': '02', 'march': '03', 'april': '04', 'may': '05', 'june': '06',
-        'july': '07', 'august': '08', 'september': '09', 'october': '10', 'november': '11', 'december': '12'
-    };
-
-    const processMonth = (m: string) => {
-        const low = m.toLowerCase().trim();
-        if (/^\d+$/.test(low)) return low.padStart(2, '0');
-        for (const [name, num] of Object.entries(monthMap)) {
-            if (low.startsWith(name.substring(0, 3))) return num;
-        }
-        return m;
-    };
 
     // Handle DD/MM/YYYY or DD-MM-YYYY
     if (dateStr.includes('/') || dateStr.includes('-')) {
@@ -69,7 +64,7 @@ function parseDate(dateStr: string): { day: string; month: string; year: string 
         }
     }
 
-    if (month) month = processMonth(month);
+    if (month) month = normalizeMonth(month);
     if (day) day = day.padStart(2, '0');
 
     if (day && month && year) {
@@ -87,44 +82,37 @@ export function processExtractedData(extractedData: Record<string, any>): Proces
     // Copy all existing fields first
     for (const [key, value] of Object.entries(extractedData)) {
         if (value !== null && value !== undefined) {
-            processed[key] = String(value);
+            let valStr = String(value);
+
+            // Normalize months for ANY field that looks like a month field
+            const lowerKey = key.toLowerCase();
+            if (lowerKey.includes('month') || lowerKey.includes('mes')) {
+                valStr = normalizeMonth(valStr);
+            }
+
+            processed[key] = valStr;
         }
     }
 
     // =========================================================================
     // 1. NUIP PRIORITY HANDLING
     // =========================================================================
-    // Priority: alphanumeric nuip_top > numeric nuip_top > nuip_bottom > nuip
     const nuipTop = extractedData.nuip_top;
     const nuipBottom = extractedData.nuip_bottom;
     const nuipLegacy = extractedData.nuip;
 
     let finalNuip = '';
-
-    // First preference: alphanumeric nuip_top (like "3HXSP3L3EZRFL")
     if (nuipTop && isAlphanumeric(String(nuipTop))) {
         finalNuip = String(nuipTop);
-        console.log(`[FieldProcessor] Using alphanumeric nuip_top: ${finalNuip}`);
-    }
-    // Second: any nuip_top value
-    else if (nuipTop && String(nuipTop).trim()) {
+    } else if (nuipTop && String(nuipTop).trim()) {
         finalNuip = String(nuipTop);
-        console.log(`[FieldProcessor] Using nuip_top: ${finalNuip}`);
-    }
-    // Third: nuip_bottom
-    else if (nuipBottom && String(nuipBottom).trim()) {
+    } else if (nuipBottom && String(nuipBottom).trim()) {
         finalNuip = String(nuipBottom);
-        console.log(`[FieldProcessor] Using nuip_bottom: ${finalNuip}`);
-    }
-    // Fallback: legacy nuip field
-    else if (nuipLegacy && String(nuipLegacy).trim()) {
+    } else if (nuipLegacy && String(nuipLegacy).trim()) {
         finalNuip = String(nuipLegacy);
-        console.log(`[FieldProcessor] Using legacy nuip: ${finalNuip}`);
     }
 
     processed.nuip_resolved = finalNuip;
-    // NOTE: Do NOT overwrite processed.nuip - preserve the original extracted value
-    // The direct mapper will use nuip_resolved as a fallback
 
     // =========================================================================
     // 2. BIRTH LOCATION COMBINING
@@ -135,55 +123,35 @@ export function processExtractedData(extractedData: Record<string, any>): Proces
         extractedData.municipio_nacimiento
     ].filter(Boolean);
 
-    // CRITICAL FIX: If we have a specific place name (clinic/hospital) extracted in lugar_nacimiento,
-    // use THAT as the combined string. Do NOT overwrite it with just the location parts.
     if (extractedData.lugar_nacimiento && String(extractedData.lugar_nacimiento).length > 10) {
         processed.birth_location_combined = String(extractedData.lugar_nacimiento);
-        console.log(`[FieldProcessor] Using specific place (clinic) for combined location: ${processed.birth_location_combined}`);
     } else if (birthLocationParts.length > 0) {
         processed.birth_location_combined = birthLocationParts.join(' - ');
-        console.log(`[FieldProcessor] Combined birth location from parts: ${processed.birth_location_combined}`);
     }
 
-    // Add lugar_nacimiento (specific place) if available - THIS IS THE CLINIC NAME
     if (extractedData.lugar_nacimiento) {
         processed.birth_place = String(extractedData.lugar_nacimiento);
-        // CRITICAL: lugar_nacimiento is already copied from extractedData at line 63-66
-        // But let's ensure it's mapped correctly to PDF fields
         processed['Place of Birth'] = String(extractedData.lugar_nacimiento);
-        console.log(`[FieldProcessor] Place of birth (clinic): ${extractedData.lugar_nacimiento}`);
     }
 
     // =========================================================================
-    // 3. REGISTRY LOCATION - DO NOT COMBINE
+    // 3. REGISTRY LOCATION
     // =========================================================================
-    // CRITICAL: country_dept_munic is extracted directly from the form field as-is.
-    // Do NOT combine pais_registro, departamento_registro, municipio_registro
-    // as this will overwrite the correctly extracted value!
-    // The form field already contains the complete string (e.g., "COLOMBIA.VALLE.CALI")
-
-    // Simply preserve the extracted value if it exists
     if (extractedData.country_dept_munic) {
         processed.country_dept_munic = String(extractedData.country_dept_munic);
-        console.log(`[FieldProcessor] Registry location (as-is from form): ${processed.country_dept_munic}`);
     } else if (extractedData.registry_location_combined) {
-        // Fallback to alias
         processed.country_dept_munic = String(extractedData.registry_location_combined);
-        console.log(`[FieldProcessor] Registry location (from alias): ${processed.country_dept_munic}`);
     }
 
-
     // =========================================================================
-    // 4. PARENT NAME COMBINING (for templates that have combined fields)
+    // 4. PARENT NAME COMBINING
     // =========================================================================
-    // Father: combine apellidos + nombres
     const fatherSurnames = extractedData.padre_apellidos || '';
     const fatherNames = extractedData.padre_nombres || '';
     if (fatherSurnames || fatherNames) {
         processed.father_full_name = [fatherSurnames, fatherNames].filter(Boolean).join(' ');
     }
 
-    // Mother: combine apellidos + nombres
     const motherSurnames = extractedData.madre_apellidos || '';
     const motherNames = extractedData.madre_nombres || '';
     if (motherSurnames || motherNames) {
@@ -191,7 +159,7 @@ export function processExtractedData(extractedData: Record<string, any>): Proces
     }
 
     // =========================================================================
-    // 5. DATE PARSING - Extract components for split date fields
+    // 5. DATE PARSING
     // =========================================================================
     if (extractedData.fecha_nacimiento) {
         const birthDate = parseDate(String(extractedData.fecha_nacimiento));
@@ -212,18 +180,17 @@ export function processExtractedData(extractedData: Record<string, any>): Proces
     }
 
     // =========================================================================
-    // 6. SERIAL INDICATOR - ensure it's captured
+    // 6. SERIAL INDICATOR
     // =========================================================================
     if (extractedData.serial_indicator) {
         processed.serial_indicator = String(extractedData.serial_indicator);
     }
-    // Sometimes serial indicator might be in a different field
     if (!processed.serial_indicator && extractedData.indicador_serial) {
         processed.serial_indicator = String(extractedData.indicador_serial);
     }
 
     // =========================================================================
-    // 7. NOTES HANDLING - combine margin_notes with notas
+    // 7. NOTES HANDLING
     // =========================================================================
     const uniqueLines = new Set<string>();
     const finalNotes: string[] = [];
@@ -233,7 +200,6 @@ export function processExtractedData(extractedData: Record<string, any>): Proces
         const noteStr = String(val).trim();
         if (!noteStr) return;
 
-        // Split by newline and deduplicate each line
         const lines = noteStr.split('\n').map(l => l.trim()).filter(l => l);
         lines.forEach(line => {
             if (!uniqueLines.has(line)) {
@@ -243,8 +209,6 @@ export function processExtractedData(extractedData: Record<string, any>): Proces
         });
     };
 
-    // Processing order matters for priority if needed, but since we are deduplicating, 
-    // we just want to ensure all unique information is captured.
     addToNotes(extractedData.margin_notes);
     addToNotes(extractedData.notas);
     addToNotes(extractedData.notes_combined);
@@ -253,59 +217,33 @@ export function processExtractedData(extractedData: Record<string, any>): Proces
 
     if (finalNotes.length > 0) {
         processed.notes_combined = finalNotes.join('\n');
-        console.log(`[FieldProcessor] Combined and deduplicated ${finalNotes.length} unique note lines.`);
     }
 
     return processed;
 }
 
-/**
- * @deprecated Use getTemplateMappings from './template-field-mapper.ts' instead.
- * This function provides hardcoded mappings and is kept for backward compatibility.
- * The new template-field-mapper prioritizes template-specific mappings from the database.
- * 
- * Get the robust field mappings - maps processed fields to PDF form fields
- * This is the definitive mapping that should be used for all templates
- */
 export function getRobustMappings(pdfFieldNames: string[]): Record<string, string[]> {
-    // Create a lowercase lookup for PDF fields
     const pdfFieldLookup = new Map<string, string>();
     pdfFieldNames.forEach(name => {
         pdfFieldLookup.set(name.toLowerCase(), name);
     });
 
-    // Helper to find actual PDF field names (case-insensitive, returns ALL matches)
     const findFields = (pattern: string, excludePatterns: string[] = []): string[] => {
         const lower = pattern.toLowerCase();
         const matches: Set<string> = new Set();
-
-        // Check exact match first
         if (pdfFieldLookup.has(lower)) {
             matches.add(pdfFieldLookup.get(lower)!);
         }
-
-        // Check partial matches
         for (const [key, value] of pdfFieldLookup) {
-            // Skip if this field matches any exclusion pattern
             const shouldExclude = excludePatterns.some(excl =>
                 key.toLowerCase().includes(excl.toLowerCase())
             );
-
-            if (shouldExclude) {
-                continue; // Skip this PDF field
-            }
-
-            // "notes" should match "Notes 1", "Notes_2", "SpaceForNotes"
-            // But we want to be careful not to match "footnotes" if we are looking for "notes" (maybe too greedy? for now let's be greedy as fallback is tough)
+            if (shouldExclude) continue;
             if (key.includes(lower) || lower.includes(key)) {
                 matches.add(value);
             }
         }
-
-        // Sort matches to ensure order (e.g. Notes 1, Notes 2, Notes 3)
-        // This is important for sequential filling
         return Array.from(matches).sort((a, b) => {
-            // Try to sort by embedded numbers if present
             const numA = parseInt(a.replace(/\D/g, '') || '0');
             const numB = parseInt(b.replace(/\D/g, '') || '0');
             if (numA !== numB) return numA - numB;
@@ -314,10 +252,7 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
     };
 
     const mappings: Record<string, string[]> = {};
-
-    // Define the comprehensive field mappings
     const fieldPatterns: Record<string, string[]> = {
-        // Resolved/Combined fields (highest priority)
         "nuip_resolved": ["nuip"],
         "birth_location_combined": ["birth_country_dept_munic", "place_of_birth", "birth_place", "place of birth", "country", "department", "municipality", "township"],
         "Place of Birth": ["birth_country_dept_munic", "place_of_birth", "place of birth", "country", "department", "municipality", "township"],
@@ -327,80 +262,52 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
         "mother_full_name": ["mother_surnames_names"],
         "notes_combined": ["notes1", "notes", "notas", "space for notes", "spacefornotes", "margin notes", "marginnotes", "observaciones"],
         "margin_notes": ["notes1", "notes", "notas", "space for notes", "spacefornotes", "margin notes", "marginnotes", "observaciones"],
-
-        // Names
         "nombres": ["reg_names", "given_names", "names"],
         "primer_apellido": ["reg_1_surname", "first_surname"],
         "segundo_apellido": ["reg_2_surname", "second_surname"],
-
-        // Personal Info
         "nuip": ["nuip"],
         "serial_indicator": ["serial_indicator", "serial"],
         "sexo": ["sex", "sexo"],
         "grupo_sanguineo": ["blood_type"],
         "factor_rh": ["rh_factor"],
-
-        // Birth Date Components
         "birth_day": ["birth_day", "day"],
         "birth_month": ["birth_month", "month"],
         "birth_year": ["birth_year", "year"],
-
-        // Registration Date Components
         "reg_day": ["reg_day"],
         "reg_month": ["reg_month"],
         "reg_year": ["reg_year"],
-
-        // Parents - Individual Fields
         "padre_nombres": ["father_names"],
         "padre_apellidos": ["father_surnames"],
         "padre_identificacion": ["father_id_doc", "father_doc_number"],
         "padre_nacionalidad": ["father_nationality"],
         "madre_nombres": ["mother_names"],
         "madre_apellidos": ["mother_surnames"],
-        "madre_identificacion": ["mother_id_doc", "mother_doc_number"],
+        "madre_identificacion": ["mother_id_doc", "mother_id_number"],
         "madre_nacionalidad": ["mother_nationality"],
-
-
-        // Declarant
         "declarante_nombres": ["declarant_surnames_names"],
         "declarante_identificacion": ["declarant_id_doc"],
-
-        // Witnesses
         "testigo1_nombres": ["witness1_surnames_names"],
         "testigo1_identificacion": ["witness1_id_doc"],
         "testigo2_nombres": ["witness2_surnames_names"],
         "testigo2_identificacion": ["witness2_id_doc"],
-
-        // Registry Office
         "oficina": ["notary_number"],
         "numero_oficina": ["notary_number"],
-
-        // Document IDs
         "codigo": ["reg_code"],
         "acta": ["birth_cert_number"],
-
-        // Officials
         "authorizing_official": ["official_name&signature"],
         "funcionario_nombre": ["official_name&signature"],
         "acknowledgment_official": ["ack_official_name&signature"],
-
-        // Prior Document
         "tipo_documento_anterior": ["prior_doc"]
     };
 
-    // Build mappings based on what PDF fields actually exist
     for (const [extractedField, patterns] of Object.entries(fieldPatterns)) {
         const matchedFields: Set<string> = new Set();
-
-        // Define exclusions for fields that should incorrect matches
         let exclusions: string[] = [];
-
         if (['nombres', 'primer_apellido', 'segundo_apellido', 'apellidos', 'reg_names', 'given_names'].includes(extractedField)) {
             exclusions = ['witness', 'testigo', 'declarant', 'declarante'];
         } else if (['authorizing_official', 'funcionario_nombre', 'funcionario_autoriza'].includes(extractedField)) {
             exclusions = ['acknowledgment', 'reconocimiento', 'ack_'];
         }
-
         for (const pattern of patterns) {
             const foundList = findFields(pattern, exclusions);
             foundList.forEach(f => matchedFields.add(f));
@@ -410,17 +317,9 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
             matchedFields.clear();
             filtered.forEach(f => matchedFields.add(f));
         }
-
         if (matchedFields.size > 0) {
-            // Convert to array and sort again to be safe
-            mappings[extractedField] = Array.from(matchedFields).sort((a, b) => {
-                const numA = parseInt(a.replace(/\D/g, '') || '0');
-                const numB = parseInt(b.replace(/\D/g, '') || '0');
-                if (numA !== numB) return numA - numB;
-                return a.localeCompare(b);
-            });
+            mappings[extractedField] = Array.from(matchedFields);
         }
     }
-
     return mappings;
 }

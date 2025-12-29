@@ -333,29 +333,28 @@ serve(async (req) => {
             return false;
         };
 
+        const MONTH_MAP: Record<string, string> = {
+            'enero': '01', 'febrero': '02', 'marzo': '03', 'abril': '04', 'mayo': '05', 'junio': '06',
+            'julio': '07', 'agosto': '08', 'septiembre': '09', 'octubre': '10', 'noviembre': '11', 'diciembre': '12',
+            'january': '01', 'february': '02', 'march': '03', 'april': '04', 'may': '05', 'june': '06',
+            'july': '07', 'august': '08', 'september': '09', 'october': '10', 'november': '11', 'december': '12'
+        };
+
+        const normalizeMonth = (m: string) => {
+            if (!m) return m;
+            const low = m.toLowerCase().trim();
+            if (/^\d+$/.test(low)) return low.padStart(2, '0');
+            for (const [name, num] of Object.entries(MONTH_MAP)) {
+                if (low.startsWith(name.substring(0, 3))) return num;
+            }
+            return m;
+        };
+
         // Helper to parse date
         const parseDate = (dateStr: string) => {
             // Handle 01-03-2017 (DD-MM-YYYY) or 2017-03-01
             let day, month, year;
             if (!dateStr) return { day: '', month: '', year: '' };
-
-            const monthMap: Record<string, string> = {
-                'enero': '01', 'febrero': '02', 'marzo': '03', 'abril': '04', 'mayo': '05', 'junio': '06',
-                'julio': '07', 'agosto': '08', 'septiembre': '09', 'octubre': '10', 'noviembre': '11', 'diciembre': '12',
-                'january': '01', 'february': '02', 'march': '03', 'april': '04', 'may': '05', 'june': '06',
-                'july': '07', 'august': '08', 'september': '09', 'october': '10', 'november': '11', 'december': '12'
-            };
-
-            const processMonth = (m: string) => {
-                const low = m.toLowerCase().trim();
-                // If it's already a number, just return it
-                if (/^\d+$/.test(low)) return low.padStart(2, '0');
-                // Check map
-                for (const [name, num] of Object.entries(monthMap)) {
-                    if (low.startsWith(name.substring(0, 3))) return num;
-                }
-                return m;
-            };
 
             if (dateStr.includes('-')) {
                 const parts = dateStr.split('-');
@@ -379,7 +378,7 @@ serve(async (req) => {
                 }
             }
 
-            if (month) month = processMonth(month);
+            if (month) month = normalizeMonth(month);
             if (day) day = day.padStart(2, '0');
 
             return { day, month, year };
@@ -593,8 +592,15 @@ serve(async (req) => {
         for (const [key, value] of sortedEntries) {
             if (value === null || value === undefined || value === '') continue;
 
-            const strValue = String(value);
+            const strValueRaw = String(value);
             const normalizedKey = normalizeKey(key);
+
+            // AUTOMATIC MONTH NORMALIZATION (Numeric conversion)
+            let strValue = strValueRaw;
+            if (normalizedKey.toLowerCase().includes('month') || normalizedKey.toLowerCase().includes('mes')) {
+                strValue = normalizeMonth(strValueRaw);
+            }
+
             let filled = false;
 
             // === STRATEGY 0: Use Direct Mapper (highest priority, most reliable) ===
@@ -801,8 +807,14 @@ serve(async (req) => {
 
             // 3. Special handling for dates (day, month, year split fields)
             // This is generic logic: if a key is a date, try to fill split fields
-            // We check if the key contains 'fecha', 'date', 'dob' or if it maps to a date field
-            const isDateKey = key.toLowerCase().includes('fecha') || key.toLowerCase().includes('date') || key.toLowerCase().includes('dob') || key === 'Date of Issue';
+            // We check if the key contains keywords related to dates
+            const isDateKey = key.toLowerCase().includes('fecha') ||
+                key.toLowerCase().includes('date') ||
+                key.toLowerCase().includes('dob') ||
+                key.toLowerCase().includes('birth') ||
+                key.toLowerCase().includes('reg_') ||
+                key.toLowerCase().includes('expedicion') ||
+                key.toLowerCase().includes('issue');
 
             if (isDateKey) {
                 const { day, month, year } = parseDate(strValue);
