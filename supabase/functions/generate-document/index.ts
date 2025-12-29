@@ -592,8 +592,13 @@ serve(async (req) => {
         for (const [key, value] of sortedEntries) {
             if (value === null || value === undefined || value === '') continue;
 
-            // Skip notes_line fields - they are handled in SPECIAL HANDLING section
-            if (key.startsWith('notes_line')) {
+            // Skip notes-related fields - they are handled in SPECIAL HANDLING section
+            // This prevents fuzzy matching these to unrelated fields like "Number"
+            if (key.startsWith('notes_line') ||
+                key === 'nuip_notes' ||
+                key === 'notas' ||
+                key === 'margin_notes' ||
+                key === 'notes_combined') {
                 console.log(`[SKIP] ${key} - handled in special notes section`);
                 continue;
             }
