@@ -91,6 +91,8 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     )) {
         console.log("[AI-EXTRACTOR] Applying FORCED overrides for Registro Nacimiento Medio");
         const medioOverrides: Record<string, string> = {
+            "primer_apellido": "Extract from the FIRST box labeled 'Primer Apellido' in the registrant section. Extract ONLY the text from this box - do NOT include the segundo apellido. Example: 'QUEVEDO' (not 'QUEVEDO HERRERA').",
+            "segundo_apellido": "Extract from the SECOND box labeled 'Segundo Apellido' in the registrant section. Extract ONLY the text from this box. Example: 'HERRERA'.",
             "madre_apellidos": "LOCATED in the row ABOVE 'Nombres'. Look for TWO separate boxes labeled 'Primer Apellido' and 'Segundo Apellido'. Extract the text from BOTH boxes (e.g., 'HERRERA HERRERA'). Do NOT extract the names.",
             "padre_apellidos": "LOCATED in the row ABOVE 'Nombres' for the father. Look for TWO separate boxes. Extract text from BOTH (e.g., 'QUEVEDO MEDINA').",
             "lugar_nacimiento": "LOCATED in the row starting with 'Fecha de nacimiento'. Look for the wide box labeled 'Lugar de nacimiento'. Extract the ENTIRE text including clinic name and parentheses (e.g., 'CLINICA ... (COLOMBIA...)').",
