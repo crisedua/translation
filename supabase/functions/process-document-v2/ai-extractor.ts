@@ -91,10 +91,12 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     )) {
         console.log("[AI-EXTRACTOR] Applying FORCED overrides for Registro Nacimiento Medio");
         const medioOverrides: Record<string, string> = {
-            "primer_apellido": "Extract from the FIRST box labeled 'Primer Apellido' in the registrant section. Extract ONLY the text from this box - do NOT include the segundo apellido. Example: 'QUEVEDO' (not 'QUEVEDO HERRERA').",
-            "segundo_apellido": "Extract from the SECOND box labeled 'Segundo Apellido' in the registrant section. Extract ONLY the text from this box. Example: 'HERRERA'.",
-            "madre_apellidos": "LOCATED in the row ABOVE 'Nombres'. Look for TWO separate boxes labeled 'Primer Apellido' and 'Segundo Apellido'. Extract the text from BOTH boxes (e.g., 'HERRERA HERRERA'). Do NOT extract the names.",
-            "padre_apellidos": "LOCATED in the row ABOVE 'Nombres' for the father. Look for TWO separate boxes. Extract text from BOTH (e.g., 'QUEVEDO MEDINA').",
+            "primer_apellido": "Extract from the FIRST box labeled 'Primer Apellido' in the registrant section (Datos del Inscrito). Extract ONLY the text from this box. Example: 'QUEVEDO'.",
+            "segundo_apellido": "Extract from the SECOND box labeled 'Segundo Apellido' in the registrant section (Datos del Inscrito). Extract ONLY the text from this box. Example: 'HERRERA'.",
+            "madre_primer_apellido": "In the mother section, find the FIRST box labeled 'Primer Apellido'. Extract ONLY from this box. Example: 'HERRERA'.",
+            "madre_segundo_apellido": "In the mother section, find the SECOND box labeled 'Segundo Apellido'. Extract ONLY from this box. Example: 'HERRERA'.",
+            "padre_primer_apellido": "In the father section, find the FIRST box labeled 'Primer Apellido'. Extract ONLY from this box. Example: 'QUEVEDO'.",
+            "padre_segundo_apellido": "In the father section, find the SECOND box labeled 'Segundo Apellido'. Extract ONLY from this box. Example: 'MEDINA'.",
             "lugar_nacimiento": "LOCATED in the row starting with 'Fecha de nacimiento'. Look for the wide box labeled 'Lugar de nacimiento'. Extract the ENTIRE text including clinic name and parentheses (e.g., 'CLINICA ... (COLOMBIA...)').",
             "nuip": "Located in the top right or within the header. EXTRACT THE FULL ALPHANUMERIC STRING including any letters like 'V2A'. Example: 'V2A2692167'.",
             "serial_indicator": "Often found near the NUIP or barcode. Extract just the number."
@@ -136,8 +138,8 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     const CRITICAL_FIELDS = [
         "nuip", "nuip_top", "serial_indicator",
         "nombres", "primer_apellido", "segundo_apellido",
-        "padre_nombres", "padre_apellidos",
-        "madre_nombres", "madre_apellidos",
+        "padre_nombres", "padre_apellidos", "padre_primer_apellido", "padre_segundo_apellido",
+        "madre_nombres", "madre_apellidos", "madre_primer_apellido", "madre_segundo_apellido",
         "lugar_nacimiento", "birth_location_combined",
         "authorizing_official", "fecha_nacimiento", "fecha_registro",
         "fecha_expedicion", "issue_day", "issue_month", "issue_year",  // Date of Issue fields
