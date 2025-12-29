@@ -278,6 +278,7 @@ CRITICAL REMINDERS - COMMON ERRORS TO AVOID:
 3. lugar_nacimiento: Include FULL clinic name + location (e.g., 'CLINICA MATERNO INFANTIL FARALLONES (COLOMBIA.VALLE.CALI)')
 4. authorizing_official: Include ALL name parts (e.g., 'HOLMES RACEL CAROLINA MONTOYA' not just 'HOLMES')
 5. registry_location_combined: Copy the form field value exactly as written (e.g., 'COLOMBIA.VALLE.CALI' or 'COLOMBIA')
+6. NOTES (margin_notes/notas/notes_combined): The 'ESPACIO PARA NOTAS' section has MULTIPLE LINES. Extract ALL lines and combine them with newlines. Example: Line 1: 'NUIP OTORGADO POR LA REGISTRADURIA NACIONAL DEL ESTADO CIVIL 26 FEBRERO 2003. NUIP NUEVO.' Line 2: '1006205637' - Combine as: 'NUIP OTORGADO POR LA REGISTRADURIA NACIONAL DEL ESTADO CIVIL 26 FEBRERO 2003. NUIP NUEVO.\n1006205637'
 
 Return JSON.`
         : `Extract data from this OCR text following the field instructions exactly:
