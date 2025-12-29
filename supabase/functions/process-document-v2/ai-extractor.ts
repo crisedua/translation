@@ -159,7 +159,8 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
         "reg_day", "reg_month", "reg_year", // Registration Date fields
         "sexo", "grupo_sanguineo", "factor_rh",
         "pais_nacimiento", "departamento_nacimiento", "municipio_nacimiento",
-        "oficina", "numero_oficina"
+        "oficina", "numero_oficina",
+        "margin_notes", "notas", "notes_combined"  // Notes fields - CRITICAL for stamps and annotations
     ];
 
     // Merge template fields with critical fields (critical fields always included)
