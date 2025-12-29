@@ -296,8 +296,8 @@ const AdminRequestReview = () => {
                                 <span className="text-sm text-gray-600">Template Matched</span>
                                 <p className="font-medium">{(request as any).document_templates?.name || 'Unknown'}</p>
                             </div>
-                            {/* QA Status Badge */}
-                            <div className="col-span-2 mt-2 pt-2 border-t border-gray-200">
+                            {/* QA Status Badge - Hidden as requested */}
+                            {/* <div className="col-span-2 mt-2 pt-2 border-t border-gray-200">
                                 <span className="text-sm text-gray-600 block mb-1">QA / Validation Status</span>
                                 {(request.validation_errors && (Array.isArray(request.validation_errors) ? request.validation_errors.length > 0 : Object.keys(request.validation_errors).length > 0)) ? (
                                     <button
@@ -313,7 +313,7 @@ const AdminRequestReview = () => {
                                         Passed
                                     </span>
                                 )}
-                            </div>
+                            </div> */}
                         </div>
                     </div>
 
