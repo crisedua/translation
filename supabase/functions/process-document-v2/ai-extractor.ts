@@ -148,7 +148,17 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
             "fecha_expedicion": "VISION INSTRUCTION: Look at the document image. Scroll/look to the LAST page, BOTTOM section. You will see a dark blue bar labeled 'Fecha de expedición'. BELOW this bar are THREE cyan input boxes. Extract ONLY from these bottom boxes. IGNORE everything above the middle of the page. The 'Date of Birth' is in the middle/top - DO NOT use it. Return format: DD-MM-YYYY from the FOOTER ONLY.",
             "issue_day": "Extract ONLY from BOTTOM footer 'Día' box under 'Fecha de expedición' label (NOT birth day which is higher up on page).",
             "issue_month": "Extract ONLY from BOTTOM footer 'Mes' box under 'Fecha de expedición' label (NOT birth month which is higher up on page).",
-            "issue_year": "Extract ONLY from BOTTOM footer 'Año' box under 'Fecha de expedición' label (NOT birth year which is higher up on page). Footer year is typically 2020+."
+            "issue_year": "Extract ONLY from BOTTOM footer 'Año' box under 'Fecha de expedición' label (NOT birth year which is higher up on page). Footer year is typically 2020+.",
+
+            // STRICT BIRTH LOCATION INSTRUCTIONS to prevent concatenation
+            "pais_nacimiento": "In 'Lugar de nacimiento' section: Extract ONLY the text inside the 'País' box (e.g., 'COLOMBIA').",
+            "departamento_nacimiento": "In 'Lugar de nacimiento' section: Extract ONLY the text inside the 'Departamento' box (e.g., 'VALLE').",
+            "municipio_nacimiento": "In 'Lugar de nacimiento' section: Extract ONLY the text inside the 'Municipio' box (e.g., 'CALI').",
+
+            // CRITICAL: Disable combined location fields to prevent overwriting
+            "birth_location_combined": "RETURN EMPTY STRING. Do not extract combined location.",
+            "lugar_nacimiento": "In 'Lugar de nacimiento' section: Extract ONLY the text inside the 'Corregimiento / Insp. de Policía' box. Return empty if none.",
+            "corregimiento": "In 'Lugar de nacimiento' section: Extract ONLY the text inside the 'Corregimiento / Insp. de Policía' box."
         };
         // Merge overrides into template instructions (overwriting DB values if present)
         templateInstructions = { ...templateInstructions, ...nuevoOverrides };

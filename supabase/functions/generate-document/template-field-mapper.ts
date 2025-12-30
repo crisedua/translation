@@ -260,7 +260,7 @@ export function getTemplateMappings(
             "corregimiento": ["Township/Police Station", "township_birth"],
 
             // Prevent combined field from overwriting individual fields
-            "birth_location_combined": ["Place of Birth"],
+            "birth_location_combined": [], // DISABLED: Do not map combined location
 
             // Fix notary mapping for Nuevo as well (just in case)
             "oficina": ["office_type", "office"],
