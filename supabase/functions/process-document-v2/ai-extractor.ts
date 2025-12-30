@@ -205,7 +205,7 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
         "birth_day", "birth_month", "birth_year", // Date of Birth fields
         "reg_day", "reg_month", "reg_year", // Registration Date fields
         "sexo", "grupo_sanguineo", "factor_rh",
-        "pais_nacimiento", "departamento_nacimiento", "municipio_nacimiento",
+        "pais_nacimiento", "departamento_nacimiento", "municipio_nacimiento", "township_birth", "corregimiento", "lugar_nacimiento",
         "oficina", "numero_oficina", "notary_number",
         "margin_notes", "notas", "notes_combined", "nuip_notes",
         "notes_line1", "notes_line2", "notes_line3", "notes_line4", "notes_line5", "notes_line6", "notes_line7"  // Individual notes lines
