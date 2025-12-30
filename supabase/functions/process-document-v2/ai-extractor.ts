@@ -449,6 +449,12 @@ Return JSON.`;
                 extractedData.corregimiento = '';
             }
 
+            // Ensure township_birth field always exists (even if empty)
+            if (extractedData.township_birth === undefined) {
+                extractedData.township_birth = '';
+                console.log(`[AI-EXTRACTOR] Set township_birth = '' (was undefined)`);
+            }
+
             // Log key extractions
             console.log(`[AI-EXTRACTOR] nuip: ${extractedData.nuip || extractedData.nuip_top || 'NOT FOUND'}`);
             console.log(`[AI-EXTRACTOR] primer_apellido: ${extractedData.primer_apellido || 'NOT FOUND'}`);
