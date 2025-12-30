@@ -380,6 +380,33 @@ export function getTemplateMappings(
         console.log(`[TemplateMapper] Unmapped: ${result.unmappedPdf.join(', ')}`);
     }
 
+    // PHASE 4: SANITATION (CRITICAL FIX)
+    // Ensure parent fields NEVER map to generic "names" or "surnames" fields
+    // This prevents "Shotgun Mapping" errors where father's name overwrites registrant's name.
+
+    // Define forbidden generic targets for specific specific fields
+    const forbiddenTargets: Record<string, string[]> = {
+        "padre_nombres": ["names", "surnames", "nombres", "apellidos", "given_names", "first_names"],
+        "padre_apellidos": ["names", "surnames", "nombres", "apellidos"],
+        "madre_nombres": ["names", "surnames", "nombres", "apellidos", "given_names", "first_names"],
+        "madre_apellidos": ["names", "surnames", "nombres", "apellidos"],
+        "primer_apellido": ["names", "surnames", "nombres", "father_surnames", "mother_surnames"],
+        "segundo_apellido": ["names", "surnames", "nombres", "father_surnames", "mother_surnames"]
+    };
+
+    for (const [key, targets] of Object.entries(result.mappings)) {
+        if (forbiddenTargets[key]) {
+            const forbidden = forbiddenTargets[key];
+            const originalLength = targets.length;
+            // Filter out any target that exactly matches a forbidden term (case-insensitive)
+            result.mappings[key] = targets.filter(t => !forbidden.includes(t.toLowerCase()));
+
+            if (result.mappings[key].length < originalLength) {
+                console.log(`[SANITIZED] Removed generic targets from ${key}. Remaining: ${result.mappings[key].join(', ')}`);
+            }
+        }
+    }
+
     return result;
 }
 
