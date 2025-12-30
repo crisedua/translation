@@ -158,7 +158,16 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
             // CRITICAL: Disable combined location fields to prevent overwriting
             "birth_location_combined": "RETURN EMPTY STRING. Do not extract combined location.",
             "lugar_nacimiento": "In 'Lugar de nacimiento' section: Extract ONLY the text inside the 'Corregimiento / Insp. de Policía' box. Return empty if none.",
-            "corregimiento": "In 'Lugar de nacimiento' section: Extract ONLY the text inside the 'Corregimiento / Insp. de Policía' box."
+            "corregimiento": "In 'Lugar de nacimiento' section: Extract ONLY the text inside the 'Corregimiento / Insp. de Policía' box.",
+
+            // === STRICT PARENT NAME EXTRACTION ===
+            // Mother's Information - SEPARATE Names from Surnames
+            "madre_nombres": "CRITICAL: In 'Datos de la madre' (Mother's Information) section, look for the box labeled 'Nombres' (Names/Given Names). Extract ONLY the GIVEN NAMES from this box (e.g., 'SARA' or 'ALBA YOLANDA'). Do NOT include surnames. The surnames are in a SEPARATE 'Apellidos' box.",
+            "madre_apellidos": "CRITICAL: In 'Datos de la madre' (Mother's Information) section, look for the box labeled 'Apellidos' (Surnames). Extract ONLY the SURNAMES from this box (e.g., 'BOTERO GOMEZ'). Do NOT include given names.",
+
+            // Father's Information - SEPARATE Names from Surnames
+            "padre_nombres": "CRITICAL: In 'Datos del padre' (Father's Information) section, look for the box labeled 'Nombres' (Names/Given Names). Extract ONLY the GIVEN NAMES from this box (e.g., 'BERNARDO JULIAN'). Do NOT include surnames. The surnames are in a SEPARATE 'Apellidos' box.",
+            "padre_apellidos": "CRITICAL: In 'Datos del padre' (Father's Information) section, look for the box labeled 'Apellidos' (Surnames). Extract ONLY the SURNAMES from this box (e.g., 'TOBAR PRADO'). Do NOT include given names."
         };
         // Merge overrides into template instructions (overwriting DB values if present)
         templateInstructions = { ...templateInstructions, ...nuevoOverrides };
