@@ -158,6 +158,10 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
             "municipio_nacimiento": "CRITICAL: Extract ONLY the MUNICIPALITY name (third segment or last segment). Examples: 'CALI' from 'COLOMBIA - VALLE DEL CAUCA - CALI'. Do NOT include country or department.",
             "lugar_nacimiento": "CRITICAL: This is the TOWNSHIP field. It is almost always EMPTY. Return empty string '' unless there is specific township data like 'CORREGIMIENTO X'. Do NOT put country, department, or municipality here. If unsure, return ''.",
             "township_birth": "CRITICAL: This is the TOWNSHIP field. It is almost always EMPTY. Return empty string '' unless there is specific township data. Do NOT put country, department, or municipality here. If unsure, return ''.",
+            // Alternate PDF field names for birth location
+            "country_birth": "CRITICAL: Extract ONLY the COUNTRY name. Return 'COLOMBIA' - do NOT include department or municipality.",
+            "dept_birth": "CRITICAL: Extract ONLY the DEPARTMENT name (e.g., 'VALLE DEL CAUCA'). Do NOT include country or municipality.",
+            "muni_birth": "CRITICAL: Extract ONLY the MUNICIPALITY name (e.g., 'CALI'). Do NOT include country or department.",
 
             // REGISTRY OFFICE LOCATION (Top of form) - Ensure we target this specifically
             "departamento_registro": "In 'Información de la oficina de registro' (Registry Office Info) section (TOP of page): Extract 'Departamento'.",
@@ -206,18 +210,27 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
         "reg_day", "reg_month", "reg_year", // Registration Date fields
         "sexo", "grupo_sanguineo", "factor_rh",
         "pais_nacimiento", "departamento_nacimiento", "municipio_nacimiento", "township_birth", "corregimiento", "lugar_nacimiento",
+        "country_birth", "dept_birth", "muni_birth",  // PDF template field names for birth location
         "oficina", "numero_oficina", "notary_number",
         "margin_notes", "notas", "notes_combined", "nuip_notes",
         "notes_line1", "notes_line2", "notes_line3", "notes_line4", "notes_line5", "notes_line6", "notes_line7"  // Individual notes lines
     ];
 
     // Merge template fields with critical fields (critical fields always included)
+    // IMPORTANT: Template PDF fields take priority - they are the actual target field names
     const targetFields = [...new Set([
-        ...CRITICAL_FIELDS,
-        ...allTemplateFields
+        ...storedPdfFields,     // PRIORITY 1: Actual PDF field names from template
+        ...CRITICAL_FIELDS,     // PRIORITY 2: Critical fields we always need
+        ...allTemplateFields    // PRIORITY 3: Other template-defined fields
     ])];
 
-    console.log(`[AI-EXTRACTOR] Target fields: ${targetFields.length} (${CRITICAL_FIELDS.length} critical + ${allTemplateFields.length} from template)`);
+    console.log(`[AI-EXTRACTOR] === FIELD DETECTION SUMMARY ===`);
+    console.log(`[AI-EXTRACTOR] Template PDF Fields: ${storedPdfFields.length}`);
+    if (storedPdfFields.length > 0) {
+        console.log(`[AI-EXTRACTOR] PDF Fields sample: ${storedPdfFields.slice(0, 10).join(', ')}...`);
+    }
+    console.log(`[AI-EXTRACTOR] Critical Fields: ${CRITICAL_FIELDS.length}`);
+    console.log(`[AI-EXTRACTOR] Total Target Fields: ${targetFields.length}`);
 
 
     const docName = template?.name || 'Colombian Document';
