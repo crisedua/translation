@@ -342,10 +342,17 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
     const mappings: Record<string, string[]> = {};
     const fieldPatterns: Record<string, string[]> = {
         "nuip_resolved": ["nuip"],
-        "birth_location_combined": ["birth_country_dept_munic", "place_of_birth", "birth_place", "place of birth", "country", "department", "municipality", "township"],
-        "Place of Birth": ["birth_country_dept_munic", "place_of_birth", "place of birth", "country", "department", "municipality", "township"],
-        "lugar_nacimiento": ["birth_country_dept_munic", "place_of_birth", "birth_place", "place of birth", "country", "department", "municipality", "township"],
+        // === ATOMIC BIRTH LOCATION MAPPINGS ===
+        "pais_nacimiento": ["Country", "country_birth", "birth_country"],
+        "departamento_nacimiento": ["Department", "dept_birth", "birth_department"],
+        "municipio_nacimiento": ["Municipality", "muni_birth", "birth_municipality"],
+        "corregimiento": ["Township/Police Station", "township_birth", "township"],
+        // Combined locations (only for combined PDF fields)
+        "birth_location_combined": ["birth_country_dept_munic", "place_of_birth", "birth_place"],
+        "Place of Birth": ["birth_country_dept_munic", "place_of_birth"],
+        "lugar_nacimiento": ["Township/Police Station", "township_birth"],
         "registry_location_combined": ["country_dept_munic"],
+        // === PARENT NAME MAPPINGS (STRICT) ===
         "father_full_name": ["father_surnames_names"],
         "mother_full_name": ["mother_surnames_names"],
         "notes_combined": ["notes1", "notes", "notas", "space for notes", "spacefornotes", "margin notes", "marginnotes", "observaciones"],
