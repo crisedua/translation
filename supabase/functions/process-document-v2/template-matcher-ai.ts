@@ -5,6 +5,7 @@ interface Template {
     field_definitions: any[];
     full_template_text?: string;
     content_profile?: any;
+    template_file_url?: string;
 }
 
 export const matchTemplateWithAI = async (

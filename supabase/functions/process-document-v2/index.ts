@@ -7,6 +7,7 @@ import { performSemanticQA } from "./qa-validator.ts";
 import { sendNotification } from "./email-notifier.ts";
 import { extractTextWithGoogleVision, extractTextFromImages } from "./google-vision.ts";
 import { convertPdfToImage } from "./pdf-converter.ts";
+import { extractPdfFields } from "./pdf-field-extractor.ts";
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -162,6 +163,31 @@ serve(async (req) => {
         if (!matchedTemplate) {
             console.error("No templates available in database!");
             throw new Error("No templates available. Please upload a template first.");
+        }
+
+        // 6.5 DYNAMIC EXTRACTION / HYBRID Strategy
+        // If DB has fields (Cached), use them (Fast). If missing, fetch Template PDF (Robust).
+        matchedTemplate.content_profile = matchedTemplate.content_profile || {};
+        const storedFields = matchedTemplate.content_profile.pdfFields || [];
+
+        // ALWAYS use Dynamic Extraction (User Request)
+        if (matchedTemplate.template_file_url) {
+            console.log(`[HYBRID] No unique DB fields found. Fetching template PDF to extract fields dynamically...`);
+            try {
+                const tmplResp = await fetch(matchedTemplate.template_file_url);
+                if (tmplResp.ok) {
+                    const tmplBuffer = await tmplResp.arrayBuffer();
+                    const dynamicPdfFields = await extractPdfFields(tmplBuffer);
+                    console.log(`[HYBRID] Extracted ${dynamicPdfFields.length} fields from template source.`);
+
+                    // INJECT
+                    matchedTemplate.content_profile.pdfFields = dynamicPdfFields;
+                } else {
+                    console.warn(`[HYBRID] Failed to fetch template PDF: ${tmplResp.statusText}`);
+                }
+            } catch (dErr) {
+                console.warn("[HYBRID] Failed to extract template fields:", dErr);
+            }
         }
 
         // 7. Extract structured data with AI (using Google Vision OCR text + OpenAI Vision)
