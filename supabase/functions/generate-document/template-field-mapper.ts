@@ -262,6 +262,19 @@ export function getTemplateMappings(
             // Prevent combined field from overwriting individual fields
             "birth_location_combined": [], // DISABLED: Do not map combined location
 
+            // === STRICT PARENT NAME MAPPINGS ===
+            // Nuevo template has SEPARATE Names and Surnames fields - do not combine
+            "padre_nombres": ["father_names"],  // STRICT: Only to Names field
+            "padre_apellidos": ["father_surnames"],  // STRICT: Only to Surnames field
+            "madre_nombres": ["mother_names"],  // STRICT: Only to Names field
+            "madre_apellidos": ["mother_surnames"],  // STRICT: Only to Surnames field
+
+            // Disable combined parent name mappings to prevent overwrites
+            "father_full_name": [],  // DISABLED: Do not map combined father name
+            "mother_full_name": [],  // DISABLED: Do not map combined mother name
+            "padre_completo": [],
+            "madre_completo": [],
+
             // Fix notary mapping for Nuevo as well (just in case)
             "oficina": ["office_type", "office"],
             "numero_oficina": ["notary_number", "office_number", "Number"],

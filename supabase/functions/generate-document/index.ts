@@ -508,11 +508,11 @@ serve(async (req) => {
 
         // === CRITICAL EARLY FILL ===
         // Force critical fields into all possible candidate fields before individualized processing
-        // NOTE: Birth location is EXCLUDED because we want atomic 1:1 mapping (Country, Department, Municipality, Township)
+        // NOTE: Birth location AND Parent names are EXCLUDED because we want atomic 1:1 mapping
         const criticalFields = [
             // { value: extractedData.lugar_nacimiento || extractedData.birth_location_combined, patterns: ['birth', 'nacimiento', 'place', 'lugar'], exclude: ['registro', 'registry'], type: 'BirthPlace' }, // DISABLED: Want atomic mapping
-            { value: extractedData.father_full_name, patterns: ['father', 'padre', 'dad'], type: 'FatherFull' },
-            { value: extractedData.mother_full_name, patterns: ['mother', 'madre', 'mom'], type: 'MotherFull' },
+            // { value: extractedData.father_full_name, patterns: ['father', 'padre', 'dad'], type: 'FatherFull' }, // DISABLED: Want atomic Names/Surnames mapping
+            // { value: extractedData.mother_full_name, patterns: ['mother', 'madre', 'mom'], type: 'MotherFull' }, // DISABLED: Want atomic Names/Surnames mapping
             { value: extractedData.declarant_full_name, patterns: ['declarant', 'declarante'], type: 'DeclarantFull' }
         ];
 
