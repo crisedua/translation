@@ -15,7 +15,8 @@ export const DIRECT_MAPPINGS: Record<string, string[]> = {
     // === REGISTRANT NAMES (Spanish and English variations) ===
     "nombres": ["names", "reg_names", "given_names", "first_names", "nombre", "Given Name(s)"],
     "Nombres": ["names", "reg_names", "given_names", "first_names", "nombre", "Given Name(s)"],
-    "Apellidos": ["surnames", "first_surname", "second_surname", "Apellidos"],
+    "apellidos": ["surnames", "Surnames"],
+    "Apellidos": ["surnames", "Surnames", "first_surname", "second_surname"],
     "primer_apellido": ["first_surname", "reg_1_surname", "surname1", "apellido1", "First Surname"],
     "segundo_apellido": ["second_surname", "reg_2_surname", "surname2", "apellido2", "Second Surname"],
     "Registrant's Names": ["names", "reg_names", "given_names"],
@@ -54,14 +55,16 @@ export const DIRECT_MAPPINGS: Record<string, string[]> = {
     "hora_nacimiento": ["time", "birth_time", "hora"],
     "Time": ["time", "birth_time"],
 
-    // === BIRTH LOCATION ===
-    "pais_nacimiento": ["country_birth", "birth_country", "Country", "country_office"],
-    "departamento_nacimiento": ["dept_office", "Department", "dept_birth", "birth_department"],
-    "municipio_nacimiento": ["muni_office", "Municipality", "muni_birth", "birth_municipality"],
-    "birth_location_combined": ["birth_country_dept_munic", "place_of_birth", "birth_place", "Place of Birth", "Lugar de nacimiento", "birth_country", "Birth Country"],
-    "lugar_nacimiento": ["birth_country_dept_munic", "Place of Birth", "birth_place", "place", "township_birth", "Lugar de nacimiento"],
-    "Place of Birth": ["birth_country_dept_munic", "place_of_birth", "birth_place", "Place of Birth"],
-    "Place of Birth (Country - Department - Municipality - Township and/or Police Station)": ["birth_country_dept_munic", "place_of_birth", "Place of Birth"],
+    // === BIRTH LOCATION (Registrant's birth place) ===
+    "pais_nacimiento": ["Country", "country_birth", "birth_country"],
+    "departamento_nacimiento": ["dept_birth", "Department"],
+    "municipio_nacimiento": ["muni_birth", "Municipality"],
+    "corregimiento": ["township_birth", "Township/Police Station"],
+    // Combined location - only for combined PDF fields
+    "birth_location_combined": ["birth_country_dept_munic", "place_of_birth", "birth_place"],
+    "lugar_nacimiento": ["township_birth", "Township/Police Station"],
+    "Place of Birth": ["birth_country_dept_munic", "place_of_birth", "birth_place"],
+    "Place of Birth (Country - Department - Municipality - Township and/or Police Station)": ["birth_country_dept_munic", "place_of_birth"],
 
     // === FATHER INFORMATION ===
     "padre_nombres": ["father_names"],

@@ -342,15 +342,19 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
     const mappings: Record<string, string[]> = {};
     const fieldPatterns: Record<string, string[]> = {
         "nuip_resolved": ["nuip"],
+        // === REGISTRANT SURNAMES ===
+        "apellidos": ["surnames", "Surnames"],
+        "primer_apellido": ["first_surname", "reg_1_surname"],
+        "segundo_apellido": ["second_surname", "reg_2_surname"],
         // === ATOMIC BIRTH LOCATION MAPPINGS ===
-        "pais_nacimiento": ["country_office", "Country", "country_birth", "birth_country"],
-        "departamento_nacimiento": ["dept_office", "Department", "dept_birth", "birth_department"],
-        "municipio_nacimiento": ["muni_office", "Municipality", "muni_birth", "birth_municipality"],
-        "corregimiento": ["Township/Police Station", "township_birth", "township"],
+        "pais_nacimiento": ["Country", "country_birth", "birth_country"],
+        "departamento_nacimiento": ["dept_birth", "Department"],
+        "municipio_nacimiento": ["muni_birth", "Municipality"],
+        "corregimiento": ["township_birth", "Township/Police Station"],
         // Combined locations (only for combined PDF fields)
         "birth_location_combined": ["birth_country_dept_munic", "place_of_birth", "birth_place"],
         "Place of Birth": ["birth_country_dept_munic", "place_of_birth"],
-        "lugar_nacimiento": ["Township/Police Station", "township_birth"],
+        "lugar_nacimiento": ["township_birth"],
         "registry_location_combined": ["country_dept_munic"],
         // === PARENT NAME MAPPINGS (STRICT) ===
         "father_full_name": ["father_surnames_names"],
@@ -358,8 +362,6 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
         "notes_combined": ["notes1", "notes", "notas", "space for notes", "spacefornotes", "margin notes", "marginnotes", "observaciones"],
         "margin_notes": ["notes1", "notes", "notas", "space for notes", "spacefornotes", "margin notes", "marginnotes", "observaciones"],
         "nombres": ["reg_names", "given_names", "names"],
-        "primer_apellido": ["reg_1_surname", "first_surname"],
-        "segundo_apellido": ["reg_2_surname", "second_surname"],
         "nuip": ["nuip"],
         "serial_indicator": ["serial_indicator", "serial"],
         "sexo": ["sex", "sexo"],
