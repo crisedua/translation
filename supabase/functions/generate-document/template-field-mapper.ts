@@ -151,15 +151,37 @@ function normalizeFieldName(name: string): string {
 /**
  * Check if two field names match (case-insensitive, normalized)
  */
+const DISTINGUISHING_KEYWORDS = [
+    "father", "padre",
+    "mother", "madre",
+    "parent",
+    "witness", "testigo",
+    "declarant", "declarante",
+    "registrant", "inscrito",
+    "official", "funcionario",
+    "registry", "registraduria", "office", "oficina"
+];
+
 function fieldsMatch(pdfField: string, pattern: string): boolean {
     const normPdf = normalizeFieldName(pdfField);
     const normPattern = normalizeFieldName(pattern);
 
-    // Exact match
+    // Exact match (Always accept)
     if (normPdf === normPattern) return true;
 
-    // Contains match (pdf field contains pattern or vice versa)
+    // Contains match
     if (normPdf.includes(normPattern) || normPattern.includes(normPdf)) {
+        // ROBUSTNESS CHECK: Word Boundary / Distinguishing Keywords
+        // If the PDF field contains a "Distinguishing Keyword" (e.g. "Father"),
+        // the Pattern MUST also contain that keyword. Otherwise, it's a false positive.
+        // Example: Pattern "Names" matches PDF "Father Names" -> REJECT (Father is distinguishing)
+
+        for (const keyword of DISTINGUISHING_KEYWORDS) {
+            if (normPdf.includes(keyword) && !normPattern.includes(keyword)) {
+                return false; // Mismatched entity context
+            }
+        }
+
         // Avoid too short matches (at least 3 chars)
         return normPattern.length >= 3 && normPdf.length >= 3;
     }
