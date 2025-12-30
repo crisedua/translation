@@ -386,12 +386,16 @@ export function getTemplateMappings(
 
     // Define forbidden generic targets for specific specific fields
     const forbiddenTargets: Record<string, string[]> = {
-        "padre_nombres": ["names", "surnames", "nombres", "apellidos", "given_names", "first_names"],
+        // Parent fields: Don't map to generic registrant fields
+        "padre_nombres": ["names", "surnames", "nombres", "apellidos", "given_names", "first_names", "reg_names"],
         "padre_apellidos": ["names", "surnames", "nombres", "apellidos"],
-        "madre_nombres": ["names", "surnames", "nombres", "apellidos", "given_names", "first_names"],
+        "madre_nombres": ["names", "surnames", "nombres", "apellidos", "given_names", "first_names", "reg_names"],
         "madre_apellidos": ["names", "surnames", "nombres", "apellidos"],
-        "primer_apellido": ["names", "surnames", "nombres", "father_surnames", "mother_surnames"],
-        "segundo_apellido": ["names", "surnames", "nombres", "father_surnames", "mother_surnames"]
+
+        // Registrant fields: Don't map to parent/other fields (BLOCKS OVERWRITES)
+        "nombres": ["father_names", "father_surnames", "mother_names", "mother_surnames", "witness", "declarant"],
+        "primer_apellido": ["father_names", "father_surnames", "mother_names", "mother_surnames"],
+        "segundo_apellido": ["father_names", "father_surnames", "mother_names", "mother_surnames"]
     };
 
     for (const [key, targets] of Object.entries(result.mappings)) {
