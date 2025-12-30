@@ -333,6 +333,20 @@ const AdminRequestReview = () => {
 
                         {showFieldMapping && (
                             <div className="mt-3">
+                                {/* OCR Raw Text Section */}
+                                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded">
+                                    <h4 className="font-semibold text-amber-800 text-sm mb-2">📄 Raw OCR Text (Google Vision)</h4>
+                                    <p className="text-xs text-amber-600 mb-2">This is what the OCR sees - notice location fields may be merged</p>
+                                    <div className="max-h-40 overflow-y-auto bg-white p-2 rounded border border-amber-100">
+                                        <pre className="whitespace-pre-wrap font-mono text-xs text-gray-700">
+                                            {request?.ocr_text?.slice(0, 1500) || 'No OCR text available'}
+                                            {request?.ocr_text && request.ocr_text.length > 1500 && '...(truncated)'}
+                                        </pre>
+                                    </div>
+                                </div>
+
+                                {/* Extracted Data Table */}
+                                <h4 className="font-semibold text-blue-800 text-sm mb-2">🔍 Extracted Data (AI parsed)</h4>
                                 <p className="text-xs text-blue-600 mb-3">All extracted data key-value pairs</p>
                                 <div className="overflow-x-auto max-h-96 overflow-y-auto">
                                     <table className="w-full text-xs">

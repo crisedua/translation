@@ -400,11 +400,49 @@ Return JSON.`;
                 extractedData.pais_registro = 'COLOMBIA';
             }
 
+            // === FORCE SPLIT LOCATION DATA ===
+            // If pais_nacimiento contains " - " it's combined data - split it!
+            const country = extractedData.pais_nacimiento || '';
+            if (country.includes(' - ') || country.includes(' – ') || country.includes('.')) {
+                console.log(`[AI-EXTRACTOR] DETECTED COMBINED COUNTRY: "${country}" - SPLITTING...`);
+
+                // Split by various separators
+                const separator = country.includes(' - ') ? ' - ' :
+                    country.includes(' – ') ? ' – ' :
+                        country.includes('.') ? '.' : ' - ';
+                const parts = country.split(separator).map(p => p.trim()).filter(p => p);
+
+                if (parts.length >= 1) {
+                    extractedData.pais_nacimiento = parts[0]; // First part = Country
+                    console.log(`[AI-EXTRACTOR] SPLIT -> pais_nacimiento: "${parts[0]}"`);
+                }
+                if (parts.length >= 2 && (!extractedData.departamento_nacimiento || extractedData.departamento_nacimiento.trim() === '')) {
+                    extractedData.departamento_nacimiento = parts[1]; // Second part = Department
+                    console.log(`[AI-EXTRACTOR] SPLIT -> departamento_nacimiento: "${parts[1]}"`);
+                }
+                if (parts.length >= 3 && (!extractedData.municipio_nacimiento || extractedData.municipio_nacimiento.trim() === '')) {
+                    extractedData.municipio_nacimiento = parts[2]; // Third part = Municipality
+                    console.log(`[AI-EXTRACTOR] SPLIT -> municipio_nacimiento: "${parts[2]}"`);
+                }
+            }
+
+            // === FORCE CLEAR TOWNSHIP IF IT CONTAINS COUNTRY/DEPT ===
+            const township = (extractedData.township_birth || extractedData.lugar_nacimiento || extractedData.corregimiento || '').toUpperCase();
+            if (township.includes('COLOMBIA') || township.includes('VALLE') || township.includes('CAUCA') ||
+                township.includes(' - ') || township.includes(' – ') || township.includes('.')) {
+                console.log(`[AI-EXTRACTOR] CLEARING BAD TOWNSHIP: "${township}"`);
+                extractedData.township_birth = '';
+                extractedData.lugar_nacimiento = '';
+                extractedData.corregimiento = '';
+            }
+
             // Log key extractions
             console.log(`[AI-EXTRACTOR] nuip: ${extractedData.nuip || extractedData.nuip_top || 'NOT FOUND'}`);
             console.log(`[AI-EXTRACTOR] primer_apellido: ${extractedData.primer_apellido || 'NOT FOUND'}`);
             console.log(`[AI-EXTRACTOR] segundo_apellido: ${extractedData.segundo_apellido || 'NOT FOUND'}`);
             console.log(`[AI-EXTRACTOR] lugar_nacimiento: ${(extractedData.lugar_nacimiento || 'NOT FOUND').substring(0, 60)}`);
+            console.log(`[AI-EXTRACTOR] township_birth: "${extractedData.township_birth || 'NOT FOUND'}"`);
+            console.log(`[AI-EXTRACTOR] corregimiento: "${extractedData.corregimiento || 'NOT FOUND'}"`);
             console.log(`[AI-EXTRACTOR] authorizing_official: ${(extractedData.authorizing_official || 'NOT FOUND').substring(0, 50)}`);
 
             // === SAFETY CHECK: Clear obvious hallucinations ===
