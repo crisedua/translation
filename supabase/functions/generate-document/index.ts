@@ -395,17 +395,13 @@ serve(async (req) => {
         }
 
         // === PRE-PROCESSING: Combine Surnames ===
-        // === DISABLED: Keep surnames separate as they are in the form ===
-        // If we have separate surname fields but no combined one, create it.
-        // This ensures that if the PDF has a single "Surnames" field, it gets the full value.
-        /*
+        // Re-enabled: Needed for templates with single 'Surnames' field
         if (extractedData['primer_apellido'] && extractedData['segundo_apellido'] && !extractedData['Apellidos']) {
             const combinedSurnames = `${extractedData['primer_apellido']} ${extractedData['segundo_apellido']}`.trim();
             console.log(`[PRE-PROCESS] Combining registrant surnames: "${combinedSurnames}"`);
             extractedData['Apellidos'] = combinedSurnames;
-        }
-        */
-        console.log("[PRE-PROCESS] Registrant surnames: keeping separate (no combination)");
+            extractedData['apellidos'] = combinedSurnames;
+        } console.log("[PRE-PROCESS] Registrant surnames: keeping separate (no combination)");
 
         // === PRE-PROCESS: Combine Parent Names ===
         // Many PDFs have a single field for "Apellidos y Nombres" of parents
@@ -613,9 +609,18 @@ serve(async (req) => {
 
             let filled = false;
 
-            // === STRATEGY 0: Use Direct Mapper (highest priority, most reliable) ===
+            // === STRATEGY 0: 1:1 PDF Field Match (Template-Driven Priority) ===
+            // If the extracted key matches a PDF field name EXACTLY, use it!
+            // This enables template-driven extraction where we just use the PDF field names.
+            if (setField(key, strValue, key)) {
+                filled = true;
+                filledCount++;
+                console.log(`[STRATEGY 0] Exact match used for "${key}"`);
+            }
+
+            // === STRATEGY 1: Use Direct Mapper (Lookup Table) ===
             const directTargets = getDirectMapping(key);
-            if (directTargets.length > 0) {
+            if (!filled && directTargets.length > 0) {
                 // Handle notes fields specially (distribute across multiple fields)
                 if (isNotesFieldDirect(key) && directTargets.length > 1) {
                     const parts = strValue.split('\n').map(p => p.trim()).filter(p => p);
@@ -639,13 +644,6 @@ serve(async (req) => {
                         }
                     }
                 }
-            }
-
-            // 1. Try exact match (Canonical Key -> PDF Field Name)
-            // Sometimes the extracted key IS the pdf field name
-            if (!filled && setField(key, strValue, key)) {
-                filled = true;
-                filledCount++;
             }
 
             // 2. Try DB-configured mappings (with normalized key)

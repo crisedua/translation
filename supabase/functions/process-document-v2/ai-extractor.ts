@@ -176,10 +176,17 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
 
 
     // Combine all field sources (unique)
+    // IMPORTANT: Include database-stored PDF fields if available (Template-Driven Extraction)
+    const storedPdfFields = template?.content_profile?.pdfFields || [];
+    if (storedPdfFields.length > 0) {
+        console.log(`[AI-EXTRACTOR] Found ${storedPdfFields.length} stored PDF fields from template analysis`);
+    }
+
     const allTemplateFields = [...new Set([
         ...pdfFields,
         ...mappingKeys,
-        ...definedFieldNames
+        ...definedFieldNames,
+        ...storedPdfFields // Add the stored PDF fields
     ])];
 
     const CRITICAL_FIELDS = [
