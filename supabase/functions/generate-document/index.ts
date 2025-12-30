@@ -508,8 +508,9 @@ serve(async (req) => {
 
         // === CRITICAL EARLY FILL ===
         // Force critical fields into all possible candidate fields before individualized processing
+        // NOTE: Birth location is EXCLUDED because we want atomic 1:1 mapping (Country, Department, Municipality, Township)
         const criticalFields = [
-            { value: extractedData.lugar_nacimiento || extractedData.birth_location_combined, patterns: ['birth', 'nacimiento', 'place', 'lugar'], exclude: ['registro', 'registry'], type: 'BirthPlace' },
+            // { value: extractedData.lugar_nacimiento || extractedData.birth_location_combined, patterns: ['birth', 'nacimiento', 'place', 'lugar'], exclude: ['registro', 'registry'], type: 'BirthPlace' }, // DISABLED: Want atomic mapping
             { value: extractedData.father_full_name, patterns: ['father', 'padre', 'dad'], type: 'FatherFull' },
             { value: extractedData.mother_full_name, patterns: ['mother', 'madre', 'mom'], type: 'MotherFull' },
             { value: extractedData.declarant_full_name, patterns: ['declarant', 'declarante'], type: 'DeclarantFull' }
@@ -544,13 +545,11 @@ serve(async (req) => {
                 if (fieldLower.includes('official') || fieldLower.includes('signature') || fieldLower.includes('firma')) continue;
                 if (fieldLower.includes('identification') || fieldLower.includes('document') || fieldLower.includes('nationality')) continue;
 
-                // Match logic
+                // Match logic - BirthPlace is now disabled above, so this won't match
                 let isMatch = false;
                 if (cf.type === 'BirthPlace') {
-                    // Birth place matches if it has (birth OR nacimiento) AND any location-like keyword
-                    const birthTerm = fieldLower.includes('birth') || fieldLower.includes('nacimiento');
-                    const placeTerm = fieldLower.includes('place') || fieldLower.includes('lugar') || fieldLower.includes('countr') || fieldLower.includes('dept') || fieldLower.includes('muni') || fieldLower.includes('town');
-                    isMatch = birthTerm && placeTerm;
+                    // DISABLED: Birth place is handled atomically now
+                    isMatch = false;
                 } else {
                     const parentTerm = cf.patterns.some(p => fieldLower.includes(p));
                     const nameTerm = fieldLower.includes('name') || fieldLower.includes('nombre') || fieldLower.includes('full') || fieldLower.includes('completo') || fieldLower.includes('surname') || fieldLower.includes('apellido');
