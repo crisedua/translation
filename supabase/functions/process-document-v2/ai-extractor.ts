@@ -150,12 +150,14 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
             "issue_month": "Extract ONLY from BOTTOM footer 'Mes' box under 'Fecha de expedición' label (NOT birth month which is higher up on page).",
             "issue_year": "Extract ONLY from BOTTOM footer 'Año' box under 'Fecha de expedición' label (NOT birth year which is higher up on page). Footer year is typically 2020+.",
 
-            // STRICT BIRTH LOCATION INSTRUCTIONS (Fixing "COLOMBIA - VALLE DE..." issue)
-            "pais_nacimiento": "In 'Lugar de nacimiento' (Place of Birth) section: Extract ONLY the text inside the 'País' box (e.g., 'COLOMBIA'). If OCR merges text, extract ONLY the first word 'COLOMBIA'.",
-            "departamento_nacimiento": "In 'Lugar de nacimiento' section: Extract ONLY the text inside the 'Departamento' box (e.g., 'VALLE DEL CAUCA').",
-            "municipio_nacimiento": "In 'Lugar de nacimiento' section: Extract ONLY the text inside the 'Municipio' box.",
-            "lugar_nacimiento": "In 'Lugar de nacimiento' section: Extract ONLY text inside 'Corregimiento / Insp. de Policía' box. If this box is EMPTY or BLANK, you MUST return an empty string ''. Do NOT extract Country, Department, or Municipality here. Return '' if no township data.",
-            "township_birth": "In 'Lugar de nacimiento' section: Extract ONLY text inside 'Corregimiento / Insp. de Policía' box. If this box is EMPTY or BLANK, you MUST return an empty string ''. Do NOT extract Country, Department, or Municipality here. Return '' if no township data.",
+            // STRICT BIRTH LOCATION INSTRUCTIONS - CRITICAL FIX
+            // The OCR often merges "COLOMBIA - VALLE DEL CAUCA - CALI" into one line.
+            // You MUST parse and split this text correctly into separate fields.
+            "pais_nacimiento": "CRITICAL: Extract ONLY the COUNTRY name (first word before any dash/hyphen). Examples: 'COLOMBIA' from 'COLOMBIA - VALLE DEL CAUCA'. Return ONLY 'COLOMBIA', never include department or municipality.",
+            "departamento_nacimiento": "CRITICAL: Extract ONLY the DEPARTMENT name (second segment after first dash). Examples: 'VALLE DEL CAUCA' from 'COLOMBIA - VALLE DEL CAUCA - CALI'. Do NOT include country or municipality.",
+            "municipio_nacimiento": "CRITICAL: Extract ONLY the MUNICIPALITY name (third segment or last segment). Examples: 'CALI' from 'COLOMBIA - VALLE DEL CAUCA - CALI'. Do NOT include country or department.",
+            "lugar_nacimiento": "CRITICAL: This is the TOWNSHIP field. It is almost always EMPTY. Return empty string '' unless there is specific township data like 'CORREGIMIENTO X'. Do NOT put country, department, or municipality here. If unsure, return ''.",
+            "township_birth": "CRITICAL: This is the TOWNSHIP field. It is almost always EMPTY. Return empty string '' unless there is specific township data. Do NOT put country, department, or municipality here. If unsure, return ''.",
 
             // REGISTRY OFFICE LOCATION (Top of form) - Ensure we target this specifically
             "departamento_registro": "In 'Información de la oficina de registro' (Registry Office Info) section (TOP of page): Extract 'Departamento'.",
@@ -291,11 +293,13 @@ ${fieldListWithInstructions}
 - These are in SEPARATE boxes side by side
 - DO NOT leave segundo_apellido empty if text is visible!
 
-### 3. PLACE OF BIRTH (FULL TEXT REQUIRED)
-- lugar_nacimiento / birth_location_combined: Extract COMPLETE value
-- MUST include clinic/hospital name AND location
-- Example: "CLINICA MATERNO INFANTIL FARALLONES (COLOMBIA.VALLE.CALI)"
-- Do NOT truncate to just the country!
+### 3. PLACE OF BIRTH (ATOMIC EXTRACTION - CRITICAL)
+- pais_nacimiento: COUNTRY ONLY (e.g., "COLOMBIA") - first segment before dash
+- departamento_nacimiento: DEPARTMENT ONLY (e.g., "VALLE DEL CAUCA") - second segment
+- municipio_nacimiento: MUNICIPALITY ONLY (e.g., "CALI") - third segment
+- lugar_nacimiento / township_birth: TOWNSHIP ONLY - almost always EMPTY, return ""
+- birth_location_combined: Full combined string for templates that need it
+- If OCR shows "COLOMBIA - VALLE DEL CAUCA - CALI", split into separate fields!
 
 ### 4. OFFICIAL NAMES (COMPLETE - NO TRUNCATION)
 - authorizing_official / funcionario_nombre: Extract ALL name parts

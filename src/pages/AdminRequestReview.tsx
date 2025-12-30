@@ -317,6 +317,41 @@ const AdminRequestReview = () => {
                         </div>
                     </div>
 
+                    {/* Field Mapping Debug View */}
+                    <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <h3 className="font-semibold text-blue-900 mb-3 flex items-center">
+                            <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                            Template Field → Extracted Data Mapping
+                        </h3>
+                        <p className="text-xs text-blue-600 mb-3">Shows how extracted data maps to template PDF fields</p>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-xs">
+                                <thead>
+                                    <tr className="border-b border-blue-200">
+                                        <th className="text-left py-2 px-2 text-blue-800 font-medium">Extracted Key</th>
+                                        <th className="text-left py-2 px-2 text-blue-800 font-medium">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {Object.entries(formData)
+                                        .filter(([_, value]) => value && value.trim() !== '')
+                                        .slice(0, 25)
+                                        .map(([key, value]) => (
+                                            <tr key={key} className="border-b border-blue-100 hover:bg-blue-100">
+                                                <td className="py-1.5 px-2 font-mono text-blue-700">{key}</td>
+                                                <td className="py-1.5 px-2 text-gray-800 truncate max-w-xs" title={value}>
+                                                    {value.length > 40 ? value.substring(0, 40) + '...' : value}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    }
+                                </tbody>
+                            </table>
+                            {Object.keys(formData).length > 25 && (
+                                <p className="text-xs text-blue-500 mt-2">+ {Object.keys(formData).length - 25} more fields</p>
+                            )}
+                        </div>
+                    </div>
 
 
                     {/* Extracted Fields - Editable Form */}
