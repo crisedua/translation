@@ -66,6 +66,8 @@ export const DIRECT_MAPPINGS: Record<string, string[]> = {
     "Place of Birth": ["birth_country_dept_munic", "place_of_birth", "birth_place"],
     "Place of Birth (Country - Department - Municipality - Township and/or Police Station)": ["birth_country_dept_munic", "place_of_birth"],
 
+
+
     // === FATHER INFORMATION ===
     "padre_nombres": ["father_names"],
     "padre_apellidos": ["father_surnames"],
@@ -112,9 +114,9 @@ export const DIRECT_MAPPINGS: Record<string, string[]> = {
     "Second Witness's Identification Document (Type and Number)": ["witness2_id_doc", "witness2_id"],
 
     // === REGISTRY INFORMATION ===
-    "tipo_oficina": ["office_type", "Type of Office", "type_office", "tipo_oficina"],
-    "oficina": ["office_type", "office", "registry_office"],
-    "numero_oficina": ["notary_number", "office_number", "Number", "office_num"],
+    "tipo_oficina": ["office_type", "Type of Office", "type_office", "tipo_oficina", "Notaria"],
+    "oficina": ["Office Type", "Office Type/Office", "Notaria", "Notary", "office_type", "office", "registry_office"],
+    "numero_oficina": ["Office Number", "Office", "Notary Number", "notary_number", "office_number", "Number", "office_num"],
     "notary_number": ["notary_number", "Number", "office_number", "office_num"],
     "numero": ["notary_number", "Number", "office_number"],
     "Número": ["notary_number", "Number", "office_number"],
@@ -123,8 +125,8 @@ export const DIRECT_MAPPINGS: Record<string, string[]> = {
     "Registry Office": ["reg_office", "office"],
     "pais_registro": ["country_office", "country", "pais", "Country"],
     "Pais Registro": ["country_office", "country", "pais", "Country"],
-    "departamento_registro": ["dept_office", "Department"],
-    "municipio_registro": ["muni_office", "Municipality"],
+    "departamento_registro": ["Department_1", "Department_top", "dept_office", "Department", "Registry Office Information - Department"],
+    "municipio_registro": ["Municipality_1", "Municipality_top", "muni_office", "Municipality", "Registry Office Information - Municipality"],
     "fecha_registro": ["date_registration", "date_registered"],
     "Date Registered": ["date_registration", "reg_date"],
     "reg_day": ["reg_day", "date_registration", "reg_date"],

@@ -150,23 +150,25 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
             "issue_month": "Extract ONLY from BOTTOM footer 'Mes' box under 'Fecha de expedición' label (NOT birth month which is higher up on page).",
             "issue_year": "Extract ONLY from BOTTOM footer 'Año' box under 'Fecha de expedición' label (NOT birth year which is higher up on page). Footer year is typically 2020+.",
 
-            // STRICT BIRTH LOCATION INSTRUCTIONS to prevent concatenation
-            "pais_nacimiento": "In 'Lugar de nacimiento' section: Extract ONLY the text inside the 'País' box (e.g., 'COLOMBIA').",
-            "departamento_nacimiento": "In 'Lugar de nacimiento' section: Extract ONLY the text inside the 'Departamento' box (e.g., 'VALLE').",
-            "municipio_nacimiento": "In 'Lugar de nacimiento' section: Extract ONLY the text inside the 'Municipio' box (e.g., 'CALI').",
+            // STRICT BIRTH LOCATION INSTRUCTIONS (Fixing "COLOMBIA - VALLE DE..." issue)
+            "pais_nacimiento": "In 'Lugar de nacimiento' (Place of Birth) section: Extract ONLY the text inside the 'País' box (e.g., 'COLOMBIA'). If OCR merges text, extract ONLY the first word 'COLOMBIA'.",
+            "departamento_nacimiento": "In 'Lugar de nacimiento' section: Extract ONLY the text inside the 'Departamento' box (e.g., 'VALLE DEL CAUCA').",
+            "municipio_nacimiento": "In 'Lugar de nacimiento' section: Extract ONLY the text inside the 'Municipio' box.",
+            "lugar_nacimiento": "In 'Lugar de nacimiento' section: Extract ONLY text inside 'Corregimiento / Insp. de Policía'. Must be BLANK if empty. Do NOT copy Country/Dept here.",
+            "township_birth": "In 'Lugar de nacimiento' section: Extract ONLY text inside 'Corregimiento / Insp. de Policía'. Must be BLANK if empty. Do NOT copy Country/Dept here.",
 
-            // CRITICAL: Disable combined location fields to prevent overwriting
-            "birth_location_combined": "RETURN EMPTY STRING. Do not extract combined location.",
-            "lugar_nacimiento": "In 'Lugar de nacimiento' section: Extract ONLY the text inside the 'Corregimiento / Insp. de Policía' box. Return empty if none.",
-            "corregimiento": "In 'Lugar de nacimiento' section: Extract ONLY the text inside the 'Corregimiento / Insp. de Policía' box.",
+            // REGISTRY OFFICE LOCATION (Top of form) - Ensure we target this specifically
+            "departamento_registro": "In 'Información de la oficina de registro' (Registry Office Info) section (TOP of page): Extract 'Departamento'.",
+            "municipio_registro": "In 'Información de la oficina de registro' (Registry Office Info) section (TOP of page): Extract 'Municipio'.",
+            "oficina": "In 'Información de la oficina de registro': Extract 'Tipo de oficina / Oficina' (e.g., 'NOTARIA / NOTARIA PRIMERA').",
 
-            // === STRICT PARENT NAME EXTRACTION ===
+            // STRICT PARENT NAME EXTRACTION
             // Mother's Information - SEPARATE Names from Surnames
-            "madre_nombres": "CRITICAL: In 'Datos de la madre' (Mother's Information) section, look for the box labeled 'Nombres' (Names/Given Names). Extract ONLY the GIVEN NAMES from this box (e.g., 'SARA' or 'ALBA YOLANDA'). Do NOT include surnames. The surnames are in a SEPARATE 'Apellidos' box.",
+            "madre_nombres": "CRITICAL: In 'Datos de la madre' (Mother's Information) section, look for the box labeled 'Nombres' (Names/Given Names). Extract ONLY the GIVEN NAMES from this box (e.g., 'SARA' or 'ALBA YOLANDA'). Do NOT include surnames.",
             "madre_apellidos": "CRITICAL: In 'Datos de la madre' (Mother's Information) section, look for the box labeled 'Apellidos' (Surnames). Extract ONLY the SURNAMES from this box (e.g., 'BOTERO GOMEZ'). Do NOT include given names.",
 
             // Father's Information - SEPARATE Names from Surnames
-            "padre_nombres": "CRITICAL: In 'Datos del padre' (Father's Information) section, look for the box labeled 'Nombres' (Names/Given Names). Extract ONLY the GIVEN NAMES from this box (e.g., 'BERNARDO JULIAN'). Do NOT include surnames. The surnames are in a SEPARATE 'Apellidos' box.",
+            "padre_nombres": "CRITICAL: In 'Datos del padre' (Father's Information) section, look for the box labeled 'Nombres' (Names/Given Names). Extract ONLY the GIVEN NAMES from this box (e.g., 'BERNARDO JULIAN'). Do NOT include surnames.",
             "padre_apellidos": "CRITICAL: In 'Datos del padre' (Father's Information) section, look for the box labeled 'Apellidos' (Surnames). Extract ONLY the SURNAMES from this box (e.g., 'TOBAR PRADO'). Do NOT include given names."
         };
         // Merge overrides into template instructions (overwriting DB values if present)
