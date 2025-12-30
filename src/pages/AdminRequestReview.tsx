@@ -30,6 +30,7 @@ const AdminRequestReview = () => {
     const [formData, setFormData] = useState<Record<string, string>>({});
     const [isEditing, setIsEditing] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [showFieldMapping, setShowFieldMapping] = useState(false);
 
     useEffect(() => {
         fetchRequest();
@@ -317,40 +318,46 @@ const AdminRequestReview = () => {
                         </div>
                     </div>
 
-                    {/* Field Mapping Debug View */}
+                    {/* Field Mapping Debug View - Collapsible */}
                     <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                        <h3 className="font-semibold text-blue-900 mb-3 flex items-center">
-                            <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
-                            Template Field → Extracted Data Mapping
-                        </h3>
-                        <p className="text-xs text-blue-600 mb-3">Shows how extracted data maps to template PDF fields</p>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-xs">
-                                <thead>
-                                    <tr className="border-b border-blue-200">
-                                        <th className="text-left py-2 px-2 text-blue-800 font-medium">Extracted Key</th>
-                                        <th className="text-left py-2 px-2 text-blue-800 font-medium">Value</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {Object.entries(formData)
-                                        .filter(([_, value]) => value && value.trim() !== '')
-                                        .slice(0, 25)
-                                        .map(([key, value]) => (
-                                            <tr key={key} className="border-b border-blue-100 hover:bg-blue-100">
-                                                <td className="py-1.5 px-2 font-mono text-blue-700">{key}</td>
-                                                <td className="py-1.5 px-2 text-gray-800 truncate max-w-xs" title={value}>
-                                                    {value.length > 40 ? value.substring(0, 40) + '...' : value}
-                                                </td>
+                        <button
+                            onClick={() => setShowFieldMapping(!showFieldMapping)}
+                            className="w-full flex items-center justify-between text-left"
+                        >
+                            <h3 className="font-semibold text-blue-900 flex items-center">
+                                <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                                Template Field → Extracted Data ({Object.keys(formData).length} fields)
+                            </h3>
+                            <span className="text-blue-600 text-sm">{showFieldMapping ? '▼ Collapse' : '▶ Expand'}</span>
+                        </button>
+
+                        {showFieldMapping && (
+                            <div className="mt-3">
+                                <p className="text-xs text-blue-600 mb-3">All extracted data key-value pairs</p>
+                                <div className="overflow-x-auto max-h-96 overflow-y-auto">
+                                    <table className="w-full text-xs">
+                                        <thead className="sticky top-0 bg-blue-100">
+                                            <tr className="border-b border-blue-200">
+                                                <th className="text-left py-2 px-2 text-blue-800 font-medium">Extracted Key</th>
+                                                <th className="text-left py-2 px-2 text-blue-800 font-medium">Value</th>
                                             </tr>
-                                        ))
-                                    }
-                                </tbody>
-                            </table>
-                            {Object.keys(formData).length > 25 && (
-                                <p className="text-xs text-blue-500 mt-2">+ {Object.keys(formData).length - 25} more fields</p>
-                            )}
-                        </div>
+                                        </thead>
+                                        <tbody>
+                                            {Object.entries(formData)
+                                                .map(([key, value]) => (
+                                                    <tr key={key} className={`border-b border-blue-100 hover:bg-blue-100 ${!value || value.trim() === '' ? 'opacity-50' : ''}`}>
+                                                        <td className="py-1.5 px-2 font-mono text-blue-700">{key}</td>
+                                                        <td className="py-1.5 px-2 text-gray-800" title={value}>
+                                                            {value || <span className="italic text-gray-400">empty</span>}
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
 
