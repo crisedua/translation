@@ -343,9 +343,9 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
     const fieldPatterns: Record<string, string[]> = {
         "nuip_resolved": ["nuip"],
         // === ATOMIC BIRTH LOCATION MAPPINGS ===
-        "pais_nacimiento": ["Country", "country_birth", "birth_country"],
-        "departamento_nacimiento": ["Department", "dept_birth", "birth_department"],
-        "municipio_nacimiento": ["Municipality", "muni_birth", "birth_municipality"],
+        "pais_nacimiento": ["country_office", "Country", "country_birth", "birth_country"],
+        "departamento_nacimiento": ["dept_office", "Department", "dept_birth", "birth_department"],
+        "municipio_nacimiento": ["muni_office", "Municipality", "muni_birth", "birth_municipality"],
         "corregimiento": ["Township/Police Station", "township_birth", "township"],
         // Combined locations (only for combined PDF fields)
         "birth_location_combined": ["birth_country_dept_munic", "place_of_birth", "birth_place"],
