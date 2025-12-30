@@ -154,8 +154,8 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
             "pais_nacimiento": "In 'Lugar de nacimiento' (Place of Birth) section: Extract ONLY the text inside the 'País' box (e.g., 'COLOMBIA'). If OCR merges text, extract ONLY the first word 'COLOMBIA'.",
             "departamento_nacimiento": "In 'Lugar de nacimiento' section: Extract ONLY the text inside the 'Departamento' box (e.g., 'VALLE DEL CAUCA').",
             "municipio_nacimiento": "In 'Lugar de nacimiento' section: Extract ONLY the text inside the 'Municipio' box.",
-            "lugar_nacimiento": "In 'Lugar de nacimiento' section: Extract ONLY text inside 'Corregimiento / Insp. de Policía'. Must be BLANK if empty. Do NOT copy Country/Dept here.",
-            "township_birth": "In 'Lugar de nacimiento' section: Extract ONLY text inside 'Corregimiento / Insp. de Policía'. Must be BLANK if empty. Do NOT copy Country/Dept here.",
+            "lugar_nacimiento": "In 'Lugar de nacimiento' section: Extract ONLY text inside 'Corregimiento / Insp. de Policía' box. If this box is EMPTY or BLANK, you MUST return an empty string ''. Do NOT extract Country, Department, or Municipality here. Return '' if no township data.",
+            "township_birth": "In 'Lugar de nacimiento' section: Extract ONLY text inside 'Corregimiento / Insp. de Policía' box. If this box is EMPTY or BLANK, you MUST return an empty string ''. Do NOT extract Country, Department, or Municipality here. Return '' if no township data.",
 
             // REGISTRY OFFICE LOCATION (Top of form) - Ensure we target this specifically
             "departamento_registro": "In 'Información de la oficina de registro' (Registry Office Info) section (TOP of page): Extract 'Departamento'.",

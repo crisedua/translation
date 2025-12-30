@@ -14,6 +14,7 @@ interface Template {
         formatIndicators?: { version?: string };
         extraction_instructions?: Record<string, string>;
         pdf_mappings?: Record<string, string[]>;
+        pdfFields?: string[];
         extractionInstructionCount?: number;
         mappingCount?: number;
     };
@@ -393,21 +394,28 @@ const TemplateAdmin = () => {
                                                     </p>
                                                 )}
 
-                                                {/* PDF Mappings */}
-                                                {template.content_profile?.pdf_mappings && (
+                                                {/* PDF Field Names (Source of Truth) */}
+                                                {template.content_profile?.pdfFields && template.content_profile.pdfFields.length > 0 && (
                                                     <div className="mt-4">
-                                                        <h4 className="font-semibold text-sm mb-2 text-green-700">PDF Field Mappings ({Object.keys(template.content_profile.pdf_mappings).length})</h4>
-                                                        <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                                                            {Object.entries(template.content_profile.pdf_mappings).slice(0, 20).map(([field, pdfFields]) => (
-                                                                <div key={field} className="text-xs bg-white p-1 rounded border">
-                                                                    <span className="font-mono text-green-600">{field}</span>
-                                                                    <span className="text-gray-400"> → </span>
-                                                                    <span className="text-gray-600">{Array.isArray(pdfFields) ? pdfFields.join(', ') : pdfFields}</span>
-                                                                </div>
+                                                        <h4 className="font-semibold text-sm mb-2 text-blue-700">PDF Form Fields ({template.content_profile.pdfFields.length})</h4>
+                                                        <p className="text-xs text-gray-500 mb-2">These are the actual field names in the PDF. Mappings are handled by code.</p>
+                                                        <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
+                                                            {template.content_profile.pdfFields.slice(0, 30).map((field: string) => (
+                                                                <span key={field} className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-200 font-mono">{field}</span>
                                                             ))}
+                                                            {template.content_profile.pdfFields.length > 30 && (
+                                                                <span className="text-xs text-gray-400">+{template.content_profile.pdfFields.length - 30} more</span>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 )}
+
+                                                {/* Notice about code-driven mappings */}
+                                                <div className="mt-4 p-2 bg-amber-50 border border-amber-200 rounded">
+                                                    <p className="text-xs text-amber-700">
+                                                        <strong>Note:</strong> Field mappings are now code-driven for reliability. The system reads PDF fields dynamically and maps them using <code className="bg-amber-100 px-1 rounded">direct-mapper.ts</code>.
+                                                    </p>
+                                                </div>
                                             </div>
                                         )}
                                     </div>

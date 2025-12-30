@@ -718,7 +718,7 @@ serve(async (req) => {
                     "Place of Birth (Country - Department - Municipality - Township and/or Police Station)": ["birth_country_dept_munic", "place_of_birth", "Place of Birth"],
                     "birth_location_combined": ["birth_country_dept_munic", "place_of_birth", "birth_place", "place", "township_birth", "Lugar de nacimiento", "birth_country", "Birth Country"],
                     "Country - Department - Municipality - Township and/or Police Station": ["country_dept_munic", "Place of Birth (Country - Department - Municipality - Township and/or Police Station)"],
-                    "lugar_nacimiento": ["birth_country_dept_munic", "Place of Birth (Country - Department - Municipality - Township and/or Police Station)", "Lugar de nacimiento(Pais - Departamento - Municipio)", "Lugar de nacimiento"],
+                    "lugar_nacimiento": ["township_birth", "Township/Police Station", "corregimiento"],
 
                     // Parents - using exact AI field names  
                     "Father's Surnames and Full Names": ["father_surnames_names", "Father Surnames and Full Names", "Apellidos y nombres completos padre"],
@@ -1088,9 +1088,11 @@ serve(async (req) => {
             // 2. Check template mappings
             let templateTargets: string[] = [];
             const normalizedKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
-            if (contentProfile.pdf_mappings && contentProfile.pdf_mappings[normalizedKey]) {
-                templateTargets = contentProfile.pdf_mappings[normalizedKey];
-            }
+            // DISABLED: DB pdf_mappings are polluted with bad "Shotgun Mappings"
+            // We now rely ONLY on code-defined mappings (direct-mapper.ts, template-field-mapper.ts)
+            // if (contentProfile.pdf_mappings && contentProfile.pdf_mappings[normalizedKey]) {
+            //     templateTargets = contentProfile.pdf_mappings[normalizedKey];
+            // }
             // 3. Exact match
             const exactTarget = fieldNames.includes(key) ? key : null;
 

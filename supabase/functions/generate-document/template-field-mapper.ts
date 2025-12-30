@@ -74,7 +74,7 @@ const STANDARD_FIELD_MAPPINGS: Record<string, string[]> = {
     "pais_nacimiento": ["country_birth", "country"],
     "departamento_nacimiento": ["dept_birth", "department"],
     "municipio_nacimiento": ["muni_birth", "municipality"],
-    "lugar_nacimiento": ["birth_country_dept_munic", "township_birth", "birth_place", "place"],
+    "lugar_nacimiento": ["township_birth", "Township/Police Station", "corregimiento"],
 
     // Father Information
     "padre_nombres": ["father_names", "father_surnames_names"],
