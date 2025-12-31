@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { matchTemplateWithAI } from "./template-matcher-ai.ts";
-import { extractData } from "./ai-extractor.ts";
+import { extractData, refineData } from "./ai-extractor.ts";
 import { validateData } from "./validator.ts";
 import { performSemanticQA } from "./qa-validator.ts";
 import { sendNotification } from "./email-notifier.ts";
@@ -225,6 +225,38 @@ serve(async (req) => {
         console.log(`Extracted lugar_nacimiento: ${extractedData?.lugar_nacimiento || 'NOT FOUND'}`);
         console.log(`Extracted grupo_sanguineo: ${extractedData?.grupo_sanguineo || 'NOT FOUND'}`);
         console.log(`Extracted factor_rh: ${extractedData?.factor_rh || 'NOT FOUND'}`);
+
+        // 7.1 VISUAL SELF-CORRECTION (Auto-Recovery for Missing Fields)
+        // Automatically re-examines the image if expected fields are missing
+        const pdfFields = matchedTemplate.content_profile?.pdfFields || [];
+        if (pdfFields.length > 0) {
+            const missingFields = pdfFields.filter((field: string) =>
+                !extractedData[field] ||
+                extractedData[field] === "" ||
+                extractedData[field] === null ||
+                extractedData[field] === "undefined"
+            );
+
+            if (missingFields.length > 0) {
+                console.log(`[SELF-CORRECTION] Found ${missingFields.length} missing/empty fields: ${missingFields.slice(0, 5).join(', ')}...`);
+
+                // Limit to 20 fields to avoid token limits
+                const fieldsToRefine = missingFields.slice(0, 20);
+
+                // Perform visual correction
+                const refinedData = await refineData(extractedData, visionDataUri || '', fieldsToRefine);
+
+                // Merge refined data into extractedData
+                for (const key in refinedData) {
+                    if (refinedData[key] && refinedData[key] !== "") {
+                        console.log(`[SELF-CORRECTION] Fixed ${key}: "${refinedData[key]}"`);
+                        extractedData[key] = refinedData[key];
+                    }
+                }
+            } else {
+                console.log("[SELF-CORRECTION] All expected fields detected. Skipping correction.");
+            }
+        }
 
         // 8. Validate & Save
         // === ALL VALIDATION DISABLED ===

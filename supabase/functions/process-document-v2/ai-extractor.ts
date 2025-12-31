@@ -605,3 +605,85 @@ Return JSON.`;
         throw error;
     }
 };
+
+/**
+ * REFINE DATA (VISUAL SELF-CORRECTION)
+ * 
+ * Re-examines the image to extract specific missing fields.
+ * This is a "System 2" pass that specifically targets gaps.
+ */
+export const refineData = async (
+    currentData: ExtractedData,
+    visionDataUri: string,
+    missingFields: string[]
+): Promise<Partial<ExtractedData>> => {
+    const apiKey = Deno.env.get("OPENAI_API_KEY");
+    if (!apiKey) return {};
+
+    console.log(`[VISUAL-CORRECTION] Triggering for ${missingFields.length} missing fields: ${missingFields.join(", ")}`);
+
+    const refinementPrompt = `
+    You are a specialized Data Validation Agent.
+    
+    The previous extraction missed or returned empty values for these SPECIFIC fields:
+    ${missingFields.map(f => `- ${f}`).join('\n')}
+    
+    ## INSTRUCTIONS
+    1. Look at the image specifically for these missing fields.
+    2. If the field HAS a value in the image, extract it exactly.
+    3. If the field is TRULY empty/blank or has "---", confirm it as empty string "".
+    
+    Return ONLY a JSON object with these specific fields and their corrected values.
+    `;
+
+    try {
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: "gpt-4o",
+                messages: [
+                    {
+                        role: "system",
+                        content: refinementPrompt
+                    },
+                    {
+                        role: "user",
+                        content: [
+                            { type: "text", text: "Fix these missing fields." },
+                            {
+                                type: "image_url",
+                                image_url: {
+                                    url: visionDataUri,
+                                    detail: "high"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                response_format: { type: "json_object" },
+                temperature: 0.1,
+                max_tokens: 1000
+            })
+        });
+
+        const data = await response.json();
+        if (data.error) {
+            console.error("[VISUAL-CORRECTION] API Error:", data.error);
+            return {};
+        }
+
+        const content = data.choices[0].message.content;
+        const refinedData = JSON.parse(content);
+
+        console.log(`[VISUAL-CORRECTION] Recovered ${Object.keys(refinedData).length} fields`);
+        return refinedData;
+
+    } catch (e) {
+        console.error("[VISUAL-CORRECTION] Error:", e);
+        return {};
+    }
+};
