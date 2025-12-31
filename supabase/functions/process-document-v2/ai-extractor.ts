@@ -182,6 +182,110 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     }
     // === END OVERRIDE ===
 
+    // =========================================================================
+    // ROBUST FIELD CATEGORIZATION FOR FUTURE TEMPLATES
+    // Auto-generates smart extraction instructions based on PDF field names
+    // =========================================================================
+
+    const FIELD_CATEGORIES: Record<string, RegExp> = {
+        identity: /nuip|serial|code|cedula|documento|id_|identificacion/i,
+        names: /nombre|name|apellido|surname|full_name|completo/i,
+        location: /pais|country|depart|munic|township|lugar|nacimiento|birth|corregimiento/i,
+        dates: /fecha|date|day|month|year|dia|mes|año|expedicion|registro|issue/i,
+        parents: /padre|madre|father|mother|parent|dad|mom/i,
+        officials: /official|funcionario|notary|registra|firma|signature/i,
+        notes: /nota|note|margin|space|observ|espacio/i
+    };
+
+    const CATEGORY_PROMPTS: Record<string, (field: string) => string> = {
+        identity: (field) => `Extract the complete ${field} value. Include ALL characters including leading letters (e.g., 'V2A1234567' not just '1234567').`,
+
+        names: (field) => {
+            if (field.includes('apellido') || field.includes('surname')) {
+                return `Extract ONLY the surnames for ${field}. Do NOT include given names.`;
+            }
+            if (field.includes('nombre') || field.includes('name')) {
+                return `Extract ONLY the given names for ${field}. Do NOT include surnames.`;
+            }
+            return `Extract the complete name value for ${field}.`;
+        },
+
+        location: (field) => {
+            if (field.includes('pais') || field.includes('country')) {
+                return `Extract ONLY the COUNTRY name. If you see "COLOMBIA - VALLE DEL CAUCA - CALI", extract ONLY "COLOMBIA".`;
+            }
+            if (field.includes('depart')) {
+                return `Extract ONLY the DEPARTMENT name. If you see "COLOMBIA - VALLE DEL CAUCA - CALI", extract ONLY "VALLE DEL CAUCA".`;
+            }
+            if (field.includes('munic')) {
+                return `Extract ONLY the MUNICIPALITY name. If you see "COLOMBIA - VALLE DEL CAUCA - CALI", extract ONLY "CALI".`;
+            }
+            if (field.includes('township') || field.includes('corregimiento')) {
+                return `Extract the township/corregimiento. If it shows "---" or is blank, return empty string.`;
+            }
+            return `Extract the complete location for ${field}. If combined (e.g., "COLOMBIA - DEPT - MUNIC"), include all parts.`;
+        },
+
+        dates: (field) => {
+            if (field.includes('day') || field.includes('dia')) {
+                return `Extract ONLY the day number (01-31). Just the number, no text.`;
+            }
+            if (field.includes('month') || field.includes('mes')) {
+                return `Extract ONLY the month number (01-12). Convert month names to numbers if needed.`;
+            }
+            if (field.includes('year') || field.includes('año')) {
+                return `Extract ONLY the year (e.g., "2024"). Just the 4-digit number.`;
+            }
+            return `Extract the date for ${field}. Format: DD-MM-YYYY or as shown in document.`;
+        },
+
+        parents: (field) => {
+            const parent = field.includes('padre') || field.includes('father') ? "father" : "mother";
+            if (field.includes('nombre') || field.includes('name')) {
+                return `Extract ONLY the ${parent}'s given names from the 'Nombres' box. Do NOT include surnames.`;
+            }
+            if (field.includes('apellido') || field.includes('surname')) {
+                return `Extract ONLY the ${parent}'s surnames from the 'Apellidos' box. Do NOT include given names.`;
+            }
+            return `Extract the ${parent}'s information for ${field}.`;
+        },
+
+        officials: (field) => `Extract the COMPLETE official name for ${field}. Include ALL name parts - officials often have 3-4+ name parts.`,
+
+        notes: (field) => `Extract ALL text from the notes section for ${field}. Include stamps, handwritten text, and NUIP numbers.`,
+
+        default: (field) => `Extract the value for "${field}" from the document.`
+    };
+
+    function detectCategory(fieldName: string): string {
+        for (const [category, pattern] of Object.entries(FIELD_CATEGORIES)) {
+            if (pattern.test(fieldName)) {
+                return category;
+            }
+        }
+        return 'default';
+    }
+
+    function getSmartPrompt(fieldName: string): string {
+        const category = detectCategory(fieldName);
+        const promptFn = CATEGORY_PROMPTS[category] || CATEGORY_PROMPTS.default;
+        return promptFn(fieldName);
+    }
+
+    // For templates without specific overrides, generate smart instructions from PDF fields
+    const pdfFieldsFromTemplate = template?.content_profile?.pdfFields || [];
+    if (pdfFieldsFromTemplate.length > 0 && Object.keys(templateInstructions).length === 0) {
+        console.log("[AI-EXTRACTOR] No template-specific overrides found - using robust field categorization");
+        for (const field of pdfFieldsFromTemplate) {
+            if (!templateInstructions[field]) {
+                templateInstructions[field] = getSmartPrompt(field);
+            }
+        }
+        console.log(`[AI-EXTRACTOR] Generated smart instructions for ${pdfFieldsFromTemplate.length} fields`);
+    }
+    // =========================================================================
+    // END ROBUST FIELD CATEGORIZATION
+    // =========================================================================
 
     // Combine all field sources (unique)
     // IMPORTANT: Include database-stored PDF fields if available (Template-Driven Extraction)
