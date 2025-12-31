@@ -46,9 +46,11 @@ export async function extractTextWithOpenAIVision(
    - Indicate form field labels followed by their values
    - Format: "Label: Value" where applicable
 
-3. **Handle blank/empty fields**:
-   - If a form field is EMPTY, output: "FieldLabel: [EMPTY]"
-   - Do NOT skip empty fields - explicitly mark them
+3. **Handle blank/empty fields** - THIS IS CRITICAL:
+   - If a form field shows "---", "-", "N/A", or is visually blank/empty, output: "FieldLabel: [EMPTY]"
+   - The "---" symbol is a STANDARD empty field indicator in Colombian documents - treat it as BLANK
+   - Do NOT skip empty fields - explicitly mark them as [EMPTY]
+   - Do NOT put data from other fields into empty fields
 
 4. **Be complete**:
    - Include ALL text from top to bottom
@@ -60,6 +62,7 @@ export async function extractTextWithOpenAIVision(
    - Names (all parts, don't truncate)
    - Dates (preserve exact format)
    - Location fields (country, department, municipality)
+   - Township/Corregimiento field - if it shows "---", it is EMPTY
 
 Return ONLY the extracted text, no explanations.`;
 
@@ -132,11 +135,13 @@ export async function extractTextFromImagesWithOpenAI(
 
 CRITICAL RULES:
 1. Extract EVERY piece of text - headers, labels, values, stamps, handwriting
-2. Empty fields: Mark as "FieldLabel: [EMPTY]"
+2. EMPTY FIELD DETECTION: If a field shows "---", "-", "N/A", or is blank, mark as "FieldLabel: [EMPTY]"
+   - The "---" symbol means the field is EMPTY in Colombian documents
 3. Preserve structure with newlines between sections
 4. Include NUIP with leading letters (e.g., V2A0001156)
 5. Include complete names (don't truncate)
 6. Extract margin notes and stamps completely
+7. Township/Corregimiento: If it shows "---", it is EMPTY - return [EMPTY]
 
 Return ONLY the extracted text.`;
 

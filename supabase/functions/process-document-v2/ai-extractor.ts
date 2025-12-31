@@ -156,8 +156,8 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
             "pais_nacimiento": "CRITICAL: Extract ONLY the COUNTRY name (first word before any dash/hyphen). Examples: 'COLOMBIA' from 'COLOMBIA - VALLE DEL CAUCA'. Return ONLY 'COLOMBIA', never include department or municipality.",
             "departamento_nacimiento": "CRITICAL: Extract ONLY the DEPARTMENT name (second segment after first dash). Examples: 'VALLE DEL CAUCA' from 'COLOMBIA - VALLE DEL CAUCA - CALI'. Do NOT include country or municipality.",
             "municipio_nacimiento": "CRITICAL: Extract ONLY the MUNICIPALITY name (third segment or last segment). Examples: 'CALI' from 'COLOMBIA - VALLE DEL CAUCA - CALI'. Do NOT include country or department.",
-            "lugar_nacimiento": "CRITICAL: This is the TOWNSHIP field. It is almost always EMPTY. Return empty string '' unless there is specific township data like 'CORREGIMIENTO X'. Do NOT put country, department, or municipality here. If unsure, return ''.",
-            "township_birth": "CRITICAL: This is the TOWNSHIP field. It is almost always EMPTY. Return empty string '' unless there is specific township data. Do NOT put country, department, or municipality here. If unsure, return ''.",
+            "lugar_nacimiento": "CRITICAL: Look at the 'Corregimiento/Township' field. If it shows '---' (three dashes), return EMPTY STRING ''. Only extract actual township name if present (like 'CORREGIMIENTO X').",
+            "township_birth": "CRITICAL: Look at the 'Corregimiento / Insp. de Policía' field. If it shows '---' (three dashes), return EMPTY STRING ''. The '---' means the field is BLANK. Only return text if there's an actual township name.",
             // Alternate PDF field names for birth location
             "country_birth": "CRITICAL: Extract ONLY the COUNTRY name. Return 'COLOMBIA' - do NOT include department or municipality.",
             "dept_birth": "CRITICAL: Extract ONLY the DEPARTMENT name (e.g., 'VALLE DEL CAUCA'). Do NOT include country or municipality.",
@@ -283,7 +283,6 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
 
 
 
-
     // === BUILD FOCUSED PROMPT ===
     const systemPrompt = `You are extracting data from a scanned ${docName} (${docType}).
 
@@ -310,7 +309,7 @@ ${fieldListWithInstructions}
 - pais_nacimiento: COUNTRY ONLY (e.g., "COLOMBIA") - first segment before dash
 - departamento_nacimiento: DEPARTMENT ONLY (e.g., "VALLE DEL CAUCA") - second segment
 - municipio_nacimiento: MUNICIPALITY ONLY (e.g., "CALI") - third segment
-- lugar_nacimiento / township_birth: TOWNSHIP ONLY - almost always EMPTY, return ""
+- lugar_nacimiento / township_birth: TOWNSHIP ONLY - if shows "---" return ""
 - birth_location_combined: Full combined string for templates that need it
 - If OCR shows "COLOMBIA - VALLE DEL CAUCA - CALI", split into separate fields!
 
@@ -325,9 +324,12 @@ ${fieldListWithInstructions}
 - This is a SINGLE field - copy its value exactly (may be "COLOMBIA.VALLE.CALI" or just "COLOMBIA")
 - Do NOT parse, split, or modify the value
 
-### 6. EMPTY FIELDS
-- Return "" only if the field has NO visible text
-- If there IS text, extract it completely
+### 6. EMPTY FIELD DETECTION (CRITICAL)
+- If a field shows "---", "-", "N/A", or is visually blank/empty, return EMPTY STRING ""
+- The "---" symbol is a STANDARD empty field indicator in Colombian documents
+- DO NOT guess or fill in data for empty fields
+- DO NOT copy data from other fields into empty fields
+- Township/Corregimiento: This field usually shows "---" which means EMPTY - return ""
 
 Return a JSON object with the exact field names listed above.`;
 
@@ -439,26 +441,22 @@ Return JSON.`;
                 }
             }
 
-            // === FORCE CLEAR TOWNSHIP IF IT CONTAINS COUNTRY/DEPT/MUNICIPALITY ===
-            // Township/Corregimiento is almost ALWAYS blank for Colombian birth certificates
-            // If it contains ANY location-like data, it's wrong and should be cleared
+            // === CLEAR TOWNSHIP IF IT CONTAINS EMPTY INDICATOR ===
+            // The form uses "---" to indicate empty fields - normalize these to empty string
             const townshipFields = ['township_birth', 'lugar_nacimiento', 'corregimiento'];
-            const locationKeywords = [
-                'COLOMBIA', 'VALLE', 'CAUCA', 'CALI', 'BOGOTA', 'MEDELLIN', 'ANTIOQUIA',
-                'CUNDINAMARCA', 'SANTANDER', 'BOLIVAR', 'ATLANTICO', 'TOLIMA', 'HUILA',
-                'NARIÑO', 'RISARALDA', 'QUINDIO', 'CALDAS', 'META', 'BOYACA',
-                ' - ', ' – ', '.', 'DEL '  // Separators and common patterns
-            ];
+            const emptyIndicators = ['---', '--', '-', 'N/A', 'NA', '[EMPTY]', 'EMPTY'];
 
             for (const fieldName of townshipFields) {
-                const fieldValue = (extractedData[fieldName] || '').toUpperCase().trim();
+                const fieldValue = (extractedData[fieldName] || '').trim();
                 if (fieldValue) {
-                    const containsLocation = locationKeywords.some(keyword => fieldValue.includes(keyword));
-                    // Also clear if it's just a short uppercase word that looks like a city
-                    const looksLikeCity = fieldValue.length < 30 && !fieldValue.includes('CORREGIMIENTO') && !fieldValue.includes('VEREDA');
+                    // Check if the value is an empty indicator
+                    const isEmptyIndicator = emptyIndicators.some(indicator =>
+                        fieldValue.toUpperCase() === indicator ||
+                        fieldValue === indicator
+                    );
 
-                    if (containsLocation || (looksLikeCity && fieldValue.length > 3)) {
-                        console.log(`[AI-EXTRACTOR] CLEARING BAD ${fieldName}: "${fieldValue}"`);
+                    if (isEmptyIndicator) {
+                        console.log(`[AI-EXTRACTOR] Detected empty indicator "${fieldValue}" in ${fieldName} - clearing`);
                         extractedData[fieldName] = '';
                     }
                 }
