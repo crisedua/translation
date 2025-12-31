@@ -354,7 +354,7 @@ export function getRobustMappings(pdfFieldNames: string[]): Record<string, strin
         // Combined locations (only for combined PDF fields)
         "birth_location_combined": ["birth_country_dept_munic", "place_of_birth", "birth_place"],
         "Place of Birth": ["birth_country_dept_munic", "place_of_birth"],
-        "lugar_nacimiento": ["township_birth"],
+        // NOTE: lugar_nacimiento removed - ambiguous field
         "registry_location_combined": ["country_dept_munic"],
         // === PARENT NAME MAPPINGS (STRICT) ===
         "father_full_name": ["father_surnames_names"],

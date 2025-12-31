@@ -716,9 +716,9 @@ serve(async (req) => {
                     // Birth place
                     "Place of Birth": ["birth_country_dept_munic", "place_of_birth", "birth_place", "Place of Birth"],
                     "Place of Birth (Country - Department - Municipality - Township and/or Police Station)": ["birth_country_dept_munic", "place_of_birth", "Place of Birth"],
-                    "birth_location_combined": ["birth_country_dept_munic", "place_of_birth", "birth_place", "place", "township_birth", "Lugar de nacimiento", "birth_country", "Birth Country"],
+                    "birth_location_combined": ["birth_country_dept_munic", "place_of_birth", "birth_place", "place", "Lugar de nacimiento", "birth_country", "Birth Country"],
                     "Country - Department - Municipality - Township and/or Police Station": ["country_dept_munic", "Place of Birth (Country - Department - Municipality - Township and/or Police Station)"],
-                    "lugar_nacimiento": ["township_birth", "Township/Police Station", "corregimiento"],
+                    // NOTE: lugar_nacimiento removed from township mapping - ambiguous field
 
                     // Parents - using exact AI field names  
                     "Father's Surnames and Full Names": ["father_surnames_names", "Father Surnames and Full Names", "Apellidos y nombres completos padre"],

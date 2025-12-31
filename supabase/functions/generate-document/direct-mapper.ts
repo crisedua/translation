@@ -62,7 +62,8 @@ export const DIRECT_MAPPINGS: Record<string, string[]> = {
     "corregimiento": ["township_birth", "Township/Police Station"],
     // Combined location - only for combined PDF fields
     "birth_location_combined": ["birth_country_dept_munic", "place_of_birth", "birth_place"],
-    "lugar_nacimiento": ["township_birth", "Township/Police Station"],
+    // NOTE: lugar_nacimiento is ambiguous (can mean township OR full birth place)
+    // Do NOT map to township - only corregimiento or township_birth should fill township field
     "Place of Birth": ["birth_country_dept_munic", "place_of_birth", "birth_place"],
     "Place of Birth (Country - Department - Municipality - Township and/or Police Station)": ["birth_country_dept_munic", "place_of_birth"],
 

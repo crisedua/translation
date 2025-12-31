@@ -74,7 +74,8 @@ const STANDARD_FIELD_MAPPINGS: Record<string, string[]> = {
     "pais_nacimiento": ["country_birth", "country"],
     "departamento_nacimiento": ["dept_birth", "department"],
     "municipio_nacimiento": ["muni_birth", "municipality"],
-    "lugar_nacimiento": ["township_birth", "Township/Police Station", "corregimiento"],
+    // NOTE: lugar_nacimiento removed - ambiguous field, use corregimiento instead
+    "corregimiento": ["township_birth", "Township/Police Station"],
 
     // Father Information
     "padre_nombres": ["father_names", "father_surnames_names"],
@@ -278,7 +279,7 @@ export function getTemplateMappings(
             "pais_nacimiento": ["Country"],
             "departamento_nacimiento": ["Department"],
             "municipio_nacimiento": ["Municipality"],
-            "lugar_nacimiento": ["Township/Police Station", "township_birth"],
+            // NOTE: lugar_nacimiento removed - ambiguous, don't map to township
             "corregimiento": ["Township/Police Station", "township_birth"],
 
             // Prevent combined field from overwriting individual fields
