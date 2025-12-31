@@ -6,7 +6,11 @@ import { validateData } from "./validator.ts";
 import { performSemanticQA } from "./qa-validator.ts";
 import { sendNotification } from "./email-notifier.ts";
 import { extractTextWithGoogleVision, extractTextFromImages } from "./google-vision.ts";
+import { extractTextWithOpenAIVision, extractTextFromImagesWithOpenAI } from "./openai-vision-ocr.ts";
 import { convertPdfToImage } from "./pdf-converter.ts";
+
+// Feature flag: Set USE_OPENAI_VISION_OCR=true in Supabase secrets to use OpenAI Vision for OCR
+const USE_OPENAI_VISION_OCR = Deno.env.get("USE_OPENAI_VISION_OCR") === "true";
 import { extractPdfFields } from "./pdf-field-extractor.ts";
 
 const corsHeaders = {
@@ -77,19 +81,28 @@ serve(async (req) => {
         console.log(`File type detection: isImage=${isImage}, isPdf=${isPdf}`);
 
         if (isImage) {
-            // Direct image - use Google Vision for OCR
+            // Direct image - OCR based on feature flag
             console.log("Processing IMAGE file...");
-            try {
-                console.log("Using Google Vision for image OCR...");
-                extractedText = await extractTextWithGoogleVision(fileBase64);
-                console.log(`Google Vision extracted ${extractedText.length} characters`);
+            const mimeType = lowerName.endsWith('.png') ? 'image/png' : 'image/jpeg';
 
-                // Prepare base64 data URI for OpenAI Vision
-                const mimeType = lowerName.endsWith('.png') ? 'image/png' : 'image/jpeg';
+            try {
+                if (USE_OPENAI_VISION_OCR) {
+                    // Use OpenAI Vision for OCR (better semantic understanding)
+                    console.log("Using OpenAI Vision for image OCR...");
+                    extractedText = await extractTextWithOpenAIVision(fileBase64, mimeType);
+                    console.log(`OpenAI Vision extracted ${extractedText.length} characters`);
+                } else {
+                    // Use Google Vision for OCR (original behavior)
+                    console.log("Using Google Vision for image OCR...");
+                    extractedText = await extractTextWithGoogleVision(fileBase64);
+                    console.log(`Google Vision extracted ${extractedText.length} characters`);
+                }
+
+                // Prepare base64 data URI for OpenAI Vision structured extraction
                 visionDataUri = `data:${mimeType};base64,${fileBase64}`;
                 console.log("Image prepared for OpenAI Vision (base64 data URI)");
             } catch (visionError) {
-                console.error("Google Vision OCR failed:", visionError);
+                console.error("OCR failed:", visionError);
                 extractedText = "";
             }
         } else if (isPdf) {
@@ -103,10 +116,19 @@ serve(async (req) => {
                 if (pdfImageUrls && pdfImageUrls.length > 0) {
                     console.log(`PDF converted to ${pdfImageUrls.length} image(s)`);
 
-                    // Use Google Vision on the images
-                    extractedText = await extractTextFromImages(pdfImageUrls);
+                    if (USE_OPENAI_VISION_OCR) {
+                        // Use OpenAI Vision for OCR (better semantic understanding)
+                        console.log("Using OpenAI Vision for PDF OCR...");
+                        extractedText = await extractTextFromImagesWithOpenAI(pdfImageUrls);
+                        console.log(`OpenAI Vision extracted ${extractedText.length} characters`);
+                    } else {
+                        // Use Google Vision for OCR (original behavior)
+                        console.log("Using Google Vision for PDF OCR...");
+                        extractedText = await extractTextFromImages(pdfImageUrls);
+                        console.log(`Google Vision extracted ${extractedText.length} characters`);
+                    }
 
-                    // Use the first page image for OpenAI Vision
+                    // Use the first page image for OpenAI Vision structured extraction
                     // OpenAI Vision accepts URLs directly for images
                     visionDataUri = pdfImageUrls[0];
                     console.log(`PDF prepared for OpenAI Vision (using converted image URL)`);
@@ -190,8 +212,9 @@ serve(async (req) => {
             }
         }
 
-        // 7. Extract structured data with AI (using Google Vision OCR text + OpenAI Vision)
+        // 7. Extract structured data with AI (using OCR text + OpenAI Vision)
         console.log("Extracting structured data with AI...");
+        console.log(`OCR engine: ${USE_OPENAI_VISION_OCR ? 'OpenAI Vision' : 'Google Vision'}`);
         console.log(`Using OCR text (${extractedText.length} chars) + Vision for extraction`);
 
         // Use Vision extraction if available, otherwise fallback to text
