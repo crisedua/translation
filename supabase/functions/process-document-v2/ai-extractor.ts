@@ -439,14 +439,29 @@ Return JSON.`;
                 }
             }
 
-            // === FORCE CLEAR TOWNSHIP IF IT CONTAINS COUNTRY/DEPT ===
-            const township = (extractedData.township_birth || extractedData.lugar_nacimiento || extractedData.corregimiento || '').toUpperCase();
-            if (township.includes('COLOMBIA') || township.includes('VALLE') || township.includes('CAUCA') ||
-                township.includes(' - ') || township.includes(' – ') || township.includes('.')) {
-                console.log(`[AI-EXTRACTOR] CLEARING BAD TOWNSHIP: "${township}"`);
-                extractedData.township_birth = '';
-                extractedData.lugar_nacimiento = '';
-                extractedData.corregimiento = '';
+            // === FORCE CLEAR TOWNSHIP IF IT CONTAINS COUNTRY/DEPT/MUNICIPALITY ===
+            // Township/Corregimiento is almost ALWAYS blank for Colombian birth certificates
+            // If it contains ANY location-like data, it's wrong and should be cleared
+            const townshipFields = ['township_birth', 'lugar_nacimiento', 'corregimiento'];
+            const locationKeywords = [
+                'COLOMBIA', 'VALLE', 'CAUCA', 'CALI', 'BOGOTA', 'MEDELLIN', 'ANTIOQUIA',
+                'CUNDINAMARCA', 'SANTANDER', 'BOLIVAR', 'ATLANTICO', 'TOLIMA', 'HUILA',
+                'NARIÑO', 'RISARALDA', 'QUINDIO', 'CALDAS', 'META', 'BOYACA',
+                ' - ', ' – ', '.', 'DEL '  // Separators and common patterns
+            ];
+
+            for (const fieldName of townshipFields) {
+                const fieldValue = (extractedData[fieldName] || '').toUpperCase().trim();
+                if (fieldValue) {
+                    const containsLocation = locationKeywords.some(keyword => fieldValue.includes(keyword));
+                    // Also clear if it's just a short uppercase word that looks like a city
+                    const looksLikeCity = fieldValue.length < 30 && !fieldValue.includes('CORREGIMIENTO') && !fieldValue.includes('VEREDA');
+
+                    if (containsLocation || (looksLikeCity && fieldValue.length > 3)) {
+                        console.log(`[AI-EXTRACTOR] CLEARING BAD ${fieldName}: "${fieldValue}"`);
+                        extractedData[fieldName] = '';
+                    }
+                }
             }
 
             // Ensure township_birth field always exists (even if empty)
