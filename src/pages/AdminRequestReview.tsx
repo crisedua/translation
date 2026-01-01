@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { CheckCircle, XCircle, Download, AlertCircle, Loader, Save, Edit2 } from 'lucide-react';
+import { CheckCircle, XCircle, Download, AlertCircle, Loader, Save, Edit2, RefreshCw } from 'lucide-react';
 
 interface DocumentRequest {
     id: string;
@@ -31,6 +31,10 @@ const AdminRequestReview = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [saving, setSaving] = useState(false);
     const [showFieldMapping, setShowFieldMapping] = useState(false);
+    const [showCorrectionModal, setShowCorrectionModal] = useState(false);
+    const [correctionField, setCorrectionField] = useState<{ key: string; value: string } | null>(null);
+    const [correctionHint, setCorrectionHint] = useState('');
+    const [correcting, setCorrecting] = useState(false);
 
     useEffect(() => {
         fetchRequest();
@@ -160,6 +164,58 @@ const AdminRequestReview = () => {
             setProcessing(false);
             setShowRejectModal(false);
         }
+    };
+
+    const handleRequestCorrection = async () => {
+        if (!correctionField || !request) return;
+        setCorrecting(true);
+
+        try {
+            const { data, error } = await supabase.functions.invoke('correct-field', {
+                body: {
+                    requestId: request.id,
+                    fieldName: correctionField.key,
+                    hint: correctionHint.trim() || undefined
+                }
+            });
+
+            if (error) throw error;
+
+            if (data?.success) {
+                // Update local form data with corrected value
+                setFormData(prev => ({
+                    ...prev,
+                    [correctionField.key]: data.correctedValue
+                }));
+
+                // Also update the request object
+                setRequest(prev => prev ? {
+                    ...prev,
+                    extracted_data: {
+                        ...prev.extracted_data,
+                        [correctionField.key]: data.correctedValue
+                    }
+                } : null);
+
+                alert(`Field corrected! New value: "${data.correctedValue}"`);
+                setShowCorrectionModal(false);
+                setCorrectionField(null);
+                setCorrectionHint('');
+            } else {
+                throw new Error(data?.error || 'Correction failed');
+            }
+        } catch (err: any) {
+            console.error('Correction error:', err);
+            alert(`Correction failed: ${err.message}`);
+        } finally {
+            setCorrecting(false);
+        }
+    };
+
+    const openCorrectionModal = (key: string, value: string) => {
+        setCorrectionField({ key, value });
+        setCorrectionHint('');
+        setShowCorrectionModal(true);
     };
 
     const handleGenerateDocument = async () => {
@@ -422,9 +478,19 @@ const AdminRequestReview = () => {
                             <div className="max-h-[500px] overflow-y-auto pr-2">
                                 {Object.entries(formData).map(([key, value]) => (
                                     <div key={key} className="mb-4">
-                                        <label className="text-sm font-medium text-gray-700 block mb-1">
-                                            {formatLabel(key)}
-                                        </label>
+                                        <div className="flex items-center justify-between mb-1">
+                                            <label className="text-sm font-medium text-gray-700">
+                                                {formatLabel(key)}
+                                            </label>
+                                            <button
+                                                onClick={() => openCorrectionModal(key, value)}
+                                                className="text-xs text-purple-600 hover:text-purple-800 flex items-center gap-1 px-2 py-0.5 rounded hover:bg-purple-50 transition-colors"
+                                                title="Request AI to re-extract this field"
+                                            >
+                                                <RefreshCw className="w-3 h-3" />
+                                                AI Fix
+                                            </button>
+                                        </div>
                                         {isEditing ? (
                                             <input
                                                 type="text"
@@ -696,6 +762,85 @@ const AdminRequestReview = () => {
                             >
                                 Close
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* AI Correction Modal */}
+            {showCorrectionModal && correctionField && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+                        <div className="p-6">
+                            <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                <RefreshCw className="w-5 h-5 text-purple-600" />
+                                Request AI Correction
+                            </h3>
+
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Field to Correct
+                                </label>
+                                <p className="text-gray-900 font-semibold">{formatLabel(correctionField.key)}</p>
+                                <p className="text-sm text-gray-500 font-mono mt-1 bg-gray-50 p-1 rounded inline-block">
+                                    {correctionField.key}
+                                </p>
+                            </div>
+
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Current Value
+                                </label>
+                                <p className="p-3 bg-gray-50 rounded border border-gray-200 text-gray-800 break-words">
+                                    {correctionField.value || <span className="text-gray-400 italic">Empty</span>}
+                                </p>
+                            </div>
+
+                            <div className="mb-6">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Hint for AI (Optional)
+                                </label>
+                                <p className="text-xs text-gray-500 mb-2">
+                                    Help the AI find the correct value. Example: "Look in the bottom right corner"
+                                </p>
+                                <textarea
+                                    value={correctionHint}
+                                    onChange={(e) => setCorrectionHint(e.target.value)}
+                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                    rows={3}
+                                    placeholder="e.g. The date is actually 12/05/2023..."
+                                />
+                            </div>
+
+                            <div className="flex justify-end space-x-3">
+                                <button
+                                    onClick={() => {
+                                        setShowCorrectionModal(false);
+                                        setCorrectionField(null);
+                                        setCorrectionHint('');
+                                    }}
+                                    className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                    disabled={correcting}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleRequestCorrection}
+                                    disabled={correcting}
+                                    className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-purple-400 transition-colors"
+                                >
+                                    {correcting ? (
+                                        <>
+                                            <Loader className="w-4 h-4 mr-2 animate-spin" />
+                                            Correcting...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <RefreshCw className="w-4 h-4 mr-2" />
+                                            Request Correction
+                                        </>
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
