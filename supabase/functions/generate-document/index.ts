@@ -564,6 +564,7 @@ serve(async (req) => {
         // Prioritize specific atomic fields over composite or fuzzy fields
         const priorityFields = [
             'lugar_nacimiento', 'birth_location_combined', 'birth_country_dept_munic',
+            'primer_apellido', 'segundo_apellido', 'First Surname', 'Second Surname', // ATOMIC SURNAMES FIRST
             'madre_nombre_completo_raw', 'padre_nombre_completo_raw', 'declarante_nombre_completo_raw',
             'father_full_name', 'mother_full_name', 'declarant_full_name',
             'declante_nombres', 'declarante_nombres', 'madre_nombres', 'padre_nombres',
