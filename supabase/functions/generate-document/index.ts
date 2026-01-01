@@ -1177,11 +1177,15 @@ serve(async (req) => {
         const generatedUrl = urlData.signedUrl;
 
         // 6. Update Request
-        const isQaFailed = mismatchCount > 0;
+        // 6. Update Request
+        // DISABLE QA BLOCKING: User requested to remove strict validation
+        const isQaFailed = false; // mismatchCount > 0;
 
-        const qaErrors = verificationDetails
+        const qaErrors: string[] = [];
+        /* verificationDetails
             .filter(d => d.status === 'MISMATCH')
             .map(d => `[GEN-QA] Field '${d.key}' mismatch: Expected '${d.expected.substring(0, 50)}...', Found '${d.actual.substring(0, 50)}...'`);
+        */
 
         const updatePayload: any = {
             generated_document_url: generatedUrl,
