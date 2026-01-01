@@ -817,49 +817,62 @@ serve(async (req) => {
             // 3. Special handling for dates (day, month, year split fields)
             // This is generic logic: if a key is a date, try to fill split fields
             // We check if the key contains keywords related to dates
-            const isDateKey = key.toLowerCase().includes('fecha') ||
-                key.toLowerCase().includes('date') ||
-                key.toLowerCase().includes('dob') ||
-                key.toLowerCase().includes('birth') ||
-                key.toLowerCase().includes('reg_') ||
-                key.toLowerCase().includes('expedicion') ||
-                key.toLowerCase().includes('issue');
+            const lowerKey = key.toLowerCase();
+            const isLocationKey = lowerKey.includes('place') || lowerKey.includes('lugar') ||
+                lowerKey.includes('sitio') || lowerKey.includes('city') ||
+                lowerKey.includes('pais') || lowerKey.includes('country') ||
+                lowerKey.includes('depar') || lowerKey.includes('muni');
+
+            const isDateKey = (
+                lowerKey.includes('fecha') ||
+                lowerKey.includes('date') ||
+                lowerKey.includes('dob') ||
+                lowerKey.includes('reg_') ||
+                lowerKey.includes('expedicion') ||
+                lowerKey.includes('issue') ||
+                (lowerKey.includes('birth') && !lowerKey.includes('place')) // specific exclusion for birth
+            ) && !isLocationKey; // Global exclusion of location terms
 
             if (isDateKey) {
                 const { day, month, year } = parseDate(strValue);
                 if (day && month && year) {
-                    const lowerKey = key.toLowerCase();
 
-                    // CASE 1: Birth Date (nacimiento, dob)
-                    if (lowerKey.includes('nacimiento') || lowerKey.includes('dob') || lowerKey.includes('birth')) {
-                        setField('birth_day', day);
-                        setField('birth_month', month);
-                        setField('birth_year', year);
-                        // Do NOT fill generic 'day' etc.
-                    }
+                    // SAFETY CHECK: Year must be numeric
+                    // If year contains letters (like "CALI"), abort date filling for this key
+                    if (/[a-zA-Z]/.test(year)) {
+                        console.warn(`[DATE-SAFETY] Rejected invalid year "${year}" derived from key "${key}" (value: "${strValue}")`);
+                    } else {
+                        // CASE 1: Birth Date (nacimiento, dob)
+                        if (lowerKey.includes('nacimiento') || lowerKey.includes('dob') || lowerKey.includes('birth')) {
+                            setField('birth_day', day);
+                            setField('birth_month', month);
+                            setField('birth_year', year);
+                            // Do NOT fill generic 'day' etc.
+                        }
 
-                    // CASE 2: Registration Date (registro, reg)
-                    else if (lowerKey.includes('registro') || lowerKey.includes('reg_')) {
-                        setField('reg_day', day);
-                        setField('reg_month', month);
-                        setField('reg_year', year);
-                    }
+                        // CASE 2: Registration Date (registro, reg)
+                        else if (lowerKey.includes('registro') || lowerKey.includes('reg_')) {
+                            setField('reg_day', day);
+                            setField('reg_month', month);
+                            setField('reg_year', year);
+                        }
 
-                    // CASE 3: Issue/Expedition Date (expedicion, issue)
-                    // These often correspond to the generic "Day", "Month", "Year" fields on the form footer
-                    else if (lowerKey.includes('expedicion') || lowerKey.includes('issue')) {
-                        // Fill specific maps
-                        setField('issue_day', day);
-                        setField('issue_month', month);
-                        setField('issue_year', year);
+                        // CASE 3: Issue/Expedition Date (expedicion, issue)
+                        // These often correspond to the generic "Day", "Month", "Year" fields on the form footer
+                        else if (lowerKey.includes('expedicion') || lowerKey.includes('issue')) {
+                            // Fill specific maps
+                            setField('issue_day', day);
+                            setField('issue_month', month);
+                            setField('issue_year', year);
 
-                        // Fill generic maps (FALLBACK for Issue Date)
-                        setField('day', day);
-                        setField('Day', day); // Capitalized
-                        setField('month', month);
-                        setField('Month', month); // Capitalized
-                        setField('year', year);
-                        setField('Year', year); // Capitalized
+                            // Fill generic maps (FALLBACK for Issue Date)
+                            setField('day', day);
+                            setField('Day', day); // Capitalized
+                            setField('month', month);
+                            setField('Month', month); // Capitalized
+                            setField('year', year);
+                            setField('Year', year); // Capitalized
+                        }
                     }
                 }
             }
