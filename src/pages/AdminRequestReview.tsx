@@ -410,6 +410,7 @@ const AdminRequestReview = () => {
                                             <tr className="border-b border-blue-200">
                                                 <th className="text-left py-2 px-2 text-blue-800 font-medium">Extracted Key</th>
                                                 <th className="text-left py-2 px-2 text-blue-800 font-medium">Value</th>
+                                                <th className="text-right py-2 px-2 text-blue-800 font-medium w-16">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -419,6 +420,15 @@ const AdminRequestReview = () => {
                                                         <td className="py-1.5 px-2 font-mono text-blue-700">{key}</td>
                                                         <td className="py-1.5 px-2 text-gray-800" title={value}>
                                                             {value || <span className="italic text-gray-400">empty</span>}
+                                                        </td>
+                                                        <td className="py-1.5 px-2 text-right">
+                                                            <button
+                                                                onClick={() => openCorrectionModal(key, value)}
+                                                                className="text-purple-600 hover:text-purple-800 p-1 rounded hover:bg-purple-100"
+                                                                title="Request AI Fix"
+                                                            >
+                                                                <RefreshCw className="w-3 h-3" />
+                                                            </button>
                                                         </td>
                                                     </tr>
                                                 ))
