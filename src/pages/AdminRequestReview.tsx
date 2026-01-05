@@ -1,7 +1,37 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { CheckCircle, XCircle, Download, AlertCircle, Loader, Save, Edit2, RefreshCw } from 'lucide-react';
+import { CheckCircle, XCircle, Download, AlertCircle, Loader, Save, Edit2, RefreshCw, Search, Wrench } from 'lucide-react';
+
+// Verification types
+interface VerificationMatch {
+    extractedKey: string;
+    pdfField: string;
+    value: string;
+}
+
+interface VerificationMismatch {
+    extractedKey: string;
+    expectedValue: string;
+    pdfField: string;
+    actualValue: string;
+}
+
+interface VerificationUnmapped {
+    extractedKey: string;
+    expectedValue: string;
+}
+
+interface VerificationResult {
+    matches: number;
+    mismatches: number;
+    unmapped: number;
+    details: {
+        matches: VerificationMatch[];
+        mismatches: VerificationMismatch[];
+        unmapped: VerificationUnmapped[];
+    };
+}
 
 interface DocumentRequest {
     id: string;
@@ -35,6 +65,10 @@ const AdminRequestReview = () => {
     const [correctionField, setCorrectionField] = useState<{ key: string; value: string } | null>(null);
     const [correctionHint, setCorrectionHint] = useState('');
     const [correcting, setCorrecting] = useState(false);
+    const [verifying, setVerifying] = useState(false);
+    const [verificationResult, setVerificationResult] = useState<VerificationResult | null>(null);
+    const [showVerificationPanel, setShowVerificationPanel] = useState(false);
+    const [autoCorrectInProgress, setAutoCorrectInProgress] = useState(false);
 
     useEffect(() => {
         fetchRequest();
@@ -274,6 +308,72 @@ const AdminRequestReview = () => {
             alert(`Generation failed: ${displayMessage}`);
         } finally {
             setProcessing(false);
+        }
+    };
+
+    const handleVerifyDocument = async () => {
+        if (!request) return;
+        setVerifying(true);
+        setVerificationResult(null);
+
+        try {
+            const { data, error } = await supabase.functions.invoke('verify-document', {
+                body: { requestId: request.id }
+            });
+
+            if (error) throw error;
+
+            if (data?.success && data?.verification) {
+                setVerificationResult(data.verification);
+                setShowVerificationPanel(true);
+            } else {
+                throw new Error(data?.error || 'Verification failed');
+            }
+        } catch (err: any) {
+            console.error('Verification error:', err);
+            alert(`Verification failed: ${err.message}`);
+        } finally {
+            setVerifying(false);
+        }
+    };
+
+    const handleAutoCorrect = async () => {
+        if (!request || !verificationResult || verificationResult.mismatches === 0) return;
+
+        setAutoCorrectInProgress(true);
+
+        try {
+            // Auto-correct means regenerating the document from extracted data
+            // The extracted data is the source of truth
+            const { error: saveError } = await supabase
+                .from('document_requests')
+                .update({
+                    extracted_data: formData,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', request.id);
+
+            if (saveError) throw saveError;
+
+            // Regenerate document
+            const { error: genError } = await supabase.functions.invoke('generate-document', {
+                body: { requestId: request.id }
+            });
+
+            if (genError) throw genError;
+
+            // Refresh request data
+            await fetchRequest();
+
+            // Re-verify to show the results
+            await handleVerifyDocument();
+
+            alert('Document regenerated from extracted data!');
+        } catch (err: any) {
+            console.error('Auto-correct error:', err);
+            alert(`Auto-correct failed: ${err.message}`);
+        } finally {
+            setAutoCorrectInProgress(false);
         }
     };
 
@@ -592,15 +692,25 @@ const AdminRequestReview = () => {
                                 {processing ? 'Generating...' : 'Generate Document'}
                             </button>
                             {request.generated_document_url && (
-                                <a
-                                    href={request.generated_document_url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center text-blue-600 hover:text-blue-800"
-                                >
-                                    <Download className="w-4 h-4 mr-1" />
-                                    Download
-                                </a>
+                                <>
+                                    <button
+                                        onClick={handleVerifyDocument}
+                                        disabled={verifying}
+                                        className="flex items-center px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 disabled:bg-gray-400 transition-colors"
+                                    >
+                                        <Search className="w-3 h-3 mr-1" />
+                                        {verifying ? 'Verifying...' : 'Verify'}
+                                    </button>
+                                    <a
+                                        href={request.generated_document_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center text-blue-600 hover:text-blue-800"
+                                    >
+                                        <Download className="w-4 h-4 mr-1" />
+                                        Download
+                                    </a>
+                                </>
                             )}
                         </div>
                     </div>
@@ -614,6 +724,99 @@ const AdminRequestReview = () => {
                     ) : (
                         <div className="flex items-center justify-center h-[600px] bg-gray-50 border border-gray-300 rounded">
                             <p className="text-gray-500">No generated document available</p>
+                        </div>
+                    )}
+
+                    {/* Verification Results Panel */}
+                    {showVerificationPanel && verificationResult && (
+                        <div className="mt-4 p-4 border rounded-lg bg-gray-50">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="font-semibold text-gray-900 flex items-center">
+                                    <Search className="w-4 h-4 mr-2 text-purple-600" />
+                                    Verification Results
+                                </h3>
+                                <button
+                                    onClick={() => setShowVerificationPanel(false)}
+                                    className="text-gray-400 hover:text-gray-600"
+                                >
+                                    <XCircle className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            {/* Summary */}
+                            <div className="flex gap-4 mb-4 text-sm">
+                                <span className="flex items-center text-green-600">
+                                    <CheckCircle className="w-4 h-4 mr-1" />
+                                    {verificationResult.matches} Matches
+                                </span>
+                                <span className="flex items-center text-red-600">
+                                    <XCircle className="w-4 h-4 mr-1" />
+                                    {verificationResult.mismatches} Mismatches
+                                </span>
+                                <span className="flex items-center text-yellow-600">
+                                    <AlertCircle className="w-4 h-4 mr-1" />
+                                    {verificationResult.unmapped} Unmapped
+                                </span>
+                            </div>
+
+                            {/* Mismatches (Most Important) */}
+                            {verificationResult.mismatches > 0 && (
+                                <div className="mb-4">
+                                    <h4 className="text-sm font-medium text-red-700 mb-2">❌ Mismatches (Need Correction)</h4>
+                                    <div className="max-h-40 overflow-y-auto bg-red-50 rounded p-2 space-y-2">
+                                        {verificationResult.details.mismatches.map((m, i) => (
+                                            <div key={i} className="text-xs bg-white p-2 rounded border border-red-200">
+                                                <span className="font-medium text-gray-700">{m.extractedKey}:</span>
+                                                <div className="ml-2 mt-1">
+                                                    <div className="text-green-700">Expected: "{m.expectedValue}"</div>
+                                                    <div className="text-red-700">PDF has: "{m.actualValue || '(empty)'}"</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Auto Correct Button */}
+                                    <button
+                                        onClick={handleAutoCorrect}
+                                        disabled={autoCorrectInProgress}
+                                        className="mt-3 flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition-colors"
+                                    >
+                                        <Wrench className="w-4 h-4 mr-2" />
+                                        {autoCorrectInProgress ? 'Correcting...' : 'Auto Correct (Regenerate)'}
+                                    </button>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        This will regenerate the document using extracted data as the source of truth.
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Unmapped Fields */}
+                            {verificationResult.unmapped > 0 && (
+                                <div className="mb-4">
+                                    <h4 className="text-sm font-medium text-yellow-700 mb-2">⚠️ Unmapped (No PDF field found)</h4>
+                                    <div className="max-h-32 overflow-y-auto bg-yellow-50 rounded p-2 space-y-1">
+                                        {verificationResult.details.unmapped.slice(0, 10).map((u, i) => (
+                                            <div key={i} className="text-xs text-yellow-800">
+                                                <span className="font-medium">{u.extractedKey}:</span> "{u.expectedValue.substring(0, 50)}..."
+                                            </div>
+                                        ))}
+                                        {verificationResult.unmapped > 10 && (
+                                            <div className="text-xs text-yellow-600 italic">
+                                                ...and {verificationResult.unmapped - 10} more
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* All Clear Message */}
+                            {verificationResult.mismatches === 0 && verificationResult.unmapped === 0 && (
+                                <div className="p-4 bg-green-50 rounded-lg text-center">
+                                    <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                                    <p className="text-green-800 font-medium">All fields verified successfully!</p>
+                                    <p className="text-green-600 text-sm">The generated document matches the extracted data.</p>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
