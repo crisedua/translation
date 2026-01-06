@@ -343,19 +343,37 @@ const AdminRequestReview = () => {
         setAutoCorrectInProgress(true);
 
         try {
-            // Auto-correct means regenerating the document from extracted data
-            // The extracted data is the source of truth
+            // Auto-correct: Update extracted data with the correct values from PDF
+            // When there's a mismatch, the PDF value is often more accurate (from the source document)
+            const correctedData = { ...formData };
+
+            // Apply corrections from mismatches - use PDF values to fix extracted data
+            for (const mismatch of verificationResult.details.mismatches) {
+                const key = mismatch.extractedKey;
+                const pdfValue = mismatch.actualValue;
+
+                // Only update if PDF has a non-empty value
+                if (pdfValue && pdfValue.trim() !== '') {
+                    console.log(`Auto-correcting ${key}: "${correctedData[key]}" → "${pdfValue}"`);
+                    correctedData[key] = pdfValue;
+                }
+            }
+
+            // Update state with corrected data
+            setFormData(correctedData);
+
+            // Save corrected extracted data to database
             const { error: saveError } = await supabase
                 .from('document_requests')
                 .update({
-                    extracted_data: formData,
+                    extracted_data: correctedData,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', request.id);
 
             if (saveError) throw saveError;
 
-            // Regenerate document
+            // Regenerate document with corrected data
             const { error: genError } = await supabase.functions.invoke('generate-document', {
                 body: { requestId: request.id }
             });
@@ -368,7 +386,7 @@ const AdminRequestReview = () => {
             // Re-verify to show the results
             await handleVerifyDocument();
 
-            alert('Document regenerated from extracted data!');
+            alert('Extracted data corrected and document regenerated!');
         } catch (err: any) {
             console.error('Auto-correct error:', err);
             alert(`Auto-correct failed: ${err.message}`);
@@ -768,8 +786,8 @@ const AdminRequestReview = () => {
                                             <div key={i} className="text-xs bg-white p-2 rounded border border-red-200">
                                                 <span className="font-medium text-gray-700">{m.extractedKey}:</span>
                                                 <div className="ml-2 mt-1">
-                                                    <div className="text-green-700">Expected: "{m.expectedValue}"</div>
-                                                    <div className="text-red-700">PDF has: "{m.actualValue || '(empty)'}"</div>
+                                                    <div className="text-amber-700">Extracted: "{m.expectedValue}" <span className="text-gray-400">(will be updated)</span></div>
+                                                    <div className="text-green-700">PDF has: "{m.actualValue || '(empty)'}" <span className="text-gray-400">(correct value)</span></div>
                                                 </div>
                                             </div>
                                         ))}
@@ -785,7 +803,7 @@ const AdminRequestReview = () => {
                                         {autoCorrectInProgress ? 'Correcting...' : 'Auto Correct (Regenerate)'}
                                     </button>
                                     <p className="text-xs text-gray-500 mt-1">
-                                        This will regenerate the document using extracted data as the source of truth.
+                                        This will update extracted data with PDF values and regenerate the document.
                                     </p>
                                 </div>
                             )}
