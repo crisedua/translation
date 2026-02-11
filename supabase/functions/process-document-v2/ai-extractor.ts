@@ -94,13 +94,21 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     // Get template-specific extraction instructions (if any)
     let templateInstructions = template?.content_profile?.extraction_instructions || {};
 
+    // === TEMPLATE TYPE DETECTION ===
+    // Use content_profile metadata (documentType + formatIndicators.version) for reliable detection.
+    // Falls back to name-based matching for templates that haven't been re-analyzed yet.
+    const docType = (template?.content_profile?.documentType || '').toLowerCase();
+    const formatVersion = (template?.content_profile?.formatIndicators?.version || '').toLowerCase();
+    const templateNameLower = (template?.name || '').toLowerCase();
+
+    const isBirthCert = docType.includes('birth') || templateNameLower.includes('nacimiento');
+    const isMedioFormat = formatVersion === 'medium' || formatVersion === 'medio' ||
+        (isBirthCert && (templateNameLower.includes('medio') || templateNameLower.includes('medium')));
+    const isNuevoFormat = formatVersion === 'new' || formatVersion === 'nuevo' ||
+        (isBirthCert && (templateNameLower.includes('nuevo') || templateNameLower.includes('new')));
+
     // === FORCE OVERRIDE FOR REGISTRO NACIMIENTO MEDIO ===
-    // If we detect the SPECIFIC "Registro Nacimiento Medio" template, apply these overrides
-    if (template.name && (
-        template.name.toLowerCase().includes('registro') &&
-        template.name.toLowerCase().includes('nacimiento') &&
-        template.name.toLowerCase().includes('medio')
-    )) {
+    if (isBirthCert && isMedioFormat) {
         console.log("[AI-EXTRACTOR] Applying FORCED overrides for Registro Nacimiento Medio");
         const medioOverrides: Record<string, string> = {
             "primer_apellido": "Extract from the FIRST box labeled 'Primer Apellido' in the registrant section (Datos del Inscrito). Extract ONLY the text from this box. Example: 'QUEVEDO'.",
@@ -137,12 +145,7 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
     // === END OVERRIDE ===
 
     // === FORCE OVERRIDE FOR REGISTRO NACIMIENTO NUEVO ===
-    // If we detect the SPECIFIC "Registro Nacimiento Nuevo" template, apply these overrides
-    if (template.name && (
-        template.name.toLowerCase().includes('registro') &&
-        template.name.toLowerCase().includes('nacimiento') &&
-        template.name.toLowerCase().includes('nuevo')
-    )) {
+    if (isBirthCert && isNuevoFormat) {
         console.log("[AI-EXTRACTOR] Applying FORCED overrides for Registro Nacimiento Nuevo");
         const nuevoOverrides: Record<string, string> = {
             "fecha_expedicion": "VISION INSTRUCTION: Look at the document image. Scroll/look to the LAST page, BOTTOM section. You will see a dark blue bar labeled 'Fecha de expedición'. BELOW this bar are THREE cyan input boxes. Extract ONLY from these bottom boxes. IGNORE everything above the middle of the page. The 'Date of Birth' is in the middle/top - DO NOT use it. Return format: DD-MM-YYYY from the FOOTER ONLY.",

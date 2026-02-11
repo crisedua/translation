@@ -53,11 +53,25 @@ serve(async (req) => {
             throw new Error("fileUrl is required");
         }
 
+        // Resolve fileUrl — it may be a signed URL or a storage path
+        let resolvedFileUrl = fileUrl;
+        if (!fileUrl.startsWith('http')) {
+            console.log(`Generating fresh signed URL for storage path: ${fileUrl}`);
+            const { data: urlData, error: urlError } = await supabase.storage
+                .from('documents')
+                .createSignedUrl(fileUrl, 7200);
+
+            if (urlError || !urlData?.signedUrl) {
+                throw new Error(`Failed to generate signed URL for file: ${urlError?.message || 'unknown error'}`);
+            }
+            resolvedFileUrl = urlData.signedUrl;
+        }
+
         console.log(`Processing document: ${fileName || 'Unknown'}`);
 
         // 1. Download file
         console.log("Downloading file...");
-        const fileResponse = await fetch(fileUrl);
+        const fileResponse = await fetch(resolvedFileUrl);
         if (!fileResponse.ok) {
             throw new Error("Failed to download file");
         }
@@ -137,10 +151,65 @@ serve(async (req) => {
                     throw new Error("PDF conversion failed");
                 }
             } catch (pdfError) {
-                console.error("PDF processing failed:", pdfError);
-                // Fallback to text-only mode
-                console.log("Falling back to text-only mode for PDF");
-                extractedText = "";
+                console.error("PDF.co image conversion failed:", pdfError);
+
+                // FALLBACK: Use PDF.co text extraction instead of image conversion
+                console.log("[FALLBACK] Attempting PDF.co text extraction as fallback...");
+                try {
+                    const pdfCoKey = Deno.env.get("PDF_CO_API_KEY");
+                    if (pdfCoKey) {
+                        // Upload PDF to PDF.co for text extraction
+                        const uploadUrl = "https://api.pdf.co/v1/file/upload/get-presigned-url";
+                        const tempName = `fallback_${Date.now()}.pdf`;
+                        const uploadResp = await fetch(`${uploadUrl}?name=${tempName}&encrypt=true`, {
+                            headers: { "x-api-key": pdfCoKey }
+                        });
+                        const uploadData = await uploadResp.json();
+
+                        if (!uploadData.error && uploadData.presignedUrl) {
+                            await fetch(uploadData.presignedUrl, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/pdf' },
+                                body: fileBuffer
+                            });
+
+                            const textResp = await fetch("https://api.pdf.co/v1/pdf/convert/to/text", {
+                                method: 'POST',
+                                headers: { "x-api-key": pdfCoKey, "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    url: uploadData.url,
+                                    async: false,
+                                    ocrMode: "Auto",
+                                    lang: "spa",
+                                    inline: true
+                                })
+                            });
+                            const textData = await textResp.json();
+                            if (!textData.error && textData.body) {
+                                extractedText = textData.body;
+                                console.log(`[FALLBACK] PDF.co text extraction got ${extractedText.length} characters`);
+                            }
+                        }
+                    }
+                } catch (fallbackError) {
+                    console.error("[FALLBACK] PDF.co text extraction also failed:", fallbackError);
+                }
+
+                // FALLBACK 2: Send the raw PDF base64 to OpenAI Vision as a last resort
+                // OpenAI gpt-4o can process PDF pages directly when sent as base64
+                if (!extractedText && fileBase64) {
+                    console.log("[FALLBACK-2] Attempting direct base64 PDF to OpenAI Vision...");
+                    try {
+                        visionDataUri = `data:application/pdf;base64,${fileBase64}`;
+                        console.log("[FALLBACK-2] Set visionDataUri with raw PDF base64 for AI extraction");
+                    } catch (fb2Error) {
+                        console.error("[FALLBACK-2] Failed:", fb2Error);
+                    }
+                }
+
+                if (!extractedText && !visionDataUri) {
+                    console.error("[CRITICAL] All PDF processing methods failed. Extraction will be empty.");
+                }
             }
         } else {
             console.warn(`Unsupported file type: ${fileName}`);

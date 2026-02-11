@@ -59,15 +59,44 @@ serve(async (req: Request) => {
             );
         }
 
+        // Resolve the file URL — it may be a storage path or a full signed URL
+        let resolvedFileUrl = original_file_url;
+        if (!original_file_url.startsWith('http')) {
+            // It's a storage path — generate a fresh signed URL
+            console.log(`[CORRECT-FIELD] Generating fresh signed URL for path: ${original_file_url}`);
+            const { data: urlData, error: urlError } = await supabase.storage
+                .from('documents')
+                .createSignedUrl(original_file_url, 3600);
+
+            if (urlError || !urlData?.signedUrl) {
+                console.error("[CORRECT-FIELD] Failed to create signed URL:", urlError);
+                return new Response(
+                    JSON.stringify({ error: "Failed to generate access URL for document" }),
+                    { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+                );
+            }
+            resolvedFileUrl = urlData.signedUrl;
+        }
+
         // Convert URL to base64 data URI for OpenAI Vision
         let imageDataUri: string;
         try {
-            const imageResponse = await fetch(original_file_url);
+            const imageResponse = await fetch(resolvedFileUrl);
             if (!imageResponse.ok) {
                 throw new Error(`Failed to fetch image: ${imageResponse.status}`);
             }
             const imageBuffer = await imageResponse.arrayBuffer();
-            const base64 = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
+
+            // Chunked base64 encoding to avoid call stack overflow on large files
+            const bytes = new Uint8Array(imageBuffer);
+            const chunkSize = 0x8000;
+            let binary = '';
+            for (let i = 0; i < bytes.byteLength; i += chunkSize) {
+                const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.byteLength));
+                binary += String.fromCharCode.apply(null, chunk as any);
+            }
+            const base64 = btoa(binary);
+
             const contentType = imageResponse.headers.get("content-type") || "image/jpeg";
             imageDataUri = `data:${contentType};base64,${base64}`;
         } catch (e) {

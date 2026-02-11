@@ -269,8 +269,17 @@ export function getTemplateMappings(
     // TEMPLATE-SPECIFIC OVERRIDES (Dynamic Code Configuration)
     // =========================================================================
 
+    // Detect template type using content_profile metadata first, name as fallback
+    const docType = (template.content_profile?.documentType || '').toLowerCase();
+    const formatVersion = (template.content_profile?.formatIndicators?.version || '').toLowerCase();
+    const tplNameLower = (template.name || '').toLowerCase();
+
+    const isBirthCert = docType.includes('birth') || tplNameLower.includes('nacimiento');
+    const isNuevoFormat = formatVersion === 'new' || formatVersion === 'nuevo' ||
+        (isBirthCert && (tplNameLower.includes('nuevo') || tplNameLower.includes('new')));
+
     // 1. REGISTRO NACIMIENTO NUEVO - Strict Birth Location Mapping
-    if (template.name && template.name.toLowerCase().includes('nuevo') && template.name.toLowerCase().includes('nacimiento')) {
+    if (isBirthCert && isNuevoFormat) {
         console.log('[TemplateMapper] Applying REGISTRO NACIMIENTO NUEVO specific strict mappings');
 
         // Ensure standard mappings are cloned so we don't mutate the global object

@@ -78,7 +78,7 @@ const DocumentUpload = () => {
 
             if (uploadError) throw uploadError;
 
-            // 2. Get signed URL (valid for 2 hours)
+            // 2. Get a short-lived signed URL for immediate processing
             const { data: urlData, error: urlError } = await supabase.storage
                 .from('documents')
                 .createSignedUrl(filePath, 7200);
@@ -88,13 +88,15 @@ const DocumentUpload = () => {
             const fileUrl = urlData.signedUrl;
 
             // 3. Create document request in database
+            // Store the persistent storage path (not the expiring signed URL)
+            // so backend functions can always generate fresh URLs when needed
             const { data: requestData, error: insertError } = await supabase
                 .from('document_requests')
                 .insert({
                     user_id: userId, // Will be null for anonymous uploads
                     category: category,
                     delivery_timeline: timeline,
-                    original_file_url: fileUrl,
+                    original_file_url: filePath,
                     status: 'processing'
                 })
                 .select()
