@@ -49,10 +49,15 @@ serve(async (req) => {
 
         const { fileUrl, fileName, userId, categoryId, timeline, requestId, openaiApiKey, pdfCoApiKey } = await req.json();
         console.log(`Request parsed: fileName=${fileName}, userId=${userId}`);
+        console.log(`[DEBUG] openaiApiKey received: ${openaiApiKey ? openaiApiKey.substring(0, 10) + '...' : 'NOT PROVIDED'}`);
+        console.log(`[DEBUG] pdfCoApiKey received: ${pdfCoApiKey ? 'YES' : 'NOT PROVIDED'}`);
 
         // Use API keys from request body (Vercel env) or fall back to Supabase secrets
         if (openaiApiKey) setApiKey("OPENAI_API_KEY", openaiApiKey);
         if (pdfCoApiKey) setApiKey("PDF_CO_API_KEY", pdfCoApiKey);
+
+        const { getApiKey } = await import("./api-keys.ts");
+        console.log(`[DEBUG] Resolved OPENAI key: ${getApiKey("OPENAI_API_KEY").substring(0, 10)}...`);
 
         if (!fileUrl) {
             throw new Error("fileUrl is required");
@@ -125,46 +130,49 @@ serve(async (req) => {
                 extractedText = "";
             }
         } else if (isPdf) {
-            // PDF file - Convert to images using PDF.co
-            // This is CRITICAL for accurate extraction - OpenAI Vision needs an image to see the NUIP box
-            console.log("Processing PDF file with PDF.co conversion...");
+            // PDF file processing - Multiple strategies with fallbacks
+            console.log("Processing PDF file...");
+
+            let pdfImageUrls: string[] = [];
+
+            // STRATEGY 1: PDF.co image conversion (best quality - gives us images for Vision)
             try {
-                // Convert PDF to images
-                const pdfImageUrls = await convertPdfToImage(fileBuffer);
-
+                console.log("[PDF-S1] Attempting PDF.co image conversion...");
+                pdfImageUrls = await convertPdfToImage(fileBuffer);
                 if (pdfImageUrls && pdfImageUrls.length > 0) {
-                    console.log(`PDF converted to ${pdfImageUrls.length} image(s)`);
+                    console.log(`[PDF-S1] Success: ${pdfImageUrls.length} image(s)`);
+                } else {
+                    throw new Error("No images returned");
+                }
+            } catch (s1Error) {
+                console.warn("[PDF-S1] PDF.co image conversion failed:", s1Error);
+                pdfImageUrls = [];
+            }
 
+            // If we have images, do OCR + set vision URI
+            if (pdfImageUrls.length > 0) {
+                try {
                     if (USE_OPENAI_VISION_OCR) {
-                        // Use OpenAI Vision for OCR (better semantic understanding)
                         console.log("Using OpenAI Vision for PDF OCR...");
                         extractedText = await extractTextFromImagesWithOpenAI(pdfImageUrls);
-                        console.log(`OpenAI Vision extracted ${extractedText.length} characters`);
                     } else {
-                        // Use Google Vision for OCR (original behavior)
                         console.log("Using Google Vision for PDF OCR...");
                         extractedText = await extractTextFromImages(pdfImageUrls);
-                        console.log(`Google Vision extracted ${extractedText.length} characters`);
                     }
-
-                    // Use the first page image for OpenAI Vision structured extraction
-                    // OpenAI Vision accepts URLs directly for images
-                    visionDataUri = pdfImageUrls[0];
-                    console.log(`PDF prepared for OpenAI Vision (using converted image URL)`);
-                } else {
-                    console.error("PDF conversion returned no images");
-                    throw new Error("PDF conversion failed");
+                    console.log(`OCR extracted ${extractedText.length} characters`);
+                    visionDataUri = pdfImageUrls[0]; // First page for structured extraction
+                } catch (ocrError) {
+                    console.error("OCR on converted images failed:", ocrError);
                 }
-            } catch (pdfError) {
-                console.error("PDF.co image conversion failed:", pdfError);
+            }
 
-                // FALLBACK: Use PDF.co text extraction instead of image conversion
-                console.log("[FALLBACK] Attempting PDF.co text extraction as fallback...");
+            // STRATEGY 2: PDF.co text extraction (if no images or OCR failed)
+            if (!extractedText) {
+                console.log("[PDF-S2] Attempting PDF.co text extraction...");
                 try {
                     const { getApiKey } = await import("./api-keys.ts");
                     const pdfCoKey = getApiKey("PDF_CO_API_KEY");
                     if (pdfCoKey) {
-                        // Upload PDF to PDF.co for text extraction
                         const uploadUrl = "https://api.pdf.co/v1/file/upload/get-presigned-url";
                         const tempName = `fallback_${Date.now()}.pdf`;
                         const uploadResp = await fetch(`${uploadUrl}?name=${tempName}&encrypt=true`, {
@@ -193,29 +201,35 @@ serve(async (req) => {
                             const textData = await textResp.json();
                             if (!textData.error && textData.body) {
                                 extractedText = textData.body;
-                                console.log(`[FALLBACK] PDF.co text extraction got ${extractedText.length} characters`);
+                                console.log(`[PDF-S2] Success: ${extractedText.length} characters`);
                             }
                         }
                     }
-                } catch (fallbackError) {
-                    console.error("[FALLBACK] PDF.co text extraction also failed:", fallbackError);
+                } catch (s2Error) {
+                    console.warn("[PDF-S2] PDF.co text extraction failed:", s2Error);
                 }
+            }
 
-                // FALLBACK 2: Send the raw PDF base64 to OpenAI Vision as a last resort
-                // OpenAI gpt-4o can process PDF pages directly when sent as base64
-                if (!extractedText && fileBase64) {
-                    console.log("[FALLBACK-2] Attempting direct base64 PDF to OpenAI Vision...");
-                    try {
-                        visionDataUri = `data:application/pdf;base64,${fileBase64}`;
-                        console.log("[FALLBACK-2] Set visionDataUri with raw PDF base64 for AI extraction");
-                    } catch (fb2Error) {
-                        console.error("[FALLBACK-2] Failed:", fb2Error);
+            // STRATEGY 3: Direct OpenAI Vision with base64 image of first page
+            // OpenAI Vision does NOT support application/pdf — only image MIME types
+            // So we skip this if we don't have image URLs. Text-only extraction will be used.
+            if (!extractedText && !visionDataUri) {
+                console.warn("[PDF] All PDF processing methods failed. Will attempt text-only extraction from PDF form fields.");
+                // Try to extract any embedded text from the PDF using pdf-lib
+                try {
+                    const { extractPdfFields } = await import("./pdf-field-extractor.ts");
+                    const fields = await extractPdfFields(fileBuffer);
+                    if (fields.length > 0) {
+                        extractedText = `PDF form fields detected: ${fields.join(', ')}`;
+                        console.log(`[PDF-S3] Extracted ${fields.length} form field names as fallback context`);
                     }
+                } catch (s3Error) {
+                    console.warn("[PDF-S3] PDF field extraction failed:", s3Error);
                 }
+            }
 
-                if (!extractedText && !visionDataUri) {
-                    console.error("[CRITICAL] All PDF processing methods failed. Extraction will be empty.");
-                }
+            if (!extractedText && !visionDataUri) {
+                console.error("[CRITICAL] All PDF processing methods failed. Extraction will be empty.");
             }
         } else {
             console.warn(`Unsupported file type: ${fileName}`);

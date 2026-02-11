@@ -468,14 +468,17 @@ CRITICAL REMINDERS - COMMON ERRORS TO AVOID:
 Return JSON.`;
 
 
+    // Safety: OpenAI Vision only accepts image MIME types, not application/pdf
+    const safeVisionUrl = fileUrl && !fileUrl.startsWith('data:application/pdf') ? fileUrl : undefined;
+
     const messages: any[] = [
         { role: "system", content: systemPrompt },
         {
             role: "user",
-            content: fileUrl
+            content: safeVisionUrl
                 ? [
                     { type: "text", text: userPrompt },
-                    { type: "image_url", image_url: { url: fileUrl } }
+                    { type: "image_url", image_url: { url: safeVisionUrl } }
                 ]
                 : userPrompt
         }
@@ -493,7 +496,7 @@ Return JSON.`;
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                model: fileUrl ? "gpt-4o" : "gpt-4o-mini",
+                model: safeVisionUrl ? "gpt-4o" : "gpt-4o-mini",
                 messages: messages,
                 temperature: 0.1,
                 response_format: { type: "json_object" },
@@ -641,6 +644,13 @@ export const refineData = async (
     Return ONLY a JSON object with these specific fields and their corrected values.
     `;
 
+    // Safety: skip vision if URI is a PDF (OpenAI only accepts image types)
+    const safeUri = visionDataUri && !visionDataUri.startsWith('data:application/pdf') ? visionDataUri : null;
+    if (!safeUri) {
+        console.log("[VISUAL-CORRECTION] No valid image URI available, skipping refinement");
+        return {};
+    }
+
     try {
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",
@@ -662,7 +672,7 @@ export const refineData = async (
                             {
                                 type: "image_url",
                                 image_url: {
-                                    url: visionDataUri,
+                                    url: safeUri,
                                     detail: "high"
                                 }
                             }
