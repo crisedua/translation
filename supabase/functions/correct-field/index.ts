@@ -19,7 +19,10 @@ serve(async (req: Request) => {
     }
 
     try {
-        const { requestId, fieldName, hint } = await req.json() as CorrectionRequest;
+        const { requestId, fieldName, hint, openaiApiKey } = await req.json() as CorrectionRequest & { openaiApiKey?: string };
+
+        // Override env var if key passed from frontend (Vercel env)
+        if (openaiApiKey) Deno.env.set("OPENAI_API_KEY", openaiApiKey);
 
         if (!requestId || !fieldName) {
             return new Response(
@@ -139,8 +142,8 @@ RESPOND WITH ONLY THE EXTRACTED VALUE - no explanations, no quotes, just the raw
 If the field cannot be found or is legitimately empty, respond with exactly: [EMPTY]`;
 
         // Call OpenAI Vision API
-        const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
-        if (!openaiApiKey) {
+        const resolvedOpenaiKey = Deno.env.get("OPENAI_API_KEY");
+        if (!resolvedOpenaiKey) {
             return new Response(
                 JSON.stringify({ error: "OpenAI API key not configured" }),
                 { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -152,7 +155,7 @@ If the field cannot be found or is legitimately empty, respond with exactly: [EM
         const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${openaiApiKey}`,
+                "Authorization": `Bearer ${resolvedOpenaiKey}`,
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({

@@ -113,7 +113,9 @@ const DocumentUpload = () => {
                         userId: userId, // Pass userId (can be null)
                         categoryId: category,
                         timeline: timeline,
-                        requestId: requestData.id
+                        requestId: requestData.id,
+                        openaiApiKey: import.meta.env.VITE_OPENAI_API_KEY || undefined,
+                        pdfCoApiKey: import.meta.env.VITE_PDF_CO_API_KEY || undefined,
                     }
                 });
 

@@ -46,8 +46,16 @@ serve(async (req) => {
 
         console.log("Supabase client created");
 
-        const { fileUrl, fileName, userId, categoryId, timeline, requestId } = await req.json();
+        const { fileUrl, fileName, userId, categoryId, timeline, requestId, openaiApiKey, pdfCoApiKey } = await req.json();
         console.log(`Request parsed: fileName=${fileName}, userId=${userId}`);
+
+        // Use API keys from request body (Vercel env) or fall back to Supabase secrets
+        const OPENAI_KEY = openaiApiKey || Deno.env.get("OPENAI_API_KEY") || "";
+        const PDF_CO_KEY = pdfCoApiKey || Deno.env.get("PDF_CO_API_KEY") || "";
+
+        // Override env vars so all sub-modules pick up the keys automatically
+        if (openaiApiKey) Deno.env.set("OPENAI_API_KEY", openaiApiKey);
+        if (pdfCoApiKey) Deno.env.set("PDF_CO_API_KEY", pdfCoApiKey);
 
         if (!fileUrl) {
             throw new Error("fileUrl is required");

@@ -209,7 +209,8 @@ const AdminRequestReview = () => {
                 body: {
                     requestId: request.id,
                     fieldName: correctionField.key,
-                    hint: correctionHint.trim() || undefined
+                    hint: correctionHint.trim() || undefined,
+                    openaiApiKey: import.meta.env.VITE_OPENAI_API_KEY || undefined,
                 }
             });
 

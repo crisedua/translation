@@ -103,7 +103,8 @@ const TemplateAdmin = () => {
                     body: {
                         templateUrl,
                         templateName,
-                        categoryId: selectedCategory
+                        categoryId: selectedCategory,
+                        openaiApiKey: import.meta.env.VITE_OPENAI_API_KEY || undefined,
                     }
                 });
 

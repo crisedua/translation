@@ -137,7 +137,10 @@ serve(async (req) => {
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
         const supabase = createClient(supabaseUrl, supabaseKey);
 
-        const { templateUrl, templateName, categoryId } = await req.json();
+        const { templateUrl, templateName, categoryId, openaiApiKey } = await req.json();
+
+        // Override env var if key passed from frontend (Vercel env)
+        if (openaiApiKey) Deno.env.set("OPENAI_API_KEY", openaiApiKey);
 
         if (!templateUrl || !templateName) {
             throw new Error("templateUrl and templateName are required");
