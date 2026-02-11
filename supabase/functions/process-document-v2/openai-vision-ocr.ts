@@ -21,7 +21,8 @@ export async function extractTextWithOpenAIVision(
     imageBase64: string,
     mimeType: string = 'image/jpeg'
 ): Promise<string> {
-    const apiKey = Deno.env.get("OPENAI_API_KEY");
+    const { getApiKey } = await import("./api-keys.ts");
+    const apiKey = getApiKey("OPENAI_API_KEY");
     if (!apiKey) {
         throw new Error("OPENAI_API_KEY environment variable is not set");
     }
@@ -124,7 +125,8 @@ Return ONLY the extracted text, no explanations.`;
 export async function extractTextFromImagesWithOpenAI(
     imageUrls: string[]
 ): Promise<string> {
-    const apiKey = Deno.env.get("OPENAI_API_KEY");
+    const { getApiKey } = await import("./api-keys.ts");
+    const apiKey = getApiKey("OPENAI_API_KEY");
     if (!apiKey) {
         throw new Error("OPENAI_API_KEY environment variable is not set");
     }

@@ -79,7 +79,8 @@ const DEFAULT_EXTRACTION_INSTRUCTIONS: Record<string, string> = {
  * Each field can have custom extraction instructions stored in the template.
  */
 export const extractData = async (text: string, template: any, fileUrl?: string): Promise<ExtractedData> => {
-    const apiKey = Deno.env.get("OPENAI_API_KEY");
+    const { getApiKey } = await import("./api-keys.ts");
+    const apiKey = getApiKey("OPENAI_API_KEY");
     if (!apiKey) {
         throw new Error("OPENAI_API_KEY environment variable is not set");
     }
@@ -620,7 +621,8 @@ export const refineData = async (
     visionDataUri: string,
     missingFields: string[]
 ): Promise<Partial<ExtractedData>> => {
-    const apiKey = Deno.env.get("OPENAI_API_KEY");
+    const { getApiKey } = await import("./api-keys.ts");
+    const apiKey = getApiKey("OPENAI_API_KEY");
     if (!apiKey) return {};
 
     console.log(`[VISUAL-CORRECTION] Triggering for ${missingFields.length} missing fields: ${missingFields.join(", ")}`);

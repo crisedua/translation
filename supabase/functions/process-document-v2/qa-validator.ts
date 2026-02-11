@@ -6,7 +6,8 @@ interface QAResult {
 }
 
 export const performSemanticQA = async (ocrText: string, extractedData: any, fileUrl?: string): Promise<QAResult> => {
-    const apiKey = Deno.env.get("OPENAI_API_KEY");
+    const { getApiKey } = await import("./api-keys.ts");
+    const apiKey = getApiKey("OPENAI_API_KEY");
     if (!apiKey) {
         throw new Error("OPENAI_API_KEY environment variable is not set");
     }

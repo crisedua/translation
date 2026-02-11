@@ -8,6 +8,7 @@ import { sendNotification } from "./email-notifier.ts";
 import { extractTextWithGoogleVision, extractTextFromImages } from "./google-vision.ts";
 import { extractTextWithOpenAIVision, extractTextFromImagesWithOpenAI } from "./openai-vision-ocr.ts";
 import { convertPdfToImage } from "./pdf-converter.ts";
+import { setApiKey } from "./api-keys.ts";
 
 // Feature flag: Set USE_OPENAI_VISION_OCR=true in Supabase secrets to use OpenAI Vision for OCR
 const USE_OPENAI_VISION_OCR = Deno.env.get("USE_OPENAI_VISION_OCR") === "true";
@@ -50,12 +51,8 @@ serve(async (req) => {
         console.log(`Request parsed: fileName=${fileName}, userId=${userId}`);
 
         // Use API keys from request body (Vercel env) or fall back to Supabase secrets
-        const OPENAI_KEY = openaiApiKey || Deno.env.get("OPENAI_API_KEY") || "";
-        const PDF_CO_KEY = pdfCoApiKey || Deno.env.get("PDF_CO_API_KEY") || "";
-
-        // Override env vars so all sub-modules pick up the keys automatically
-        if (openaiApiKey) Deno.env.set("OPENAI_API_KEY", openaiApiKey);
-        if (pdfCoApiKey) Deno.env.set("PDF_CO_API_KEY", pdfCoApiKey);
+        if (openaiApiKey) setApiKey("OPENAI_API_KEY", openaiApiKey);
+        if (pdfCoApiKey) setApiKey("PDF_CO_API_KEY", pdfCoApiKey);
 
         if (!fileUrl) {
             throw new Error("fileUrl is required");
@@ -164,7 +161,8 @@ serve(async (req) => {
                 // FALLBACK: Use PDF.co text extraction instead of image conversion
                 console.log("[FALLBACK] Attempting PDF.co text extraction as fallback...");
                 try {
-                    const pdfCoKey = Deno.env.get("PDF_CO_API_KEY");
+                    const { getApiKey } = await import("./api-keys.ts");
+                    const pdfCoKey = getApiKey("PDF_CO_API_KEY");
                     if (pdfCoKey) {
                         // Upload PDF to PDF.co for text extraction
                         const uploadUrl = "https://api.pdf.co/v1/file/upload/get-presigned-url";

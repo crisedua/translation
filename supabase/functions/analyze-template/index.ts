@@ -216,7 +216,7 @@ serve(async (req) => {
         console.log(`   ✓ Rule-based mappings: ${Object.keys(pdfMappings).length} fields`);
 
         // Then, enhance with AI for any PDF fields not yet mapped
-        const openaiKey = Deno.env.get("OPENAI_API_KEY");
+        const openaiKey = resolvedOpenaiKey;
         if (!openaiKey) {
             throw new Error("OPENAI_API_KEY not set");
         }

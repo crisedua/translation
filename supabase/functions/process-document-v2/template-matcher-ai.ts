@@ -24,7 +24,8 @@ export const matchTemplateWithAI = async (
         return templates[0];
     }
 
-    const apiKey = Deno.env.get("OPENAI_API_KEY");
+    const { getApiKey } = await import("./api-keys.ts");
+    const apiKey = getApiKey("OPENAI_API_KEY");
     if (!apiKey) {
         console.error("OPENAI_API_KEY not set, using first template");
         return templates[0];

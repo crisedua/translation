@@ -1,5 +1,6 @@
 export const convertPdfToImage = async (pdfBuffer: ArrayBuffer): Promise<string[]> => {
-    const apiKey = Deno.env.get("PDF_CO_API_KEY");
+    const { getApiKey } = await import("./api-keys.ts");
+    const apiKey = getApiKey("PDF_CO_API_KEY");
     if (!apiKey) {
         throw new Error("PDF_CO_API_KEY environment variable is not set");
     }
