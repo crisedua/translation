@@ -74,14 +74,51 @@ const AdminRequestReview = () => {
         fetchRequest();
     }, [id]);
 
+    // Auto-poll while status is 'processing' or extracted_data is empty
+    useEffect(() => {
+        if (!request) return;
+        const needsPoll = request.status === 'processing' || 
+            !request.extracted_data || 
+            (typeof request.extracted_data === 'object' && Object.keys(request.extracted_data).length === 0);
+        
+        if (!needsPoll) return;
+
+        console.log('[AdminReview] Data not ready, polling in 3s...', { 
+            status: request.status, 
+            hasData: !!request.extracted_data,
+            dataKeys: request.extracted_data ? Object.keys(request.extracted_data).length : 0 
+        });
+
+        const timer = setInterval(() => {
+            console.log('[AdminReview] Polling for updated data...');
+            fetchRequest();
+        }, 3000);
+
+        return () => clearInterval(timer);
+    }, [request?.status, request?.extracted_data]);
+
     // Populate form data when request is loaded
     useEffect(() => {
         if (request?.extracted_data) {
-            const flattenedData: Record<string, string> = {};
-            Object.entries(request.extracted_data).forEach(([key, value]) => {
-                flattenedData[key] = String(value || '');
-            });
-            setFormData(flattenedData);
+            // Handle case where extracted_data might be a JSON string
+            let data = request.extracted_data;
+            if (typeof data === 'string') {
+                try {
+                    data = JSON.parse(data);
+                } catch (e) {
+                    console.error('[AdminReview] Failed to parse extracted_data string:', e);
+                    return;
+                }
+            }
+            
+            if (typeof data === 'object' && data !== null) {
+                const flattenedData: Record<string, string> = {};
+                Object.entries(data).forEach(([key, value]) => {
+                    flattenedData[key] = String(value || '');
+                });
+                console.log('[AdminReview] Populated formData with', Object.keys(flattenedData).length, 'fields');
+                setFormData(flattenedData);
+            }
         }
     }, [request?.extracted_data]);
 
@@ -94,6 +131,15 @@ const AdminRequestReview = () => {
                 .single();
 
             if (fetchError) throw fetchError;
+            
+            console.log('[AdminReview] Fetched request:', {
+                id: data?.id?.slice(0, 8),
+                status: data?.status,
+                hasExtractedData: !!data?.extracted_data,
+                extractedDataType: typeof data?.extracted_data,
+                extractedDataKeys: data?.extracted_data ? Object.keys(data.extracted_data).length : 0
+            });
+            
             setRequest(data);
         } catch (err: any) {
             setError(err.message || 'Failed to load request');
@@ -449,7 +495,28 @@ const AdminRequestReview = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left Panel: Extracted Data */}
                 <div className="bg-white rounded-lg shadow-lg p-6">
-                    <h2 className="text-xl font-semibold mb-4">Extracted Data</h2>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-semibold">Extracted Data</h2>
+                        <button
+                            onClick={() => fetchRequest()}
+                            className="flex items-center text-sm text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+                            title="Refresh data from server"
+                        >
+                            <RefreshCw className="w-4 h-4 mr-1" />
+                            Refresh
+                        </button>
+                    </div>
+
+                    {/* Processing indicator */}
+                    {(request.status === 'processing' || (!request.extracted_data || Object.keys(formData).length === 0)) && (
+                        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center">
+                            <Loader className="w-5 h-5 animate-spin text-blue-600 mr-3" />
+                            <div>
+                                <p className="text-blue-800 font-medium">Processing document...</p>
+                                <p className="text-blue-600 text-sm">Extracting data from your document. This page will update automatically.</p>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Category & Timeline */}
                     <div className="mb-6 p-4 bg-gray-50 rounded-lg">
