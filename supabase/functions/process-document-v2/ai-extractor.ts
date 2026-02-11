@@ -341,7 +341,7 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
 
 
     const docName = template?.name || 'Colombian Document';
-    const docType = template?.content_profile?.documentType?.replace(/_/g, ' ').toUpperCase() || 'CIVIL REGISTRY DOCUMENT';
+    const docTypeDisplay = template?.content_profile?.documentType?.replace(/_/g, ' ').toUpperCase() || 'CIVIL REGISTRY DOCUMENT';
 
     // Log template instruction availability
     console.log(`[AI-EXTRACTOR] Template: ${docName}`);
@@ -391,7 +391,7 @@ export const extractData = async (text: string, template: any, fileUrl?: string)
 
 
     // === BUILD FOCUSED PROMPT ===
-    const systemPrompt = `You are extracting data from a scanned ${docName} (${docType}).
+    const systemPrompt = `You are extracting data from a scanned ${docName} (${docTypeDisplay}).
 
 ## YOUR TASK
 Extract the following fields from the document. Each field has specific instructions - FOLLOW THEM EXACTLY:
